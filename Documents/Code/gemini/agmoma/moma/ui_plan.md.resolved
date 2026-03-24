@@ -1,0 +1,100 @@
+# Stitch UI Plan: MOMA – Personal Finance Tracker (Redesign)
+
+**App Core Philosophy**
+MOMA is a premium, mobile-first web app (max width: 600px). It feels like a high-end banking or wealth management product: clean lines, authoritative typography, generous whitespace, and "architectural clarity". 
+
+## Global Design System
+*   **Color Palette:**
+    *   **Primary:** Deep Indigo (`#1A237E`) – Used for primary buttons, active NAV states, and brand text.
+    *   **Background:** Clean White (`#FFFFFF`) or very light off-white (`#F8F9FA` or similar neutral).
+    *   **Surface Cards:** Crisp White (`#FFFFFF`) to float on the background, separated by subtle, soft drop shadows.
+    *   **Text (Primary):** Near-black/Dark Slate (`#1E212B`) for high contrast readability.
+    *   **Text (Secondary):** Muted Grey (`#6B7280`) for hints and timestamps.
+    *   **Income Metric:** Muted/Elegant Green (e.g. `#2E7D32` or `#10B981`).
+    *   **Expense Metric:** Deep Red/Rose (e.g. `#C62828` or `#E11D48`).
+*   **Typography:** `Manrope` (Clean, modern sans-serif). Use varied font weights (e.g. Heavy 800 for balances, Medium 500 for labels) to establish clear hierarchy without clutter.
+*   **Border Radius:** 8px (`Round Eight`) uniformly across inputs, cards, and buttons for a structured, architectural feel.
+*   **Visual Style:** Lots of whitespace. Tonal layering instead of hard borders where possible. 
+
+---
+
+## Shared Layout Components
+
+**TopAppBar (Header)**
+*   Clean, minimalist top bar.
+*   Left: Simple text-based logo ("MOMA" in Indigo/bold Manrope) or discrete "Welcome back, {User}" text.
+*   Right: Subtle notification bell icon or user profile avatar circle.
+*   Background: White/Transparent, blurring into the page content below.
+
+**BottomNavBar (Persistent Navigation)**
+*   Fixed to the bottom. White background with a subtle top border or soft top shadow.
+*   3-item setup:
+    1.  **Dashboard** (Left)
+    2.  **Add** (Center) – Prominent, elevated FAB (Floating Action Button). Background is Deep Indigo, icon is white `+`. It breaks the top plane of the nav bar slightly.
+    3.  **Settings** (Right)
+
+---
+
+## Screen-by-Screen Breakdown
+
+### 1. Landing Page (Screen 10)
+*   **Background:** Clean white/off-white.
+*   **Hero Image/Graphic:** Very subtle abstract geometric shapes or a clean, grey-scale mockup chart. "Architectural" line art. 
+*   **Headline:** "Simplify Your Spend, Grow Your Future." (Large, Manrope, high-contrast dark text).
+*   **Call-to-Action:** Primary Deep Indigo button ("Get Started"). Soft shadow, 8px radius.
+
+### 2. Authentication (Screens 9 & 7)
+*   **Layout:** Centered form in a crisp white surface box/card with an 8px radius.
+*   **Tabs:** "Log In" and "Sign Up" tabs above the form. The active tab has an Indigo underline or bold text.
+*   **Inputs:** Minimalist input fields (Email, Password) with subtle grey borders (`#E5E7EB`) that turn Indigo on focus.
+*   **Primary Action:** Full-width Indigo button ("Enter Vault" / "Create Account").
+*   **Secondary Action:** "Continue with Google / Apple" white buttons with subtle borders and respective logos.
+
+### 3. Dashboard (Screen 6)
+*   **Top Net Worth Card:** A prominent, hero-style card at the top. 
+    *   Label: "Total Net Worth" (small, uppercase, muted). 
+    *   Value: Huge, dark, readable number (e.g. `$12,450.00`).
+    *   Badge: Small green pill (+4.2% this month) next to or below the balance.
+*   **Income/Expense Row:** Two equal-width cards side-by-side. 
+    *   Income Card: Subtle green hint (icon or text color) and the total positive amount.
+    *   Expense Card: Subtle red hint and total negative amount.
+*   **Smart Insights:** A full-width, low-profile card acting as an alert. E.g., a small info icon and text: "You are spending 15% less on Dining out this week." (Background: very pale indigo `#EEF2FF`).
+*   **Recent Activity:** A list header ("Recent") followed by 3-5 minimalist transaction rows (see Ledger styling).
+
+### 4. Ledger (Screen 8)
+*   **Header Area:** "Ledger" title. Below it, a sleek date-range filter row (e.g. pill-shaped buttons for "This Month", "Last Month", or "Custom").
+*   **List Style:** Grouped by date (e.g. "Today", "Yesterday" headers in muted grey).
+*   **Transaction Row:** Clean white background, no outer borders. Divider line between rows is extremely faint.
+    *   Left: Crisp, minimalist icon representing the category (in a subtle grey or pale indigo 8px-rounded square).
+    *   Center: Two stacked lines — Top line is Category/Party (dark, medium weight), bottom line is the Date and optional Notes (muted grey, smaller).
+    *   Right: The Amount. Positive is elegantly green, negative is elegantly red. Font is Manrope with tabular numbers so they align cleanly.
+
+### 5. New / Edit Transaction (Screens 11 & 12)
+*   **Header:** "New Entry" / "Edit Entry".
+*   **Toggle:** Clean, segmented control switch for "Income" vs "Expense". The active state highlights the pill background.
+*   **Amount Input:** The centerpiece. Huge, borderless input field in the center of the screen. Font size should be massive.
+*   **Contextual Fields (Form Below):** A sleek, vertically stacked list of inputs disguised as a menu:
+    *   **Date:** Tapping opens picker.
+    *   **Category:** Tapping slides open a neat list of categories with minimalist icons.
+    *   **Merchant/Party:** Text entry or searchable dropdown. 
+    *   **Note:** Simple text field.
+*   **Action Area:** At the bottom (above keyboard). 
+    *   Large, full-width "Confirm Entry" button (Indigo).
+    *   Underneath, a discrete, muted text button to "Discard" or "Cancel".
+
+### 6. Settings (Screen 2)
+*   **Profile Block:** Top area showing User Avatar (initials in an Indigo circle) and Email.
+*   **List Options:** A clean list of rows (like iOS settings). Each row has a label on the left and an arrow/value on the right.
+    *   Currency Preferences (shows current, e.g. "USD $")
+    *   Manage Categories
+    *   Manage Parties
+*   **Log Out Action:** A single row at the bottom, text in an authoritative Red, indicating a destructive/exit action. 
+
+### 7. Manage Categories (Screen 5)
+*   **List:** Hierarchical view. Parent categories are bold. Child categories are indented slightly with a muted text color. 
+*   **Visuals:** Clean layout. Each row has the category icon, name, and a discrete edit/delete icon on the far right.
+*   **Add Action:** Floating "Add Category" FAB or a fixed button at the top "Add New". Opens a minimalist form with an icon selector.
+
+### 8. Manage Parties (Screen 4)
+*   **List:** Simple, alphabetical list of merchants/people. Generous padding between rows. 
+*   **Add Action:** Prominent text input at the top "Add Counterparty..." with a submit icon, instantly adding to the list below.
