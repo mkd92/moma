@@ -1394,3 +1394,21 @@
 
 .add-cat-btn:hover { opacity: 0.88; }
 .add-cat-btn:active { transform: scale(0.99); }
+
+/* =========================================
+   TAGS
+   ========================================= */
+
+/* Tag chips in transaction form */
+.tag-chips-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+.tag-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--primary-light); color: var(--primary); border: 1px solid var(--primary); border-radius: 20px; padding: 0.2rem 0.55rem; font-size: 0.78rem; font-weight: 600; }
+.tag-chip-remove { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.95rem; line-height: 1; padding: 0; opacity: 0.7; }
+.tag-chip-remove:hover { opacity: 1; }
+
+/* Tag dropdown selected state */
+.tag-item-selected { background: var(--primary-light); color: var(--primary); }
+.tag-checkbox { margin-right: 0.5rem; }
+
+/* Tag pills on transaction items */
+.t-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.1rem; }
+.t-tag-pill { display: inline-block; background: var(--primary-light); color: var(--primary); border-radius: 20px; padding: 0.1rem 0.45rem; font-size: 0.68rem; font-weight: 600; }

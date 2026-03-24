@@ -20,7 +20,7 @@ const formatGroupDate = (dateStr) => {
 
 // Sidebar — desktop left-rail navigation
 const Sidebar = ({ view, onDashboard, onLedger, onNewTx, onSettings, session, onLogout }) => {
-  const isSettingsGroup = ['settings', 'category_management', 'party_management', 'account_management'].includes(view);
+  const isSettingsGroup = ['settings', 'category_management', 'party_management', 'account_management', 'tag_management'].includes(view);
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">MOMA</div>
@@ -126,6 +126,15 @@ function App() {
   // Party Manager State
   const [newPartyName, setNewPartyName] = useState('');
 
+  // Tag Manager State
+  const [tags, setTags] = useState([]);
+  const [newTagName, setNewTagName] = useState('');
+
+  // Transaction Form Tag State
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [tagSearch, setTagSearch] = useState('');
+
   // Ledger Filter State
   const [filterStart, setFilterStart] = useState('');
   const [filterEnd, setFilterEnd] = useState('');
@@ -178,7 +187,7 @@ function App() {
   // Parallelised fetch — categories/parties/transactions load simultaneously
   const fetchInitialData = async (activeSession) => {
     await fetchProfile(activeSession);
-    await Promise.all([fetchCategories(), fetchParties(), fetchAccounts(), fetchTransactions()]);
+    await Promise.all([fetchCategories(), fetchParties(), fetchAccounts(), fetchTags(), fetchTransactions()]);
   };
 
   const fetchProfile = async (activeSession) => {
@@ -225,6 +234,11 @@ function App() {
     if (data) setParties(data);
   };
 
+  const fetchTags = async () => {
+    const { data } = await supabase.from('tags').select('*').order('name');
+    if (data) setTags(data);
+  };
+
   const fetchAccounts = async () => {
     const { data, error } = await supabase.from('accounts').select('*').order('name');
     // Silently ignore if table doesn't exist yet (migration not applied)
@@ -246,15 +260,24 @@ function App() {
   }, [accounts, transactions]);
 
   const fetchTransactions = async () => {
-    // Try with accounts join; fall back if the FK doesn't exist yet
+    // Try with full join including tags; fall back progressively if tables not yet migrated
     let { data, error } = await supabase
       .from('transactions')
-      .select('*, categories(name, icon, type), parties(name), accounts(name)')
+      .select('*, categories(name, icon, type), parties(name), accounts(name), transaction_tags(tag_id, tags(id, name))')
       .order('transaction_date', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error && error.code === 'PGRST200') {
-      // accounts FK not yet in schema — retry without the join
+      // tags FK not yet in schema — retry without the tags join
+      ({ data, error } = await supabase
+        .from('transactions')
+        .select('*, categories(name, icon, type), parties(name), accounts(name)')
+        .order('transaction_date', { ascending: false })
+        .order('created_at', { ascending: false }));
+    }
+
+    if (error && error.code === 'PGRST200') {
+      // accounts FK not yet in schema — retry without the accounts join
       ({ data, error } = await supabase
         .from('transactions')
         .select('*, categories(name, icon, type), parties(name)')
@@ -303,6 +326,9 @@ function App() {
     setShowCatDropdown(false);
     setAccountSearch('');
     setShowAccountDropdown(false);
+    setSelectedTags([]);
+    setTagSearch('');
+    setShowTagDropdown(false);
   }, []);
 
   const openEditTransaction = useCallback((t) => {
@@ -314,6 +340,7 @@ function App() {
     setSelectedAccount(t.account_id);
     setNote(t.note || '');
     setTxDate(t.transaction_date || t.created_at.split('T')[0]);
+    setSelectedTags((t.transaction_tags || []).map(tt => tt.tag_id));
     setView('new_transaction');
   }, []);
 
@@ -333,21 +360,30 @@ function App() {
     };
 
     if (session) {
+      let transactionId;
       if (txToEdit) {
         const { error } = await supabase.from('transactions').update(payload).eq('id', txToEdit.id);
-        if (error) alert('Database error: ' + error.message);
-        else fetchTransactions();
+        if (error) { alert('Database error: ' + error.message); return; }
+        transactionId = txToEdit.id;
       } else {
         payload.user_id = session.user.id;
-        const { error } = await supabase.from('transactions').insert([payload]);
-        if (error) alert('Database error: ' + error.message);
-        else fetchTransactions();
+        const { data, error } = await supabase.from('transactions').insert([payload]).select('id').single();
+        if (error) { alert('Database error: ' + error.message); return; }
+        transactionId = data.id;
       }
+      // Sync tags
+      await supabase.from('transaction_tags').delete().eq('transaction_id', transactionId);
+      if (selectedTags.length > 0) {
+        await supabase.from('transaction_tags').insert(
+          selectedTags.map(tagId => ({ transaction_id: transactionId, tag_id: tagId }))
+        );
+      }
+      fetchTransactions();
     }
 
     resetForm();
     setView('ledger');
-  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, resetForm]);
+  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, resetForm]);
 
   const handleDeleteTransaction = useCallback(async () => {
     if (!session || !txToEdit) return;
@@ -401,6 +437,24 @@ function App() {
     await supabase.from('parties').delete().eq('id', id);
     fetchParties();
   }, [session]);
+
+  const handleCreateTag = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newTagName.trim()) return;
+    const { error } = await supabase.from('tags').insert([{ user_id: session.user.id, name: newTagName.trim() }]);
+    if (!error) { setNewTagName(''); fetchTags(); }
+    else if (error.code === '23505') alert('A tag with that name already exists.');
+  }, [session, newTagName]);
+
+  const handleDeleteTag = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('tags').delete().eq('id', id);
+    fetchTags();
+  }, [session]);
+
+  const handleToggleTag = useCallback((tagId) => {
+    setSelectedTags(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]);
+  }, []);
 
   const handleCreateAccount = useCallback(async (e) => {
     e.preventDefault();
@@ -618,6 +672,9 @@ function App() {
                   <button className="settings-nav-btn" onClick={() => setView('party_management')}>
                     Parties <span className="arrow">›</span>
                   </button>
+                  <button className="settings-nav-btn" onClick={() => setView('tag_management')}>
+                    Tags <span className="arrow">›</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -820,6 +877,56 @@ function App() {
               />
             </div>
             <button type="submit" className="add-cat-btn">Add Party</button>
+          </form>
+        </div>
+        </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'tag_management') {
+    return (
+      <div className="app-shell">
+        <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
+        <div className="page-content">
+        <div className="page-inner slide-up">
+          <div className="page-header">
+            <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
+            <h2 className="page-title">Tags</h2>
+          </div>
+
+        <div className="settings-controls fade-in">
+          <div className="category-manager">
+            {tags.length === 0 ? (
+              <div className="empty-state">
+                <p>No tags added yet.</p>
+              </div>
+            ) : (
+              tags.map(tag => (
+                <div key={tag.id} className="settings-cat-block">
+                  <div className="settings-cat-parent">
+                    <span className="cat-name">{tag.name}</span>
+                    <button className="delete-btn" onClick={() => handleDeleteTag(tag.id)}>✕</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <form onSubmit={handleCreateTag} className="add-category-form">
+            <h3>Add Tag</h3>
+            <div className="form-row">
+              <input
+                type="text"
+                placeholder="Tag Name (e.g. Vacation, Reimbursable)"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                required
+                style={{ flex: 1 }}
+              />
+            </div>
+            <button type="submit" className="add-cat-btn">Add Tag</button>
           </form>
         </div>
         </div>
@@ -1236,6 +1343,60 @@ function App() {
             </div>
           </div>
 
+          <div className="category-selection-area" style={{ position: 'relative' }}>
+            <p className="selection-label">Tags</p>
+            {selectedTags.length > 0 && (
+              <div className="tag-chips-row">
+                {selectedTags.map(tagId => {
+                  const tag = tags.find(t => t.id === tagId);
+                  if (!tag) return null;
+                  return (
+                    <span key={tagId} className="tag-chip">
+                      {tag.name}
+                      <button
+                        type="button"
+                        className="tag-chip-remove"
+                        onClick={() => handleToggleTag(tagId)}
+                      >×</button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            <div
+              className="searchable-dropdown"
+              onBlur={() => setTimeout(() => setShowTagDropdown(false), 200)}
+            >
+              <input
+                type="text"
+                className="text-input"
+                placeholder="Add tags (optional)..."
+                value={tagSearch}
+                onChange={(e) => { setTagSearch(e.target.value); setShowTagDropdown(true); }}
+                onFocus={() => setShowTagDropdown(true)}
+              />
+              {showTagDropdown && (
+                <div className="dropdown-menu">
+                  {tags
+                    .filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase()))
+                    .map(t => (
+                      <div
+                        key={t.id}
+                        className={`dropdown-item${selectedTags.includes(t.id) ? ' tag-item-selected' : ''}`}
+                        onMouseDown={(e) => { e.preventDefault(); handleToggleTag(t.id); setTagSearch(''); }}
+                      >
+                        <span className="tag-checkbox">{selectedTags.includes(t.id) ? '☑' : '☐'}</span>
+                        {t.name}
+                      </div>
+                    ))}
+                  {tags.filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase())).length === 0 && (
+                    <div className="dropdown-item disabled">No matching tag</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
           <button
             className={`submit-tx-btn bg-${txType}`}
             onClick={handleTransaction}
@@ -1351,6 +1512,13 @@ function App() {
                         <div className="t-details">
                           <div className="t-type">{tag}</div>
                           {t.note && <div className="t-note">{t.note}</div>}
+                          {(t.transaction_tags?.length > 0) && (
+                            <div className="t-tags">
+                              {t.transaction_tags.map(tt => tt.tags?.name).filter(Boolean).map(name => (
+                                <span key={name} className="t-tag-pill">{name}</span>
+                              ))}
+                            </div>
+                          )}
                           <div className="t-time">{t.transaction_date}</div>
                         </div>
                         <div className="t-amount">
@@ -1438,6 +1606,13 @@ function App() {
                         <div className="t-details">
                           <div className="t-type">{tag}</div>
                           {t.note && <div className="t-note">{t.note}</div>}
+                          {(t.transaction_tags?.length > 0) && (
+                            <div className="t-tags">
+                              {t.transaction_tags.map(tt => tt.tags?.name).filter(Boolean).map(name => (
+                                <span key={name} className="t-tag-pill">{name}</span>
+                              ))}
+                            </div>
+                          )}
                           <div className="t-time">
                             {t.transaction_date || new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                           </div>
