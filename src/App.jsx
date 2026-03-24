@@ -1829,23 +1829,39 @@ function App() {
                 </div>
               </div>
 
-              {/* Categories */}
-              {parentCategories.length > 0 && (
-                <div className="filter-section">
-                  <span className="filter-section-label">Category</span>
-                  <div className="filter-chips">
-                    {parentCategories.map(c => (
-                      <button
-                        key={c.id}
-                        className={`filter-chip${filterCategories.includes(c.id) ? ' active' : ''}`}
-                        onClick={() => setFilterCategories(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id])}
-                      >
-                        {c.icon} {c.name}
-                      </button>
-                    ))}
+              {/* Categories — split by type, parents + subcategories */}
+              {['expense', 'income'].map(type => {
+                const typeParents = parentCategories.filter(c => c.type === type);
+                if (typeParents.length === 0) return null;
+                return (
+                  <div key={type} className="filter-section">
+                    <span className="filter-section-label">{type === 'expense' ? 'Expense' : 'Income'} Categories</span>
+                    <div className="filter-chips">
+                      {typeParents.flatMap(parent => {
+                        const subs = subCategories.filter(s => s.parent_id === parent.id);
+                        return [
+                          <button
+                            key={parent.id}
+                            className={`filter-chip${filterCategories.includes(parent.id) ? ' active' : ''}`}
+                            onClick={() => setFilterCategories(prev => prev.includes(parent.id) ? prev.filter(id => id !== parent.id) : [...prev, parent.id])}
+                          >
+                            {parent.icon} {parent.name}
+                          </button>,
+                          ...subs.map(sub => (
+                            <button
+                              key={sub.id}
+                              className={`filter-chip filter-chip-sub${filterCategories.includes(sub.id) ? ' active' : ''}`}
+                              onClick={() => setFilterCategories(prev => prev.includes(sub.id) ? prev.filter(id => id !== sub.id) : [...prev, sub.id])}
+                            >
+                              {sub.icon} {sub.name}
+                            </button>
+                          )),
+                        ];
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })}
 
               {/* Parties */}
               {parties.length > 0 && (
