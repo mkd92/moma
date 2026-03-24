@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from './supabaseClient';
 import './App.css';
 
@@ -19,7 +20,7 @@ const formatGroupDate = (dateStr) => {
 };
 
 // Sidebar — desktop left-rail navigation
-const Sidebar = ({ view, onDashboard, onLedger, onNewTx, onSettings, session, onLogout }) => {
+const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, session, onLogout }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand-wrapper">
@@ -40,13 +41,13 @@ const Sidebar = ({ view, onDashboard, onLedger, onNewTx, onSettings, session, on
           </svg>
           Transactions
         </button>
-        <button className="sidebar-item">
+        <button className={`sidebar-item ${view === 'budgets' ? 'active' : ''}`} onClick={onBudgets}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 20v-6M6 20V10M18 20V4"/>
           </svg>
           Budgets
         </button>
-        <button className="sidebar-item">
+        <button className={`sidebar-item ${view === 'analytics' ? 'active' : ''}`} onClick={onAnalytics}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/>
           </svg>
@@ -105,116 +106,187 @@ const TopHeader = ({ session, onLogout }) => (
   </header>
 );
 
-// Advanced Filter Panel Component
-const FilterPanel = ({
-  categories,
-  tags,
-  filterOptions,
-  onUpdateFilter,
-  onResetFilters
-}) => {
+// Chart palette + empty state
+const CHART_COLORS = ['#000666', '#2e7d32', '#93000a', '#e65100', '#6200ea', '#00695c', '#1565c0', '#4a148c', '#880e4f', '#bf360c'];
+const emptyChartStyle = { height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', color: 'var(--on-surface-variant)', opacity: 0.5 };
+
+const ChartTooltip = ({ active, payload, label, currencySymbol = '' }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: '#fff', border: '1px solid var(--outline-variant)', borderRadius: '0.75rem', padding: '0.75rem 1rem', boxShadow: '0 8px 24px rgba(28,27,27,0.1)', fontFamily: 'Inter,sans-serif', minWidth: 160 }}>
+      <p style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--on-surface-variant)', marginBottom: '0.4rem' }}>{label}</p>
+      {payload.map((p, i) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '1.5rem', fontSize: '0.875rem', fontWeight: 600, color: p.color }}>
+          <span>{p.name}</span>
+          <span style={{ color: 'var(--on-surface)', fontFamily: 'Manrope,sans-serif' }}>{currencySymbol}{typeof p.value === 'number' ? p.value.toLocaleString(undefined, { maximumFractionDigits: 0 }) : p.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const CashFlowChart = ({ data, currencySymbol }) => {
+  if (!data.length) return <div style={emptyChartStyle}>No data for this period</div>;
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id="incGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#2e7d32" stopOpacity={0.18}/>
+            <stop offset="95%" stopColor="#2e7d32" stopOpacity={0}/>
+          </linearGradient>
+          <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#93000a" stopOpacity={0.18}/>
+            <stop offset="95%" stopColor="#93000a" stopOpacity={0}/>
+          </linearGradient>
+        </defs>
+        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#454652', fontFamily: 'Inter' }} interval="preserveStartEnd" />
+        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#454652', fontFamily: 'Inter' }} tickFormatter={v => v === 0 ? '0' : `${currencySymbol}${v >= 1000 ? (v/1000).toFixed(1)+'k' : v}`} width={58} />
+        <Tooltip content={<ChartTooltip currencySymbol={currencySymbol} />} />
+        <Area type="monotone" dataKey="income" name="Income" stroke="#2e7d32" strokeWidth={2} fill="url(#incGrad)" dot={false} activeDot={{ r: 4, fill: '#2e7d32' }} />
+        <Area type="monotone" dataKey="expense" name="Expense" stroke="#93000a" strokeWidth={2} fill="url(#expGrad)" dot={false} activeDot={{ r: 4, fill: '#93000a' }} />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+};
+
+const CategoryDonutChart = ({ data, currencySymbol }) => {
+  if (!data.length) return <div style={emptyChartStyle}>No expense data</div>;
+  const total = data.reduce((s, d) => s + d.value, 0);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <ResponsiveContainer width="100%" height={190}>
+        <PieChart>
+          <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={88} dataKey="value" paddingAngle={2} startAngle={90} endAngle={450}>
+            {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} stroke="none" />)}
+          </Pie>
+          <Tooltip formatter={(v) => [`${currencySymbol}${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, '']} />
+        </PieChart>
+      </ResponsiveContainer>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+        {data.slice(0, 6).map((d, i) => (
+          <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}>
+            <div style={{ width: 9, height: 9, borderRadius: '50%', background: CHART_COLORS[i % CHART_COLORS.length], flexShrink: 0 }} />
+            <span style={{ flex: 1, color: 'var(--on-surface)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</span>
+            <span style={{ color: 'var(--on-surface-variant)', fontFamily: 'Manrope,sans-serif', fontWeight: 600, flexShrink: 0 }}>{Math.round((d.value / total) * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const TagBarChart = ({ data, currencySymbol }) => {
+  if (!data.length) return <div style={emptyChartStyle}>No tagged transactions</div>;
+  return (
+    <ResponsiveContainer width="100%" height={Math.max(160, data.length * 40)}>
+      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 12, left: 0, bottom: 0 }}>
+        <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#454652', fontFamily: 'Inter' }} tickFormatter={v => `${currencySymbol}${v >= 1000 ? (v/1000).toFixed(1)+'k' : v}`} />
+        <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#1c1b1b', fontFamily: 'Inter', fontWeight: 500 }} width={85} />
+        <Tooltip content={<ChartTooltip currencySymbol={currencySymbol} />} />
+        <Bar dataKey="value" name="Amount" fill="#000666" radius={[0, 4, 4, 0]} barSize={14} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};
+
+// Filter Panel Component
+const FilterPanel = ({ categories, tags, accounts, filterOptions, onUpdateFilter, onResetFilters }) => {
   const parentCategories = categories.filter(c => !c.parent_id);
   const getSubs = (pid) => categories.filter(c => c.parent_id === pid);
 
-  const toggleCategory = (id) => {
-    const next = filterOptions.categoryIds.includes(id)
-      ? filterOptions.categoryIds.filter(x => x !== id)
-      : [...filterOptions.categoryIds, id];
-    onUpdateFilter('categoryIds', next);
-  };
-
-  const toggleTag = (id) => {
-    const next = filterOptions.tagIds.includes(id)
-      ? filterOptions.tagIds.filter(x => x !== id)
-      : [...filterOptions.tagIds, id];
-    onUpdateFilter('tagIds', next);
+  const toggle = (key, id) => {
+    const arr = filterOptions[key];
+    onUpdateFilter(key, arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id]);
   };
 
   return (
-    <div className="advanced-filters slide-up" style={{ marginTop: '1.5rem', background: 'var(--surface-container-low)', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2.5rem' }}>
-        
-        {/* Type Section */}
-        <div className="filter-section">
-          <p className="label-sm" style={{ marginBottom: '1rem' }}>Transaction Type</p>
-          <div className="type-toggle-bar" style={{ background: 'var(--surface-container-lowest)' }}>
-            {['all', 'income', 'expense', 'transfer'].map(t => (
-              <button
-                key={t}
-                className={`type-btn ${filterOptions.type === t ? (t === 'all' ? 'active-transfer' : `active-${t}`) : ''}`}
-                onClick={() => onUpdateFilter('type', t)}
-                style={{ textTransform: 'capitalize' }}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
+    <div className="filter-panel slide-up">
+      <div className="filter-panel-grid">
 
-        {/* Date Range Section */}
+        {/* Date Range */}
         <div className="filter-section">
-          <p className="label-sm" style={{ marginBottom: '1rem' }}>Custom Date Range</p>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <p className="label-sm">Custom Date Range</p>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
               type="date"
-              className="text-input"
-              style={{ background: 'var(--surface-container-lowest)', fontSize: '0.8125rem' }}
+              className="text-input filter-date-input"
               value={filterOptions.dateRange.start || ''}
               onChange={(e) => onUpdateFilter('dateRange', { ...filterOptions.dateRange, start: e.target.value })}
             />
             <input
               type="date"
-              className="text-input"
-              style={{ background: 'var(--surface-container-lowest)', fontSize: '0.8125rem' }}
+              className="text-input filter-date-input"
               value={filterOptions.dateRange.end || ''}
               onChange={(e) => onUpdateFilter('dateRange', { ...filterOptions.dateRange, end: e.target.value })}
             />
           </div>
         </div>
 
-        {/* Categories Section */}
-        <div className="filter-section" style={{ gridColumn: 'span 2' }}>
-          <p className="label-sm" style={{ marginBottom: '1rem' }}>Hierarchical Categories</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', maxHeight: '240px', overflowY: 'auto', paddingRight: '1rem' }}>
-            {parentCategories.map(parent => (
-              <div key={parent.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <label className="filter-chip" style={{ cursor: 'pointer', justifyContent: 'flex-start', gap: '0.5rem', background: filterOptions.categoryIds.includes(parent.id) ? 'var(--primary-light)' : 'var(--surface-container-lowest)', borderColor: filterOptions.categoryIds.includes(parent.id) ? 'var(--primary)' : 'var(--ghost-border)' }}>
-                  <input type="checkbox" checked={filterOptions.categoryIds.includes(parent.id)} onChange={() => toggleCategory(parent.id)} style={{ display: 'none' }} />
-                  <span>{parent.icon}</span>
-                  <span style={{ fontWeight: 700 }}>{parent.name}</span>
-                </label>
-                {getSubs(parent.id).map(sub => (
-                  <label key={sub.id} className="filter-chip filter-chip-sub" style={{ cursor: 'pointer', marginLeft: '1.5rem', justifyContent: 'flex-start', gap: '0.5rem', background: filterOptions.categoryIds.includes(sub.id) ? 'var(--primary-light)' : 'transparent', borderColor: filterOptions.categoryIds.includes(sub.id) ? 'var(--primary)' : 'var(--ghost-border)', opacity: filterOptions.categoryIds.includes(sub.id) ? 1 : 0.6 }}>
-                    <input type="checkbox" checked={filterOptions.categoryIds.includes(sub.id)} onChange={() => toggleCategory(sub.id)} style={{ display: 'none' }} />
-                    <span>{sub.icon}</span>
-                    <span>{sub.name}</span>
-                  </label>
-                ))}
-              </div>
-            ))}
+        {/* Accounts */}
+        {accounts.length > 0 && (
+          <div className="filter-section">
+            <p className="label-sm">Accounts</p>
+            <div className="filter-chips">
+              {accounts.map(a => (
+                <button
+                  key={a.id}
+                  className={`filter-chip${filterOptions.accountIds.includes(a.id) ? ' active' : ''}`}
+                  onClick={() => toggle('accountIds', a.id)}
+                >
+                  {a.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Categories */}
+        <div className="filter-section filter-section-full">
+          <p className="label-sm">Categories</p>
+          <div className="filter-chips">
+            {parentCategories.flatMap(parent => [
+              <button
+                key={parent.id}
+                className={`filter-chip${filterOptions.categoryIds.includes(parent.id) ? ' active' : ''}`}
+                onClick={() => toggle('categoryIds', parent.id)}
+              >
+                {parent.icon} {parent.name}
+              </button>,
+              ...getSubs(parent.id).map(sub => (
+                <button
+                  key={sub.id}
+                  className={`filter-chip filter-chip-sub${filterOptions.categoryIds.includes(sub.id) ? ' active' : ''}`}
+                  onClick={() => toggle('categoryIds', sub.id)}
+                >
+                  {sub.icon} {sub.name}
+                </button>
+              ))
+            ])}
           </div>
         </div>
 
-        {/* Tags Section */}
-        <div className="filter-section" style={{ gridColumn: '1 / -1' }}>
-          <p className="label-sm" style={{ marginBottom: '1rem' }}>Tags</p>
-          <div className="filter-chips">
-            {tags.map(tag => (
-              <button
-                key={tag.id}
-                className={`filter-chip ${filterOptions.tagIds.includes(tag.id) ? 'active' : ''}`}
-                onClick={() => toggleTag(tag.id)}
-                style={{ background: filterOptions.tagIds.includes(tag.id) ? 'var(--primary-light)' : 'var(--surface-container-lowest)' }}
-              >
-                #{tag.name}
-              </button>
-            ))}
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div className="filter-section filter-section-full">
+            <p className="label-sm">Tags</p>
+            <div className="filter-chips">
+              {tags.map(tag => (
+                <button
+                  key={tag.id}
+                  className={`filter-chip${filterOptions.tagIds.includes(tag.id) ? ' active' : ''}`}
+                  onClick={() => toggle('tagIds', tag.id)}
+                >
+                  #{tag.name}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--ghost-border)', display: 'flex', justifyContent: 'flex-end' }}>
-        <button className="section-action-link" onClick={onResetFilters} style={{ color: 'var(--tertiary-fixed-variant)' }}>Reset All Filters</button>
+      <div className="filter-panel-footer">
+        <button className="filter-reset-btn" onClick={onResetFilters}>Reset All Filters</button>
       </div>
     </div>
   );
@@ -236,6 +308,12 @@ function App() {
   const [parties, setParties] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [tags, setTags] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+
+  // Budget UI State
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [editingBudget, setEditingBudget] = useState(null);
+  const [budgetForm, setBudgetForm] = useState({ category_id: '', amount_limit: '', period: 'monthly', name: '' });
 
   // Profile State
   const [currencySymbol, setCurrencySymbol] = useState('$');
@@ -265,6 +343,7 @@ function App() {
     dateRange: { start: '', end: '' },
     categoryIds: [],
     tagIds: [],
+    accountIds: [],
     searchTerm: '',
     preset: 'all'
   });
@@ -282,6 +361,7 @@ function App() {
       dateRange: { start: '', end: '' },
       categoryIds: [],
       tagIds: [],
+      accountIds: [],
       searchTerm: '',
       preset: 'all'
     });
@@ -467,7 +547,7 @@ function App() {
 
   const fetchInitialData = async (activeSession) => {
     await fetchProfile(activeSession);
-    await Promise.all([fetchCategories(), fetchParties(), fetchAccounts(), fetchTags(), fetchTransactions()]);
+    await Promise.all([fetchCategories(), fetchParties(), fetchAccounts(), fetchTags(), fetchTransactions(), fetchBudgets()]);
   };
 
   const fetchProfile = async (activeSession) => {
@@ -499,6 +579,112 @@ function App() {
     const { data } = await supabase.from('accounts').select('*').order('name');
     if (data) setAccounts(data);
   };
+
+  const fetchBudgets = async () => {
+    const { data } = await supabase.from('budgets').select('*').order('created_at');
+    if (data) setBudgets(data);
+  };
+
+  // --- Budget helpers ---
+  const isWithinBudgetPeriod = (dateStr, period) => {
+    const today = new Date();
+    const d = new Date(dateStr + 'T12:00:00');
+    if (period === 'monthly') return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+    if (period === 'weekly') {
+      const dayN = today.getDay() || 7;
+      const mon = new Date(today); mon.setDate(today.getDate() - dayN + 1); mon.setHours(0,0,0,0);
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+      return d >= mon && d <= sun;
+    }
+    if (period === 'quarterly') {
+      const q = Math.floor(today.getMonth() / 3);
+      const qStart = new Date(today.getFullYear(), q * 3, 1);
+      const qEnd = new Date(today.getFullYear(), q * 3 + 3, 0);
+      return d >= qStart && d <= qEnd;
+    }
+    return true;
+  };
+
+  const getBudgetPeriodInfo = (period) => {
+    const today = new Date();
+    if (period === 'monthly') return { elapsed: today.getDate(), total: new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() };
+    if (period === 'weekly') return { elapsed: today.getDay() || 7, total: 7 };
+    if (period === 'quarterly') {
+      const q = Math.floor(today.getMonth() / 3);
+      const qStart = new Date(today.getFullYear(), q * 3, 1);
+      const qEnd = new Date(today.getFullYear(), q * 3 + 3, 0);
+      const total = Math.ceil((qEnd - qStart) / 86400000) + 1;
+      const elapsed = Math.max(1, Math.ceil((today - qStart) / 86400000) + 1);
+      return { elapsed, total };
+    }
+    return { elapsed: 1, total: 1 };
+  };
+
+  const budgetProgress = useMemo(() => {
+    return budgets.map(b => {
+      const spent = transactions
+        .filter(t => t.type === 'expense' && !t.transfer_id && isWithinBudgetPeriod(t.transaction_date, b.period) &&
+          (!b.category_id || t.category_id === b.category_id || categories.find(c => c.id === t.category_id)?.parent_id === b.category_id))
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const { elapsed, total } = getBudgetPeriodInfo(b.period);
+      const projected = elapsed > 0 ? (spent / elapsed) * total : 0;
+      const rawPct = b.amount_limit > 0 ? (spent / b.amount_limit) * 100 : 0;
+      return { ...b, spent, projected, rawPct, pct: Math.min(rawPct, 100), remaining: Math.max(0, b.amount_limit - spent), status: rawPct >= 100 ? 'over' : rawPct >= 80 ? 'warning' : 'ok' };
+    });
+  }, [budgets, transactions, categories]);
+
+  // Auto-suggestion for budget creation
+  const budgetSuggestion = useMemo(() => {
+    if (!budgetForm.category_id) return null;
+    const today = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const start = `${new Date(today.getFullYear(), today.getMonth() - 2, 1).getFullYear()}-${pad(new Date(today.getFullYear(), today.getMonth() - 2, 1).getMonth()+1)}-01`;
+    const total = transactions
+      .filter(t => t.type === 'expense' && t.transaction_date >= start &&
+        (t.category_id === budgetForm.category_id || categories.find(c => c.id === t.category_id)?.parent_id === budgetForm.category_id))
+      .reduce((s, t) => s + parseFloat(t.amount), 0);
+    return Math.round(total / 3);
+  }, [budgetForm.category_id, transactions, categories]);
+
+  const handleSaveBudget = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !budgetForm.amount_limit) return;
+    const payload = {
+      user_id: session.user.id,
+      category_id: budgetForm.category_id || null,
+      name: budgetForm.name.trim() || null,
+      amount_limit: parseFloat(budgetForm.amount_limit),
+      period: budgetForm.period,
+    };
+    if (editingBudget) {
+      await supabase.from('budgets').update(payload).eq('id', editingBudget.id);
+    } else {
+      await supabase.from('budgets').insert([payload]);
+    }
+    setShowBudgetModal(false);
+    setEditingBudget(null);
+    fetchBudgets();
+  }, [session, budgetForm, editingBudget]);
+
+  const handleDeleteBudget = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('budgets').delete().eq('id', id);
+    setShowBudgetModal(false);
+    setEditingBudget(null);
+    fetchBudgets();
+  }, [session]);
+
+  const openNewBudget = useCallback(() => {
+    setBudgetForm({ category_id: '', amount_limit: '', period: 'monthly', name: '' });
+    setEditingBudget(null);
+    setShowBudgetModal(true);
+  }, []);
+
+  const openEditBudget = useCallback((b) => {
+    setBudgetForm({ category_id: b.category_id || '', amount_limit: String(b.amount_limit), period: b.period, name: b.name || '' });
+    setEditingBudget(b);
+    setShowBudgetModal(true);
+  }, []);
 
   const accountBalances = useMemo(() => {
     const balances = {};
@@ -565,9 +751,10 @@ function App() {
 
   const openEditTransaction = useCallback((t) => {
     setTxToEdit(t);
-    setAmount(t.amount.toString());
+    setAmount(t.amount ? t.amount.toString() : '');
     setNote(t.note || '');
-    setTxDate(t.transaction_date || t.created_at.split('T')[0]);
+    setTxDate(t.transaction_date || (t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0]));
+    
     if (t.transfer_id) {
       const pair = transactions.find(tx => tx.transfer_id === t.transfer_id && tx.id !== t.id);
       const expenseLeg = t.type === 'expense' ? t : pair;
@@ -576,18 +763,18 @@ function App() {
       setTransferFromAccount(expenseLeg?.account_id || null);
       setTransferToAccount(incomeLeg?.account_id || null);
     } else {
-      setTxType(t.type);
-      setSelectedCategory(t.category_id);
-      setSelectedParty(t.party_id);
-      setSelectedAccount(t.account_id);
+      setTxType(t.type || 'expense');
+      setSelectedCategory(t.category_id || null);
+      setSelectedParty(t.party_id || null);
+      setSelectedAccount(t.account_id || (accounts.length > 0 ? accounts[0].id : null));
       setSelectedTags((t.transaction_tags || []).map(tt => tt.tag_id));
     }
     setView('new_transaction');
-  }, [transactions]);
+  }, [transactions, accounts]);
 
   const handleTransaction = useCallback(async () => {
     const val = parseFloat(amount);
-    if (!val || val <= 0 || !session) return;
+    if (isNaN(val) || val <= 0 || !session) return;
 
     if (txType === 'transfer') {
       if (!transferFromAccount || !transferToAccount || transferFromAccount === transferToAccount) return;
@@ -603,29 +790,192 @@ function App() {
         ]);
       }
     } else {
-      const payload = { amount: val, type: txType, category_id: selectedSubcategory || selectedCategory, party_id: selectedParty, account_id: selectedAccount, note: note.trim() || null, transaction_date: txDate };
+      const payload = { 
+        amount: val, 
+        type: txType, 
+        category_id: selectedSubcategory || selectedCategory || null, 
+        party_id: selectedParty || null, 
+        account_id: selectedAccount || (accounts.length > 0 ? accounts[0].id : null), 
+        note: note.trim() || null, 
+        transaction_date: txDate 
+      };
+      
       let transactionId;
-      if (txToEdit) {
-        await supabase.from('transactions').update(payload).eq('id', txToEdit.id);
+      if (txToEdit && txToEdit.id) {
+        const { error } = await supabase.from('transactions').update(payload).eq('id', txToEdit.id);
+        if (error) { console.error('Update error:', error); return; }
         transactionId = txToEdit.id;
       } else {
         payload.user_id = session.user.id;
-        const { data } = await supabase.from('transactions').insert([payload]).select('id').single();
+        const { data, error } = await supabase.from('transactions').insert([payload]).select('id').single();
+        if (error) { console.error('Insert error:', error); return; }
         transactionId = data.id;
       }
-      await supabase.from('transaction_tags').delete().eq('transaction_id', transactionId);
-      if (selectedTags.length > 0) {
-        await supabase.from('transaction_tags').insert(selectedTags.map(tagId => ({ transaction_id: transactionId, tag_id: tagId })));
+      
+      if (transactionId) {
+        await supabase.from('transaction_tags').delete().eq('transaction_id', transactionId);
+        if (selectedTags.length > 0) {
+          await supabase.from('transaction_tags').insert(selectedTags.map(tagId => ({ transaction_id: transactionId, tag_id: tagId })));
+        }
       }
     }
     fetchTransactions();
     resetForm();
     setView('ledger');
-  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm]);
+  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm, accounts]);
+
+  // Analytics filter state — initialised to this month
+  const [analyticsFilters, setAnalyticsFilters] = useState(() => {
+    const today = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    return {
+      type: 'all',
+      dateRange: {
+        start: fmt(new Date(today.getFullYear(), today.getMonth(), 1)),
+        end: fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)),
+      },
+      categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'this_month',
+    };
+  });
+  const [showAnalyticsFilters, setShowAnalyticsFilters] = useState(false);
+
+  const updateAnalyticsFilter = useCallback((key, value) => {
+    setAnalyticsFilters(prev => ({ ...prev, [key]: value, preset: key === 'preset' ? value : 'custom' }));
+  }, []);
+
+  const resetAnalyticsFilters = useCallback(() => {
+    const today = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    setAnalyticsFilters({ type: 'all', dateRange: { start: fmt(new Date(today.getFullYear(), today.getMonth(), 1)), end: fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)) }, categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'this_month' });
+  }, []);
+
+  const applyAnalyticsPreset = useCallback((preset) => {
+    const today = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    let start = '', end = '';
+    if (preset === 'today') { start = end = fmt(today); }
+    else if (preset === 'this_week') { const day = today.getDay() || 7; const mon = new Date(today); mon.setDate(today.getDate() - day + 1); start = fmt(mon); end = fmt(today); }
+    else if (preset === 'this_month') { start = fmt(new Date(today.getFullYear(), today.getMonth(), 1)); end = fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)); }
+    else if (preset === 'last_3m') { start = fmt(new Date(today.getFullYear(), today.getMonth() - 2, 1)); end = fmt(today); }
+    else if (preset === 'this_year') { start = `${today.getFullYear()}-01-01`; end = `${today.getFullYear()}-12-31`; }
+    setAnalyticsFilters(prev => ({ ...prev, preset, dateRange: { start, end } }));
+  }, []);
+
+  // Filtered transactions for analytics
+  const analyticsTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const { type, dateRange, categoryIds, tagIds, accountIds, searchTerm } = analyticsFilters;
+      if (type !== 'all') {
+        const isTx = !!t.transfer_id;
+        if (type === 'transfer' && !isTx) return false;
+        if (type !== 'transfer' && (isTx || t.type !== type)) return false;
+      }
+      if (dateRange.start && t.transaction_date < dateRange.start) return false;
+      if (dateRange.end && t.transaction_date > dateRange.end) return false;
+      if (categoryIds.length > 0) {
+        const cat = categories.find(c => c.id === t.category_id);
+        if (!categoryIds.includes(t.category_id) && (!cat?.parent_id || !categoryIds.includes(cat.parent_id))) return false;
+      }
+      if (tagIds.length > 0 && !t.transaction_tags?.some(tt => tagIds.includes(tt.tag_id))) return false;
+      if (accountIds.length > 0 && !accountIds.includes(t.account_id)) return false;
+      if (searchTerm) { const s = searchTerm.toLowerCase(); if (!(t.note||'').toLowerCase().includes(s) && !(t.parties?.name||'').toLowerCase().includes(s) && !(t.categories?.name||'').toLowerCase().includes(s)) return false; }
+      return true;
+    });
+  }, [transactions, analyticsFilters, categories]);
+
+  // Time-series chart data
+  const chartTimeSeries = useMemo(() => {
+    const { start, end } = analyticsFilters.dateRange;
+    if (!start) return [];
+    const pad = n => String(n).padStart(2, '0');
+    const startD = new Date(start + 'T00:00:00');
+    const endD = end ? new Date(end + 'T00:00:00') : new Date();
+    const dayCount = Math.ceil((endD - startD) / 86400000) + 1;
+
+    if (dayCount > 180) {
+      // Monthly
+      const data = {};
+      analyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+        const key = t.transaction_date.slice(0, 7);
+        if (!data[key]) data[key] = { date: key, income: 0, expense: 0, label: new Date(key + '-01T12:00:00').toLocaleDateString(undefined, { month: 'short', year: '2-digit' }) };
+        if (t.type === 'income') data[key].income += parseFloat(t.amount);
+        if (t.type === 'expense') data[key].expense += parseFloat(t.amount);
+      });
+      return Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
+    } else if (dayCount > 60) {
+      // Weekly
+      const data = {};
+      analyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+        const d = new Date(t.transaction_date + 'T12:00:00');
+        const day = d.getDay() || 7;
+        const mon = new Date(d); mon.setDate(d.getDate() - day + 1);
+        const key = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
+        if (!data[key]) data[key] = { date: key, income: 0, expense: 0, label: mon.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) };
+        if (t.type === 'income') data[key].income += parseFloat(t.amount);
+        if (t.type === 'expense') data[key].expense += parseFloat(t.amount);
+      });
+      return Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
+    } else {
+      // Daily
+      const data = {};
+      for (let i = 0; i < dayCount; i++) {
+        const d = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate() + i);
+        const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        data[key] = { date: key, income: 0, expense: 0, label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) };
+      }
+      analyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+        if (data[t.transaction_date]) {
+          if (t.type === 'income') data[t.transaction_date].income += parseFloat(t.amount);
+          if (t.type === 'expense') data[t.transaction_date].expense += parseFloat(t.amount);
+        }
+      });
+      return Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
+    }
+  }, [analyticsTransactions, analyticsFilters.dateRange]);
+
+  // Category donut data
+  const chartCategorical = useMemo(() => {
+    const totals = {};
+    analyticsTransactions.filter(t => t.type === 'expense' && !t.transfer_id && t.categories).forEach(t => {
+      const cat = categories.find(c => c.id === t.category_id);
+      const parentId = cat?.parent_id || t.category_id;
+      const parent = categories.find(c => c.id === parentId);
+      const name = parent?.name || cat?.name || 'Other';
+      totals[name] = (totals[name] || 0) + parseFloat(t.amount);
+    });
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
+  }, [analyticsTransactions, categories]);
+
+  // Tag bar data
+  const chartTags = useMemo(() => {
+    const totals = {};
+    analyticsTransactions.filter(t => !t.transfer_id && t.transaction_tags?.length > 0).forEach(t => {
+      t.transaction_tags.forEach(tt => {
+        if (tt.tags?.name) totals[tt.tags.name] = (totals[tt.tags.name] || 0) + parseFloat(t.amount);
+      });
+    });
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
+  }, [analyticsTransactions]);
+
+  // KPI summary
+  const analyticsKPIs = useMemo(() => {
+    const { start, end } = analyticsFilters.dateRange;
+    const ms = start && end ? new Date(end) - new Date(start) + 86400000 : 30 * 86400000;
+    const days = Math.max(1, Math.round(ms / 86400000));
+    let totalExpense = 0, totalIncome = 0;
+    analyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+      if (t.type === 'expense') totalExpense += parseFloat(t.amount);
+      if (t.type === 'income') totalIncome += parseFloat(t.amount);
+    });
+    return { totalExpense, totalIncome, dailyBurn: totalExpense / days, net: totalIncome - totalExpense, txCount: analyticsTransactions.filter(t => !t.transfer_id).length };
+  }, [analyticsTransactions, analyticsFilters.dateRange]);
 
   const filteredLedger = useMemo(() => {
     return transactions.filter(t => {
-      const { type, dateRange, categoryIds, tagIds, searchTerm } = filterOptions;
+      const { type, dateRange, categoryIds, tagIds, accountIds, searchTerm } = filterOptions;
       if (type !== 'all') {
         const isTransfer = !!t.transfer_id;
         if (type === 'transfer' && !isTransfer) return false;
@@ -641,6 +991,7 @@ function App() {
       if (tagIds.length > 0) {
         if (!t.transaction_tags?.some(tt => tagIds.includes(tt.tag_id))) return false;
       }
+      if (accountIds.length > 0 && !accountIds.includes(t.account_id)) return false;
       if (searchTerm) {
         const s = searchTerm.toLowerCase();
         const matchesNote = (t.note || '').toLowerCase().includes(s);
@@ -666,10 +1017,12 @@ function App() {
   const navToLedger = useCallback(() => { resetForm(); setView('ledger'); }, [resetForm]);
   const navToNewTx = useCallback(() => { resetForm(); setView('new_transaction'); }, [resetForm]);
   const navToSettings = useCallback(() => setView('settings'), []);
+  const navToAnalytics = useCallback(() => setView('analytics'), []);
+  const navToBudgets = useCallback(() => setView('budgets'), []);
 
   const PageShell = ({ children }) => (
     <div className="app-shell">
-      <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
+      <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onAnalytics={navToAnalytics} onBudgets={navToBudgets} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
       <div className="page-content">
         <TopHeader session={session} onLogout={handleLogout} />
         {children}
@@ -705,77 +1058,115 @@ function App() {
   }
 
   if (view === 'ledger') {
-    const activeFiltersCount = (filterOptions.type !== 'all' ? 1 : 0) + (filterOptions.dateRange.start ? 1 : 0) + (filterOptions.dateRange.end ? 1 : 0) + filterOptions.categoryIds.length + filterOptions.tagIds.length;
+    const activeFiltersCount =
+      (filterOptions.type !== 'all' ? 1 : 0) +
+      (filterOptions.dateRange.start ? 1 : 0) +
+      (filterOptions.dateRange.end ? 1 : 0) +
+      filterOptions.categoryIds.length +
+      filterOptions.tagIds.length +
+      filterOptions.accountIds.length;
+
+    const PRESET_LABELS = { all: 'All Time', today: 'Today', this_week: 'This Week', this_month: 'This Month', last_3m: '3 Months' };
 
     return (
       <PageShell>
         <div className="page-inner fade-in">
+
+          {/* Header */}
           <div className="section-header-row">
             <h2 className="section-title-editorial">Transactions</h2>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button className={`filter-toggle-btn ${showAdvancedFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showAdvancedFilters)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                {showAdvancedFilters ? 'Hide Filters' : 'Deep Filter'}
-                {activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}
-              </button>
-              <button className="section-action-link" onClick={navToDashboard}>Dashboard</button>
-            </div>
+            <span className="tx-count">{filteredLedger.length} result{filteredLedger.length !== 1 ? 's' : ''}</span>
           </div>
 
-          <div className="ledger-search-row" style={{ marginTop: '1.5rem' }}>
-            <div className="ledger-search-wrap" style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-full)', padding: '0.25rem' }}>
+          {/* Search + Type Toggle */}
+          <div className="ledger-filter-bar">
+            <div className="ledger-search-wrap">
+              <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input
                 type="text"
-                placeholder="Search transactions..."
                 className="ledger-search-input"
-                style={{ background: 'transparent', border: 'none', padding: '0.75rem 1rem 0.75rem 3rem' }}
+                placeholder="Search payee, note, category..."
                 value={filterOptions.searchTerm}
                 onChange={(e) => updateFilter('searchTerm', e.target.value)}
               />
-              <svg className="search-icon" style={{ left: '1.25rem' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              {filterOptions.searchTerm && (
+                <button className="search-clear-btn" onClick={() => updateFilter('searchTerm', '')}>✕</button>
+              )}
+            </div>
+            <div className="type-toggle-bar">
+              {['all', 'income', 'expense', 'transfer'].map(t => (
+                <button
+                  key={t}
+                  className={`type-btn${filterOptions.type === t ? (t === 'expense' ? ' active-expense' : t === 'income' ? ' active-income' : ' active-transfer') : ''}`}
+                  onClick={() => updateFilter('type', t)}
+                >
+                  {t === 'all' ? 'All' : t[0].toUpperCase() + t.slice(1)}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="filter-pills" style={{ marginTop: '1rem' }}>
-            {['all', 'today', 'this_week', 'this_month', 'last_3m'].map(p => (
+          {/* Date Presets + Filter Toggle */}
+          <div className="filter-pills-row">
+            {Object.entries(PRESET_LABELS).map(([key, label]) => (
               <button
-                key={p}
-                className={`filter-pill ${filterOptions.preset === p ? 'active-pill' : ''}`}
-                onClick={() => applyDatePreset(p)}
-                style={{ textTransform: 'capitalize' }}
+                key={key}
+                className={`filter-pill${filterOptions.preset === key ? ' active-pill' : ''}`}
+                onClick={() => applyDatePreset(key)}
               >
-                {p.replace('_', ' ')}
+                {label}
               </button>
             ))}
+            <button
+              className={`filter-toggle-btn${showAdvancedFilters ? ' active' : ''}`}
+              onClick={() => setShowFilters(!showAdvancedFilters)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+              Filters
+              {activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}
+            </button>
           </div>
 
+          {/* Active filter chips summary */}
           {activeFiltersCount > 0 && !showAdvancedFilters && (
             <div className="filter-active-summary slide-up">
-              <span className="label-sm" style={{ marginRight: '0.5rem' }}>Active:</span>
-              {filterOptions.type !== 'all' && <span className="active-filter-tag">{filterOptions.type} <span className="active-filter-remove" onClick={() => updateFilter('type', 'all')}>✕</span></span>}
+              <span className="label-sm" style={{ opacity: 0.6, flexShrink: 0 }}>Filtering by:</span>
+              {filterOptions.type !== 'all' && (
+                <span className="active-filter-tag">
+                  {filterOptions.type}
+                  <span className="active-filter-remove" onClick={() => updateFilter('type', 'all')}>✕</span>
+                </span>
+              )}
+              {filterOptions.accountIds.map(id => {
+                const a = accounts.find(x => x.id === id);
+                return a ? <span key={id} className="active-filter-tag">{a.name} <span className="active-filter-remove" onClick={() => updateFilter('accountIds', filterOptions.accountIds.filter(x => x !== id))}>✕</span></span> : null;
+              })}
               {filterOptions.categoryIds.map(id => {
                 const c = categories.find(x => x.id === id);
                 return c ? <span key={id} className="active-filter-tag">{c.icon} {c.name} <span className="active-filter-remove" onClick={() => updateFilter('categoryIds', filterOptions.categoryIds.filter(x => x !== id))}>✕</span></span> : null;
               })}
               {filterOptions.tagIds.map(id => {
-                const t = tags.find(x => x.id === id);
-                return t ? <span key={id} className="active-filter-tag">#{t.name} <span className="active-filter-remove" onClick={() => updateFilter('tagIds', filterOptions.tagIds.filter(x => x !== id))}>✕</span></span> : null;
+                const tg = tags.find(x => x.id === id);
+                return tg ? <span key={id} className="active-filter-tag">#{tg.name} <span className="active-filter-remove" onClick={() => updateFilter('tagIds', filterOptions.tagIds.filter(x => x !== id))}>✕</span></span> : null;
               })}
-              <button className="section-action-link" style={{ marginLeft: 'auto', fontSize: '0.7rem' }} onClick={resetFilters}>Clear All</button>
+              <button className="filter-clear-all-btn" onClick={resetFilters}>Clear All</button>
             </div>
           )}
 
+          {/* Filter Panel */}
           {showAdvancedFilters && (
             <FilterPanel
               categories={categories}
               tags={tags}
+              accounts={accounts}
               filterOptions={filterOptions}
               onUpdateFilter={updateFilter}
               onResetFilters={resetFilters}
             />
           )}
 
-          <div className="editorial-list" style={{ marginTop: '1rem' }}>
+          {/* Transaction List */}
+          <div className="editorial-list" style={{ marginTop: '1.5rem' }}>
             {groupedLedger.map(([date, txs]) => (
               <div key={date} className="ledger-date-group">
                 <div className="ledger-date-header">
@@ -793,13 +1184,15 @@ function App() {
                             {cat.name} · {t.accounts?.name || 'Cash'}
                             {t.transaction_tags?.length > 0 && (
                               <span style={{ marginLeft: '0.5rem', opacity: 0.6 }}>
-                                {t.transaction_tags.map(tt => `#${tt.tags?.name}`).join(' ')}
+                                {t.transaction_tags.map(tt => `#${tt.tags?.name}`).filter(Boolean).join(' ')}
                               </span>
                             )}
                           </div>
                         </div>
                         <div className="editorial-amount-wrap">
-                          <div className={`editorial-amount ${t.type}`}>{t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div>
+                          <div className={`editorial-amount ${t.type}`}>
+                            {t.transfer_id ? '⇄' : t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}
+                          </div>
                           <div className="editorial-status">{t.transfer_id ? 'TRANSFER' : 'CLEARED'}</div>
                         </div>
                       </div>
@@ -808,15 +1201,15 @@ function App() {
                 </div>
               </div>
             ))}
-            
+
             {filteredLedger.length === 0 && (
               <div className="empty-ledger-state fade-in">
                 <svg className="empty-ledger-graphic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
                 </svg>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <p className="title-lg">Architectural Silence</p>
-                  <p className="body-md">No transactions match your current lens. Try clearing your filters to reveal the ledger.</p>
+                  <p className="title-lg">No Results</p>
+                  <p className="body-md">No transactions match your current filters.</p>
                 </div>
                 <button className="launch-btn" style={{ maxWidth: '200px', marginTop: '1rem' }} onClick={resetFilters}>Reset Filters</button>
               </div>
@@ -827,6 +1220,281 @@ function App() {
     );
   }
 
+  // --- BUDGETS VIEW ---
+  if (view === 'budgets') {
+    const totalBudgeted = budgetProgress.reduce((s, b) => s + b.amount_limit, 0);
+    const totalSpent = budgetProgress.reduce((s, b) => s + b.spent, 0);
+    const totalRemaining = Math.max(0, totalBudgeted - totalSpent);
+    const overCount = budgetProgress.filter(b => b.status === 'over').length;
+    const warnCount = budgetProgress.filter(b => b.status === 'warning').length;
+    const healthPct = totalBudgeted > 0 ? Math.min(100, Math.round((totalSpent / totalBudgeted) * 100)) : 0;
+    const healthData = totalBudgeted > 0
+      ? [{ name: 'Spent', value: Math.min(totalSpent, totalBudgeted) }, { name: 'Remaining', value: Math.max(0, totalRemaining) }]
+      : [{ name: 'No budgets', value: 1 }];
+    const parentCategories = categories.filter(c => !c.parent_id);
+
+    return (
+      <PageShell>
+        <div className="page-inner fade-in">
+
+          {/* Header */}
+          <div className="section-header-row">
+            <h2 className="section-title-editorial">Budgets</h2>
+            <button className="section-action-link" onClick={openNewBudget}>+ New Budget</button>
+          </div>
+
+          {budgets.length === 0 ? (
+            <div className="empty-ledger-state" style={{ marginTop: '2rem' }}>
+              <svg className="empty-ledger-graphic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20v-6M6 20V10M18 20V4"/>
+              </svg>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <p className="title-lg">No Budgets Yet</p>
+                <p className="body-md">Create your first budget to start tracking spending limits.</p>
+              </div>
+              <button className="launch-btn" style={{ maxWidth: '200px', marginTop: '1rem' }} onClick={openNewBudget}>Create Budget</button>
+            </div>
+          ) : (
+            <>
+              {/* Global Health Card */}
+              <div className="budget-health-card">
+                <div className="budget-health-donut">
+                  <PieChart width={160} height={160}>
+                    <Pie data={healthData} cx={75} cy={75} innerRadius={50} outerRadius={70} dataKey="value" startAngle={90} endAngle={450} paddingAngle={healthData.length > 1 ? 3 : 0}>
+                      <Cell fill={healthPct >= 100 ? '#93000a' : healthPct >= 80 ? '#e65100' : '#000666'} />
+                      <Cell fill="var(--surface-container-low)" />
+                    </Pie>
+                  </PieChart>
+                  <div className="budget-health-center">
+                    <span className="budget-health-pct">{healthPct}%</span>
+                    <span className="budget-health-label">used</span>
+                  </div>
+                </div>
+                <div className="budget-health-stats">
+                  <div className="budget-health-stat">
+                    <p className="kpi-label">Total Budgeted</p>
+                    <p className="kpi-value">{currencySymbol}{totalBudgeted.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                  </div>
+                  <div className="budget-health-stat">
+                    <p className="kpi-label">Spent This Period</p>
+                    <p className={`kpi-value ${healthPct >= 100 ? 'expense' : ''}`}>{currencySymbol}{totalSpent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                  </div>
+                  <div className="budget-health-stat">
+                    <p className="kpi-label">Remaining</p>
+                    <p className="kpi-value income">{currencySymbol}{totalRemaining.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                    {overCount > 0 && <span className="budget-status-badge budget-status-over">{overCount} over budget</span>}
+                    {warnCount > 0 && <span className="budget-status-badge budget-status-warning">{warnCount} near limit</span>}
+                    {overCount === 0 && warnCount === 0 && <span className="budget-status-badge budget-status-ok">All on track</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Budget Cards */}
+              <div className="budget-list">
+                {budgetProgress.map(b => {
+                  const cat = categories.find(c => c.id === b.category_id);
+                  const name = b.name || cat?.name || 'Overall Budget';
+                  const icon = cat?.icon || '🌐';
+                  const periodLabel = { monthly: 'Monthly', weekly: 'Weekly', quarterly: 'Quarterly' }[b.period];
+                  return (
+                    <div key={b.id} className={`budget-card budget-card-${b.status}`} onClick={() => openEditBudget(b)}>
+                      <div className="budget-card-header">
+                        <div className="budget-card-info">
+                          <span className="budget-icon">{icon}</span>
+                          <div>
+                            <p className="budget-name">{name}</p>
+                            <p className="budget-period-label">{periodLabel}</p>
+                          </div>
+                        </div>
+                        <span className={`budget-status-badge budget-status-${b.status}`}>
+                          {b.status === 'over' ? 'Over Budget' : b.status === 'warning' ? 'Near Limit' : 'On Track'}
+                        </span>
+                      </div>
+
+                      <div className="budget-amounts-row">
+                        <span className="budget-spent-val">{currencySymbol}{b.spent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                        <span className="budget-limit-val">of {currencySymbol}{parseFloat(b.amount_limit).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                      </div>
+
+                      <div className="budget-bar-track">
+                        <div className={`budget-bar-fill budget-bar-${b.status}`} style={{ width: `${b.pct}%` }} />
+                        {b.projected > b.amount_limit && b.pct < 100 && (
+                          <div className="budget-projected-marker" style={{ left: `${Math.min(98, (b.amount_limit / b.projected) * 100)}%` }} />
+                        )}
+                      </div>
+
+                      <div className="budget-footer-row">
+                        <span className="budget-pct-text">{Math.round(b.rawPct)}% used</span>
+                        {b.remaining > 0 && <span className="budget-remaining-text">{currencySymbol}{b.remaining.toLocaleString(undefined, { maximumFractionDigits: 0 })} left</span>}
+                        {b.projected > b.amount_limit && (
+                          <span className="budget-projected-text">⚠ Projected {currencySymbol}{Math.round(b.projected).toLocaleString()}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Create / Edit Modal */}
+          {showBudgetModal && (
+            <div className="modal-overlay" onClick={() => setShowBudgetModal(false)}>
+              <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h3 className="modal-title">{editingBudget ? 'Edit Budget' : 'New Budget'}</h3>
+                  <button className="modal-close" onClick={() => setShowBudgetModal(false)}>✕</button>
+                </div>
+
+                <form onSubmit={handleSaveBudget} className="modal-form">
+                  {/* Period */}
+                  <div className="form-group">
+                    <label className="form-label">Period</label>
+                    <div className="type-toggle-bar">
+                      {['monthly', 'weekly', 'quarterly'].map(p => (
+                        <button key={p} type="button"
+                          className={`type-btn${budgetForm.period === p ? ' active-transfer' : ''}`}
+                          onClick={() => setBudgetForm(f => ({ ...f, period: p }))}
+                          style={{ textTransform: 'capitalize' }}
+                        >{p}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Category */}
+                  <div className="form-group">
+                    <label className="form-label">Category <span style={{ opacity: 0.5 }}>(leave blank for overall)</span></label>
+                    <select className="text-input" value={budgetForm.category_id} onChange={e => setBudgetForm(f => ({ ...f, category_id: e.target.value }))}>
+                      <option value="">Overall Budget</option>
+                      {parentCategories.map(c => (
+                        <optgroup key={c.id} label={`${c.icon} ${c.name}`}>
+                          <option value={c.id}>{c.icon} {c.name} (all)</option>
+                          {categories.filter(sc => sc.parent_id === c.id).map(sc => (
+                            <option key={sc.id} value={sc.id}>— {sc.icon} {sc.name}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Auto-suggestion */}
+                  {budgetSuggestion !== null && budgetSuggestion > 0 && (
+                    <div className="budget-suggestion" onClick={() => setBudgetForm(f => ({ ...f, amount_limit: String(budgetSuggestion) }))}>
+                      <span>💡 Based on your last 3 months, suggested limit:</span>
+                      <strong> {currencySymbol}{budgetSuggestion.toLocaleString()} / {budgetForm.period}</strong>
+                      <span className="budget-suggestion-apply">Apply →</span>
+                    </div>
+                  )}
+
+                  {/* Amount */}
+                  <div className="form-group">
+                    <label className="form-label">Spending Limit</label>
+                    <div className="amount-input-wrapper">
+                      <span className="currency-symbol-label">{currencySymbol}</span>
+                      <input type="number" className="text-input amount-input" placeholder="0.00" min="1" step="any" required value={budgetForm.amount_limit} onChange={e => setBudgetForm(f => ({ ...f, amount_limit: e.target.value }))} />
+                    </div>
+                  </div>
+
+                  {/* Optional name */}
+                  <div className="form-group">
+                    <label className="form-label">Custom Name <span style={{ opacity: 0.5 }}>(optional)</span></label>
+                    <input type="text" className="text-input" placeholder="e.g. Dining Out, Utilities" value={budgetForm.name} onChange={e => setBudgetForm(f => ({ ...f, name: e.target.value }))} />
+                  </div>
+
+                  <div className="modal-actions">
+                    {editingBudget && (
+                      <button type="button" className="btn-danger" onClick={() => handleDeleteBudget(editingBudget.id)}>Delete</button>
+                    )}
+                    <button type="submit" className="btn-primary">Save Budget</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </PageShell>
+    );
+  }
+
+  // --- ANALYTICS VIEW ---
+  if (view === 'analytics') {
+    const PRESET_LABELS = { all: 'All Time', today: 'Today', this_week: 'This Week', this_month: 'This Month', last_3m: '3 Months', this_year: 'This Year' };
+    const analyticsActiveCount =
+      (analyticsFilters.type !== 'all' ? 1 : 0) +
+      (analyticsFilters.dateRange.start ? 1 : 0) +
+      analyticsFilters.categoryIds.length + analyticsFilters.tagIds.length + analyticsFilters.accountIds.length;
+
+    return (
+      <PageShell>
+        <div className="page-inner fade-in">
+          <div className="section-header-row">
+            <h2 className="section-title-editorial">Analytics</h2>
+          </div>
+
+          {/* Date preset + filter toggle */}
+          <div className="filter-pills-row" style={{ marginTop: '1.5rem' }}>
+            {Object.entries(PRESET_LABELS).map(([key, label]) => (
+              <button key={key} className={`filter-pill${analyticsFilters.preset === key ? ' active-pill' : ''}`} onClick={() => applyAnalyticsPreset(key)}>{label}</button>
+            ))}
+            <button className={`filter-toggle-btn${showAnalyticsFilters ? ' active' : ''}`} onClick={() => setShowAnalyticsFilters(v => !v)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+              Filters
+              {analyticsActiveCount > 0 && <span className="filter-badge">{analyticsActiveCount}</span>}
+            </button>
+          </div>
+
+          {showAnalyticsFilters && (
+            <FilterPanel categories={categories} tags={tags} accounts={accounts} filterOptions={analyticsFilters} onUpdateFilter={updateAnalyticsFilter} onResetFilters={resetAnalyticsFilters} />
+          )}
+
+          {/* KPI Ribbon */}
+          <div className="kpi-ribbon">
+            <div className="kpi-card"><p className="kpi-label">Total Income</p><p className="kpi-value income">{currencySymbol}{analyticsKPIs.totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p></div>
+            <div className="kpi-card"><p className="kpi-label">Total Expenses</p><p className="kpi-value expense">{currencySymbol}{analyticsKPIs.totalExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p></div>
+            <div className="kpi-card"><p className="kpi-label">Net Flow</p><p className={`kpi-value ${analyticsKPIs.net >= 0 ? 'income' : 'expense'}`}>{analyticsKPIs.net >= 0 ? '+' : ''}{currencySymbol}{analyticsKPIs.net.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p></div>
+            <div className="kpi-card"><p className="kpi-label">Daily Burn</p><p className="kpi-value">{currencySymbol}{analyticsKPIs.dailyBurn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p></div>
+            <div className="kpi-card"><p className="kpi-label">Transactions</p><p className="kpi-value">{analyticsKPIs.txCount}</p></div>
+            {topExpenseCat && <div className="kpi-card"><p className="kpi-label">Top Category</p><p className="kpi-value" style={{ fontSize: '1rem', letterSpacing: 0 }}>{topExpenseCat[0]}</p></div>}
+          </div>
+
+          {/* Charts */}
+          <div className="analytics-charts-grid">
+
+            {/* Cash Flow — full width */}
+            <div className="chart-card chart-card-full">
+              <p className="chart-title">Cash Flow Velocity</p>
+              <p className="chart-subtitle">Daily income vs. expenses{chartTimeSeries.length > 60 ? ' (weekly)' : ''}{chartTimeSeries.length > 200 ? ' (monthly)' : ''}</p>
+              <div className="chart-legend">
+                <span className="chart-legend-dot" style={{ background: '#2e7d32' }} /> Income
+                <span className="chart-legend-dot" style={{ background: '#93000a', marginLeft: '1rem' }} /> Expense
+              </div>
+              <CashFlowChart data={chartTimeSeries} currencySymbol={currencySymbol} />
+            </div>
+
+            {/* Donut */}
+            <div className="chart-card">
+              <p className="chart-title">Spending by Category</p>
+              <p className="chart-subtitle">Breakdown of expenses</p>
+              <CategoryDonutChart data={chartCategorical} currencySymbol={currencySymbol} />
+            </div>
+
+            {/* Tags */}
+            <div className="chart-card">
+              <p className="chart-title">Tag Breakdown</p>
+              <p className="chart-subtitle">Amount by tag label</p>
+              <TagBarChart data={chartTags} currencySymbol={currencySymbol} />
+            </div>
+
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  // --- DASHBOARD VIEW ---
   return (
     <PageShell>
       <div className="page-inner fade-in">
