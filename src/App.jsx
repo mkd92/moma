@@ -292,6 +292,16 @@ const FilterPanel = ({ categories, tags, accounts, filterOptions, onUpdateFilter
   );
 };
 
+const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, session, onLogout }) => (
+  <div className="app-shell">
+    <Sidebar view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onBudgets={onBudgets} onNewTx={onNewTx} onSettings={onSettings} session={session} onLogout={onLogout} />
+    <div className="page-content">
+      <TopHeader session={session} onLogout={onLogout} />
+      {children}
+    </div>
+  </div>
+);
+
 function App() {
   const [view, setView] = useState('landing');
   const [session, setSession] = useState(null);
@@ -1020,15 +1030,7 @@ function App() {
   const navToAnalytics = useCallback(() => setView('analytics'), []);
   const navToBudgets = useCallback(() => setView('budgets'), []);
 
-  const PageShell = ({ children }) => (
-    <div className="app-shell">
-      <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onAnalytics={navToAnalytics} onBudgets={navToBudgets} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
-      <div className="page-content">
-        <TopHeader session={session} onLogout={handleLogout} />
-        {children}
-      </div>
-    </div>
-  );
+  const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, session, onLogout: handleLogout };
 
   if (view === 'landing') {
     return (
@@ -1069,7 +1071,7 @@ function App() {
     const PRESET_LABELS = { all: 'All Time', today: 'Today', this_week: 'This Week', this_month: 'This Month', last_3m: '3 Months' };
 
     return (
-      <PageShell>
+      <PageShell {...shellProps}>
         <div className="page-inner fade-in">
 
           {/* Header */}
@@ -1235,7 +1237,7 @@ function App() {
 
     return (
       <>
-      <PageShell>
+      <PageShell {...shellProps}>
         <div className="page-inner fade-in">
 
           {/* Header */}
@@ -1430,7 +1432,7 @@ function App() {
       analyticsFilters.categoryIds.length + analyticsFilters.tagIds.length + analyticsFilters.accountIds.length;
 
     return (
-      <PageShell>
+      <PageShell {...shellProps}>
         <div className="page-inner fade-in">
           <div className="section-header-row">
             <h2 className="section-title-editorial">Analytics</h2>
@@ -1498,7 +1500,7 @@ function App() {
 
   // --- DASHBOARD VIEW ---
   return (
-    <PageShell>
+    <PageShell {...shellProps}>
       <div className="page-inner fade-in">
         <div className="dashboard-layout">
           <div className="dashboard-main-stack">
