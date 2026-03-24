@@ -156,6 +156,12 @@ function App() {
   const [filterStart, setFilterStart] = useState('');
   const [filterEnd, setFilterEnd] = useState('');
   const [filterPreset, setFilterPreset] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategories, setFilterCategories] = useState([]);
+  const [filterParties, setFilterParties] = useState([]);
+  const [filterTags, setFilterTags] = useState([]);
+  const [filterType, setFilterType] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Derived financials — no separate state needed
   const { balance, totalIncome, totalExpense } = useMemo(() => {
@@ -619,6 +625,14 @@ function App() {
     }
   }, []);
 
+  const clearFilters = useCallback(() => {
+    setSearchTerm('');
+    setFilterCategories([]);
+    setFilterParties([]);
+    setFilterTags([]);
+    setFilterType('all');
+  }, []);
+
   // Memoised category splits — avoids filter on every render
   const parentCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);
   const subCategories = useMemo(() => categories.filter(c => c.parent_id), [categories]);
@@ -627,10 +641,27 @@ function App() {
   const filteredLedger = useMemo(() => {
     return transactions.filter(t => {
       const matchStart = filterStart ? t.transaction_date >= filterStart : true;
-      const matchEnd = filterEnd ? t.transaction_date <= filterEnd : true;
-      return matchStart && matchEnd;
+      const matchEnd   = filterEnd   ? t.transaction_date <= filterEnd   : true;
+      const matchType  = filterType === 'all'      ? true
+                       : filterType === 'transfer' ? !!t.transfer_id
+                       : (t.type === filterType && !t.transfer_id);
+      const matchSearch = searchTerm
+        ? (t.note || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (t.parties?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+        : true;
+      const matchCat = filterCategories.length > 0
+        ? (!t.transfer_id && filterCategories.some(catId =>
+            t.category_id === catId ||
+            categories.find(c => c.id === t.category_id)?.parent_id === catId
+          ))
+        : true;
+      const matchParty = filterParties.length > 0 ? filterParties.includes(t.party_id) : true;
+      const matchTags  = filterTags.length > 0
+        ? (t.transaction_tags?.some(tt => filterTags.includes(tt.tag_id)) ?? false)
+        : true;
+      return matchStart && matchEnd && matchType && matchSearch && matchCat && matchParty && matchTags;
     });
-  }, [transactions, filterStart, filterEnd]);
+  }, [transactions, filterStart, filterEnd, filterType, searchTerm, filterCategories, filterParties, filterTags, categories]);
 
   // Stable nav callbacks passed as props (no inline arrows in JSX)
   const navToDashboard = useCallback(() => setView('dashboard'), []);
@@ -1734,46 +1765,127 @@ function App() {
           </div>
 
         <div className="ledger-filters fade-in">
+          {/* Search + Filters toggle row */}
+          <div className="ledger-search-row">
+            <div className="ledger-search-wrap">
+              <svg className="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                className="ledger-search-input"
+                placeholder="Search notes, parties…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button className="search-clear-btn" onClick={() => setSearchTerm('')}>✕</button>
+              )}
+            </div>
+            <button
+              className={`filter-toggle-btn${showFilters ? ' active' : ''}`}
+              onClick={() => setShowFilters(v => !v)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              Filters
+              {(filterCategories.length + filterParties.length + filterTags.length + (filterType !== 'all' ? 1 : 0)) > 0 && (
+                <span className="filter-badge">{filterCategories.length + filterParties.length + filterTags.length + (filterType !== 'all' ? 1 : 0)}</span>
+              )}
+            </button>
+          </div>
+
+          {/* Date preset pills */}
           <div className="filter-pills">
-            <button
-              className={`filter-pill ${filterPreset === 'all' ? 'active-pill' : ''}`}
-              onClick={() => applyPreset('all')}
-            >
-              All
-            </button>
-            <button
-              className={`filter-pill ${filterPreset === 'this_month' ? 'active-pill' : ''}`}
-              onClick={() => applyPreset('this_month')}
-            >
-              This Month
-            </button>
-            <button
-              className={`filter-pill ${filterPreset === 'last_month' ? 'active-pill' : ''}`}
-              onClick={() => applyPreset('last_month')}
-            >
-              Last Month
-            </button>
-            <button
-              className={`filter-pill ${filterPreset === 'custom' ? 'active-pill' : ''}`}
-              onClick={() => setFilterPreset('custom')}
-            >
-              Custom
-            </button>
+            <button className={`filter-pill ${filterPreset === 'all' ? 'active-pill' : ''}`} onClick={() => applyPreset('all')}>All</button>
+            <button className={`filter-pill ${filterPreset === 'this_month' ? 'active-pill' : ''}`} onClick={() => applyPreset('this_month')}>This Month</button>
+            <button className={`filter-pill ${filterPreset === 'last_month' ? 'active-pill' : ''}`} onClick={() => applyPreset('last_month')}>Last Month</button>
+            <button className={`filter-pill ${filterPreset === 'custom' ? 'active-pill' : ''}`} onClick={() => setFilterPreset('custom')}>Custom</button>
           </div>
           {filterPreset === 'custom' && (
             <div className="custom-dates">
-              <input
-                type="date"
-                value={filterStart}
-                onChange={(e) => setFilterStart(e.target.value)}
-                className="text-input"
-              />
-              <input
-                type="date"
-                value={filterEnd}
-                onChange={(e) => setFilterEnd(e.target.value)}
-                className="text-input"
-              />
+              <input type="date" value={filterStart} onChange={(e) => setFilterStart(e.target.value)} className="text-input" />
+              <input type="date" value={filterEnd}   onChange={(e) => setFilterEnd(e.target.value)}   className="text-input" />
+            </div>
+          )}
+
+          {/* Advanced filters panel */}
+          {showFilters && (
+            <div className="advanced-filters">
+              {/* Type */}
+              <div className="filter-section">
+                <span className="filter-section-label">Type</span>
+                <div className="filter-chips">
+                  {['all','income','expense','transfer'].map(t => (
+                    <button
+                      key={t}
+                      className={`filter-chip${filterType === t ? ' active' : ''}`}
+                      onClick={() => setFilterType(t)}
+                    >
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Categories */}
+              {parentCategories.length > 0 && (
+                <div className="filter-section">
+                  <span className="filter-section-label">Category</span>
+                  <div className="filter-chips">
+                    {parentCategories.map(c => (
+                      <button
+                        key={c.id}
+                        className={`filter-chip${filterCategories.includes(c.id) ? ' active' : ''}`}
+                        onClick={() => setFilterCategories(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id])}
+                      >
+                        {c.icon} {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Parties */}
+              {parties.length > 0 && (
+                <div className="filter-section">
+                  <span className="filter-section-label">Counterparty</span>
+                  <div className="filter-chips">
+                    {parties.map(p => (
+                      <button
+                        key={p.id}
+                        className={`filter-chip${filterParties.includes(p.id) ? ' active' : ''}`}
+                        onClick={() => setFilterParties(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id])}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tags */}
+              {tags.length > 0 && (
+                <div className="filter-section">
+                  <span className="filter-section-label">Tags</span>
+                  <div className="filter-chips">
+                    {tags.map(t => (
+                      <button
+                        key={t.id}
+                        className={`filter-chip${filterTags.includes(t.id) ? ' active' : ''}`}
+                        onClick={() => setFilterTags(prev => prev.includes(t.id) ? prev.filter(id => id !== t.id) : [...prev, t.id])}
+                      >
+                        {t.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(filterCategories.length + filterParties.length + filterTags.length + (filterType !== 'all' ? 1 : 0)) > 0 && (
+                <button className="clear-filters-btn" onClick={clearFilters}>Clear all filters</button>
+              )}
             </div>
           )}
         </div>
@@ -1781,7 +1893,10 @@ function App() {
         <div className="transactions-list" style={{ marginTop: '0.5rem' }}>
           {filteredLedger.length === 0 ? (
             <div className="empty-state">
-              <p>No transactions match this timeframe.</p>
+              <p>No transactions match your filters.</p>
+              {(searchTerm || filterCategories.length || filterParties.length || filterTags.length || filterType !== 'all') && (
+                <button className="icon-btn-text" onClick={clearFilters} style={{ marginTop: '0.5rem' }}>Clear filters</button>
+              )}
             </div>
           ) : (() => {
             const groups = {};
