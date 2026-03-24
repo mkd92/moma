@@ -1,24 +1,45 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --primary: #1A237E;
-  --primary-light: #EEF2FF;
-  --bg: #F8F9FA;
-  --surface: #FFFFFF;
-  --text-primary: #1E212B;
-  --text-secondary: #6B7280;
-  --text-muted: #9CA3AF;
-  --income-color: #2E7D32;
-  --income-bg: #E8F5E9;
-  --expense-color: #C62828;
-  --expense-bg: #FFEBEE;
-  --border: #E5E7EB;
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.06);
+  /* --- Primary Colors --- */
+  --primary: #000666;
+  --primary-container: #1a237e;
+  --on-primary: #ffffff;
+  
+  /* --- Surface Hierarchy (Physical Stack Metaphor) --- */
+  --surface: #fcf9f8;                /* Base Layer - Main Background */
+  --surface-container-low: #f6f3f2;   /* Sectioning Areas */
+  --surface-container-lowest: #ffffff; /* Actionable Cards / Pop-up Layer */
+  --surface-bright: #ffffff;          /* Closest to User */
+  --surface-tint: rgba(76, 86, 175, 0.04); /* Branded cool-grey tint */
+
+  /* --- Text Colors --- */
+  --on-surface: #1c1b1b;         /* High-contrast Headlines */
+  --on-surface-variant: #454652; /* Body Text / Labels */
+  
+  /* --- Semantic Colors --- */
+  --secondary: #2e7d32;          /* Income / Growth */
+  --secondary-container: #a0f399; /* Income highlight */
+  --tertiary-fixed: #ffdad6;      /* Expense highlight */
+  --tertiary-fixed-variant: #93000e; /* Sophisticated Expense Red */
+  --error: #ba1a1a;
+  
+  /* --- Functional Elements --- */
+  --outline-variant: #c6c5d4;
+  --ghost-border: rgba(198, 197, 212, 0.15); /* For high-density fallbacks */
+  
+  /* --- Spacing --- */
+  --spacing-4: 1rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  
+  /* --- Border Radius --- */
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-full: 9999px;
+
+  /* --- Shadows (Ambient & Diffused) --- */
+  --shadow-ambient: 0 12px 32px rgba(28, 27, 27, 0.04);
 }
 
 *, *::before, *::after {
@@ -27,35 +48,47 @@
   padding: 0;
 }
 
-html {
+html, body, #root {
   height: 100%;
+  width: 100%;
 }
 
 body {
-  height: 100%;
-  background-color: var(--bg);
-  color: var(--text-primary);
-  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--surface);
+  color: var(--on-surface-variant);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 400;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
-  width: 100%;
-  height: 100%;
-  display: flex;
-}
-
-h1, h2, h3, h4, h5, h6 {
+/* --- Typography tokens --- */
+h1, h2, h3, h4, .display-lg, .headline-md {
   font-family: 'Manrope', sans-serif;
-  font-weight: 800;
+  color: var(--on-surface);
   line-height: 1.15;
-  color: var(--text-primary);
 }
 
-a {
-  color: var(--primary);
-  text-decoration: none;
+.display-lg { font-size: 3.5rem; font-weight: 800; }
+.headline-md { font-size: 1.75rem; font-weight: 800; }
+.title-lg { font-family: 'Inter', sans-serif; font-size: 1.375rem; font-weight: 600; color: var(--on-surface); }
+.body-md { font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 400; color: var(--on-surface-variant); }
+.label-sm { font-family: 'Inter', sans-serif; font-size: 0.6875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-surface-variant); }
+
+/* Financial data emphasis */
+.financial-num {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+}
+
+button {
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input {
+  font-family: 'Inter', sans-serif;
 }
