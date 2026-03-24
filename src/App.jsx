@@ -1234,6 +1234,7 @@ function App() {
     const parentCategories = categories.filter(c => !c.parent_id);
 
     return (
+      <>
       <PageShell>
         <div className="page-inner fade-in">
 
@@ -1339,83 +1340,84 @@ function App() {
             </>
           )}
 
-          {/* Create / Edit Modal */}
-          {showBudgetModal && (
-            <div className="modal-overlay" onClick={() => setShowBudgetModal(false)}>
-              <div className="modal-sheet" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                  <h3 className="modal-title">{editingBudget ? 'Edit Budget' : 'New Budget'}</h3>
-                  <button className="modal-close" onClick={() => setShowBudgetModal(false)}>✕</button>
-                </div>
-
-                <form onSubmit={handleSaveBudget} className="modal-form">
-                  {/* Period */}
-                  <div className="form-group">
-                    <label className="form-label">Period</label>
-                    <div className="type-toggle-bar">
-                      {['monthly', 'weekly', 'quarterly'].map(p => (
-                        <button key={p} type="button"
-                          className={`type-btn${budgetForm.period === p ? ' active-transfer' : ''}`}
-                          onClick={() => setBudgetForm(f => ({ ...f, period: p }))}
-                          style={{ textTransform: 'capitalize' }}
-                        >{p}</button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Category */}
-                  <div className="form-group">
-                    <label className="form-label">Category <span style={{ opacity: 0.5 }}>(leave blank for overall)</span></label>
-                    <select className="text-input" value={budgetForm.category_id} onChange={e => setBudgetForm(f => ({ ...f, category_id: e.target.value }))}>
-                      <option value="">Overall Budget</option>
-                      {parentCategories.map(c => (
-                        <optgroup key={c.id} label={`${c.icon} ${c.name}`}>
-                          <option value={c.id}>{c.icon} {c.name} (all)</option>
-                          {categories.filter(sc => sc.parent_id === c.id).map(sc => (
-                            <option key={sc.id} value={sc.id}>— {sc.icon} {sc.name}</option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Auto-suggestion */}
-                  {budgetSuggestion !== null && budgetSuggestion > 0 && (
-                    <div className="budget-suggestion" onClick={() => setBudgetForm(f => ({ ...f, amount_limit: String(budgetSuggestion) }))}>
-                      <span>💡 Based on your last 3 months, suggested limit:</span>
-                      <strong> {currencySymbol}{budgetSuggestion.toLocaleString()} / {budgetForm.period}</strong>
-                      <span className="budget-suggestion-apply">Apply →</span>
-                    </div>
-                  )}
-
-                  {/* Amount */}
-                  <div className="form-group">
-                    <label className="form-label">Spending Limit</label>
-                    <div className="amount-input-wrapper">
-                      <span className="currency-symbol-label">{currencySymbol}</span>
-                      <input type="number" className="text-input amount-input" placeholder="0.00" min="1" step="any" required value={budgetForm.amount_limit} onChange={e => setBudgetForm(f => ({ ...f, amount_limit: e.target.value }))} />
-                    </div>
-                  </div>
-
-                  {/* Optional name */}
-                  <div className="form-group">
-                    <label className="form-label">Custom Name <span style={{ opacity: 0.5 }}>(optional)</span></label>
-                    <input type="text" className="text-input" placeholder="e.g. Dining Out, Utilities" value={budgetForm.name} onChange={e => setBudgetForm(f => ({ ...f, name: e.target.value }))} />
-                  </div>
-
-                  <div className="modal-actions">
-                    {editingBudget && (
-                      <button type="button" className="btn-danger" onClick={() => handleDeleteBudget(editingBudget.id)}>Delete</button>
-                    )}
-                    <button type="submit" className="btn-primary">Save Budget</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
         </div>
       </PageShell>
+
+      {/* Create / Edit Modal — rendered outside PageShell to prevent remount on state change */}
+      {showBudgetModal && (
+        <div className="modal-overlay" onClick={() => setShowBudgetModal(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">{editingBudget ? 'Edit Budget' : 'New Budget'}</h3>
+              <button className="modal-close" onClick={() => setShowBudgetModal(false)}>✕</button>
+            </div>
+
+            <form onSubmit={handleSaveBudget} className="modal-form">
+              {/* Period */}
+              <div className="form-group">
+                <label className="form-label">Period</label>
+                <div className="type-toggle-bar">
+                  {['monthly', 'weekly', 'quarterly'].map(p => (
+                    <button key={p} type="button"
+                      className={`type-btn${budgetForm.period === p ? ' active-transfer' : ''}`}
+                      onClick={() => setBudgetForm(f => ({ ...f, period: p }))}
+                      style={{ textTransform: 'capitalize' }}
+                    >{p}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category */}
+              <div className="form-group">
+                <label className="form-label">Category <span style={{ opacity: 0.5 }}>(leave blank for overall)</span></label>
+                <select className="text-input" value={budgetForm.category_id} onChange={e => setBudgetForm(f => ({ ...f, category_id: e.target.value }))}>
+                  <option value="">Overall Budget</option>
+                  {parentCategories.map(c => (
+                    <optgroup key={c.id} label={`${c.icon} ${c.name}`}>
+                      <option value={c.id}>{c.icon} {c.name} (all)</option>
+                      {categories.filter(sc => sc.parent_id === c.id).map(sc => (
+                        <option key={sc.id} value={sc.id}>— {sc.icon} {sc.name}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              {/* Auto-suggestion */}
+              {budgetSuggestion !== null && budgetSuggestion > 0 && (
+                <div className="budget-suggestion" onClick={() => setBudgetForm(f => ({ ...f, amount_limit: String(budgetSuggestion) }))}>
+                  <span>💡 Based on your last 3 months, suggested limit:</span>
+                  <strong> {currencySymbol}{budgetSuggestion.toLocaleString()} / {budgetForm.period}</strong>
+                  <span className="budget-suggestion-apply">Apply →</span>
+                </div>
+              )}
+
+              {/* Amount */}
+              <div className="form-group">
+                <label className="form-label">Spending Limit</label>
+                <div className="amount-input-wrapper">
+                  <span className="currency-symbol-label">{currencySymbol}</span>
+                  <input type="number" className="text-input amount-input" placeholder="0.00" min="1" step="any" required value={budgetForm.amount_limit} onChange={e => setBudgetForm(f => ({ ...f, amount_limit: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Optional name */}
+              <div className="form-group">
+                <label className="form-label">Custom Name <span style={{ opacity: 0.5 }}>(optional)</span></label>
+                <input type="text" className="text-input" placeholder="e.g. Dining Out, Utilities" value={budgetForm.name} onChange={e => setBudgetForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+
+              <div className="modal-actions">
+                {editingBudget && (
+                  <button type="button" className="btn-danger" onClick={() => handleDeleteBudget(editingBudget.id)}>Delete</button>
+                )}
+                <button type="submit" className="btn-primary">Save Budget</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      </>
     );
   }
 
