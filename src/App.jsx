@@ -18,41 +18,51 @@ const formatGroupDate = (dateStr) => {
   });
 };
 
-// FloatingNav — 3-item bottom nav: Dashboard | FAB | Settings
-const FloatingNav = ({ view, onDashboard, onNewTx, onSettings }) => (
-  <nav className="bottom-nav fade-in">
-    <button
-      className={`nav-tab ${view === 'dashboard' ? 'active' : ''}`}
-      onClick={onDashboard}
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
-      <span>Home</span>
-    </button>
-
-    <div className="nav-fab-container">
-      <button className="nav-fab" onClick={onNewTx}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19"/>
-          <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-      </button>
-    </div>
-
-    <button
-      className={`nav-tab ${['settings', 'category_management', 'party_management', 'account_management'].includes(view) ? 'active' : ''}`}
-      onClick={onSettings}
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-      <span>Settings</span>
-    </button>
-  </nav>
-);
+// Sidebar — desktop left-rail navigation
+const Sidebar = ({ view, onDashboard, onLedger, onNewTx, onSettings, session, onLogout }) => {
+  const isSettingsGroup = ['settings', 'category_management', 'party_management', 'account_management'].includes(view);
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-brand">MOMA</div>
+      <nav className="sidebar-nav">
+        <button className="sidebar-new-tx-btn" onClick={onNewTx}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          New Transaction
+        </button>
+        <button className={`sidebar-item ${view === 'dashboard' ? 'active' : ''}`} onClick={onDashboard}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          Dashboard
+        </button>
+        <button className={`sidebar-item ${view === 'ledger' ? 'active' : ''}`} onClick={onLedger}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          Ledger
+        </button>
+        <button className={`sidebar-item ${isSettingsGroup ? 'active' : ''}`} onClick={onSettings}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Settings
+        </button>
+      </nav>
+      <div className="sidebar-footer">
+        <div className="sidebar-user">
+          <div className="sidebar-avatar">{session?.user?.email?.charAt(0).toUpperCase()}</div>
+          <span className="sidebar-email">{session?.user?.email}</span>
+        </div>
+        <button className="sidebar-logout-btn" onClick={onLogout}>Log out</button>
+      </div>
+    </aside>
+  );
+};
 
 function App() {
   const [view, setView] = useState('landing');
@@ -472,11 +482,11 @@ function App() {
 
   if (view === 'auth') {
     return (
-      <div className="tracker-container fade-in auth-view">
-        <div className="top-bar">
+      <div className="auth-view fade-in">
+        <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button className="icon-btn-text" onClick={() => setView('landing')}>← Back</button>
-          <h2 className="view-title">Sign In</h2>
-          <div style={{ width: '60px' }}></div>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>MOMA</h2>
         </div>
         <div className="auth-box">
           <div className="auth-tabs">
@@ -536,101 +546,85 @@ function App() {
             </button>
           </div>
         </div>
+        </div>
       </div>
     );
   }
 
   if (view === 'settings') {
     return (
-      <div className="tracker-container fade-in main-layout">
-        <div className="top-bar">
-          <div style={{ width: '60px' }}></div>
-          <h2 className="view-title">Settings</h2>
-          <div style={{ width: '60px' }}></div>
-        </div>
-
-        <div className="settings-panel fade-in">
-          <div className="profile-block">
-            <div className="avatar-circle">
-              {session?.user?.email?.charAt(0).toUpperCase()}
+      <div className="app-shell">
+        <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
+        <div className="page-content">
+          <div className="page-inner fade-in">
+            <div className="page-header">
+              <h2 className="page-title">Settings</h2>
             </div>
-            <div className="profile-info">
-              <span className="profile-name">{session?.user?.email?.split('@')[0]}</span>
-              <span className="profile-email">{session?.user?.email}</span>
-            </div>
-          </div>
 
-          <div className="settings-section">
-            <p className="settings-label">Preferences</p>
-            <div className="settings-group">
-              <div className="settings-card">
-                <span className="sc-text">Currency</span>
-                <div className="currency-dropdown" ref={currencyDropdownRef}>
-                  <button
-                    className="currency-dropdown-trigger"
-                    onClick={() => setCurrencyDropdownOpen(o => !o)}
-                  >
-                    {currencyCode} ({CURRENCY_SYMBOLS[currencyCode]})
-                    <span className="currency-dropdown-arrow">{currencyDropdownOpen ? '▲' : '▼'}</span>
+            <div className="settings-panel">
+              <div className="settings-section">
+                <p className="settings-label">Preferences</p>
+                <div className="settings-group">
+                  <div className="settings-card">
+                    <span className="sc-text">Currency</span>
+                    <div className="currency-dropdown" ref={currencyDropdownRef}>
+                      <button
+                        className="currency-dropdown-trigger"
+                        onClick={() => setCurrencyDropdownOpen(o => !o)}
+                      >
+                        {currencyCode} ({CURRENCY_SYMBOLS[currencyCode]})
+                        <span className="currency-dropdown-arrow">{currencyDropdownOpen ? '▲' : '▼'}</span>
+                      </button>
+                      {currencyDropdownOpen && (
+                        <ul className="currency-dropdown-menu">
+                          {Object.keys(CURRENCY_SYMBOLS).map(code => (
+                            <li key={code}>
+                              <button
+                                className={`currency-dropdown-item${code === currencyCode ? ' active' : ''}`}
+                                onClick={() => handleCurrencyChange(code)}
+                              >
+                                {code} ({CURRENCY_SYMBOLS[code]})
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-section">
+                <p className="settings-label">Manage</p>
+                <div className="settings-group">
+                  <button className="settings-nav-btn" onClick={() => setView('account_management')}>
+                    Accounts <span className="arrow">›</span>
                   </button>
-                  {currencyDropdownOpen && (
-                    <ul className="currency-dropdown-menu">
-                      {Object.keys(CURRENCY_SYMBOLS).map(code => (
-                        <li key={code}>
-                          <button
-                            className={`currency-dropdown-item${code === currencyCode ? ' active' : ''}`}
-                            onClick={() => handleCurrencyChange(code)}
-                          >
-                            {code} ({CURRENCY_SYMBOLS[code]})
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <button className="settings-nav-btn" onClick={() => setView('category_management')}>
+                    Categories <span className="arrow">›</span>
+                  </button>
+                  <button className="settings-nav-btn" onClick={() => setView('party_management')}>
+                    Parties <span className="arrow">›</span>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-
-          <div className="settings-section">
-            <p className="settings-label">Manage</p>
-            <div className="settings-group">
-              <button className="settings-nav-btn" onClick={() => setView('account_management')}>
-                Accounts <span className="arrow">›</span>
-              </button>
-              <button className="settings-nav-btn" onClick={() => setView('category_management')}>
-                Categories <span className="arrow">›</span>
-              </button>
-              <button className="settings-nav-btn" onClick={() => setView('party_management')}>
-                Parties <span className="arrow">›</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="settings-section" style={{ marginTop: '2rem' }}>
-            <button className="settings-logout-btn" onClick={handleLogout}>Log Out</button>
-          </div>
         </div>
-
-        <FloatingNav
-          view={view}
-          onDashboard={navToDashboard}
-          onLedger={navToLedger}
-          onNewTx={navToNewTx}
-          onSettings={navToSettings}
-        />
       </div>
     );
   }
 
   if (view === 'account_management') {
     return (
-      <div className="tracker-container slide-up main-layout">
-        <div className="top-bar">
-          <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
-          <h2 className="view-title">Accounts</h2>
-          <div style={{ width: '60px' }}></div>
-        </div>
+      <div className="app-shell">
+        <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
+        <div className="page-content">
+        <div className="page-inner slide-up">
+          <div className="page-header">
+            <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
+            <h2 className="page-title">Accounts</h2>
+          </div>
 
         <div className="settings-controls fade-in">
           <div className="category-manager">
@@ -765,26 +759,22 @@ function App() {
             <button type="submit" className="add-cat-btn" style={{ marginTop: '1rem' }}>Add Account</button>
           </form>
         </div>
-
-        <FloatingNav
-          view={view}
-          onDashboard={navToDashboard}
-          onLedger={navToLedger}
-          onNewTx={navToNewTx}
-          onSettings={navToSettings}
-        />
+        </div>
+        </div>
       </div>
     );
   }
 
   if (view === 'party_management') {
     return (
-      <div className="tracker-container slide-up main-layout">
-        <div className="top-bar">
-          <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
-          <h2 className="view-title">Parties</h2>
-          <div style={{ width: '60px' }}></div>
-        </div>
+      <div className="app-shell">
+        <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
+        <div className="page-content">
+        <div className="page-inner slide-up">
+          <div className="page-header">
+            <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
+            <h2 className="page-title">Parties</h2>
+          </div>
 
         <div className="settings-controls fade-in">
           <div className="category-manager">
@@ -820,14 +810,8 @@ function App() {
             <button type="submit" className="add-cat-btn">Add Party</button>
           </form>
         </div>
-
-        <FloatingNav
-          view={view}
-          onDashboard={navToDashboard}
-          onLedger={navToLedger}
-          onNewTx={navToNewTx}
-          onSettings={navToSettings}
-        />
+        </div>
+        </div>
       </div>
     );
   }
@@ -835,12 +819,14 @@ function App() {
   if (view === 'category_management') {
     const parents = parentCategories.filter(c => c.type === settingsType);
     return (
-      <div className="tracker-container slide-up main-layout">
-        <div className="top-bar">
-          <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
-          <h2 className="view-title">Categories</h2>
-          <div style={{ width: '60px' }}></div>
-        </div>
+      <div className="app-shell">
+        <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
+        <div className="page-content">
+        <div className="page-inner slide-up">
+          <div className="page-header">
+            <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
+            <h2 className="page-title">Categories</h2>
+          </div>
 
         <div className="settings-controls fade-in">
           <div className="type-toggle-bar">
@@ -919,14 +905,8 @@ function App() {
             <button type="submit" className="add-cat-btn">Save Category</button>
           </form>
         </div>
-
-        <FloatingNav
-          view={view}
-          onDashboard={navToDashboard}
-          onLedger={navToLedger}
-          onNewTx={navToNewTx}
-          onSettings={navToSettings}
-        />
+        </div>
+        </div>
       </div>
     );
   }
@@ -936,19 +916,21 @@ function App() {
     const applicableSubs = subCategories.filter(sub => currentParents.some(p => p.id === sub.parent_id));
 
     return (
-      <div className="tracker-container slide-up main-layout" style={{ paddingBottom: '140px' }}>
-        <div className="top-bar">
-          <button
-            className="icon-btn-text"
-            onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}
-          >
-            ← Cancel
-          </button>
-          <h2 className="view-title">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2>
-          <div style={{ width: '80px' }}></div>
-        </div>
+      <div className="app-shell">
+        <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
+        <div className="page-content">
+        <div className="page-inner slide-up" style={{ maxWidth: '640px' }}>
+          <div className="page-header">
+            <button
+              className="icon-btn-text"
+              onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}
+            >
+              ← Cancel
+            </button>
+            <h2 className="page-title">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2>
+          </div>
 
-        <div className="fluid-input-area fade-in" style={{ overflowY: 'auto', maxHeight: '80vh', paddingBottom: '2rem' }}>
+        <div className="fluid-input-area fade-in">
           <div className="type-toggle-bar">
             <button
               className={`type-btn ${txType === 'expense' ? 'active-expense' : ''}`}
@@ -1162,14 +1144,8 @@ function App() {
             </button>
           )}
         </div>
-
-        <FloatingNav
-          view={view}
-          onDashboard={navToDashboard}
-          onLedger={navToLedger}
-          onNewTx={navToNewTx}
-          onSettings={navToSettings}
-        />
+        </div>
+        </div>
       </div>
     );
   }
@@ -1177,12 +1153,13 @@ function App() {
   // --- LEDGER VIEW ---
   if (view === 'ledger') {
     return (
-      <div className="tracker-container fade-in main-layout">
-        <div className="top-bar">
-          <div style={{ width: '60px' }}></div>
-          <h2 className="view-title">Ledger</h2>
-          <div style={{ width: '60px' }}></div>
-        </div>
+      <div className="app-shell">
+        <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
+        <div className="page-content">
+        <div className="page-inner fade-in">
+          <div className="page-header">
+            <h2 className="page-title">Ledger</h2>
+          </div>
 
         <div className="ledger-filters fade-in">
           <div className="filter-pills">
@@ -1276,107 +1253,97 @@ function App() {
               ));
           })()}
         </div>
-
-        <FloatingNav
-          view={view}
-          onDashboard={navToDashboard}
-          onLedger={navToLedger}
-          onNewTx={navToNewTx}
-          onSettings={navToSettings}
-        />
+        </div>
+        </div>
       </div>
     );
   }
 
   // --- DASHBOARD VIEW ---
   return (
-    <div className="tracker-container fade-in main-layout">
-      <div className="top-bar">
-        <span className="moma-logo">MOMA</span>
-        <div className="top-avatar-sm">
-          {session?.user?.email?.charAt(0).toUpperCase() || 'G'}
-        </div>
-      </div>
-
-      <div className="dashboard-hero fade-in">
-        <div className="balance-board">
-          <p className="balance-label">Total Net Worth</p>
-          <h1 className="balance-amount">{currencySymbol}{balance.toFixed(2)}</h1>
-          <span className="balance-badge">All Transactions</span>
-        </div>
-
-        <div className="metrics-row">
-          <div className="metric-card metric-income">
-            <span className="metric-label">Income</span>
-            <span className="metric-value">+{currencySymbol}{totalIncome.toFixed(2)}</span>
+    <div className="app-shell">
+      <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
+      <div className="page-content">
+        <div className="page-inner fade-in">
+          <div className="page-header">
+            <h2 className="page-title">Dashboard</h2>
           </div>
-          <div className="metric-card metric-expense">
-            <span className="metric-label">Expenses</span>
-            <span className="metric-value">-{currencySymbol}{totalExpense.toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
 
-      {topExpenseCat && (
-        <div className="insight-card fade-in">
-          <span className="insight-icon">💡</span>
-          <p className="insight-text">
-            Your top expense is <strong>{topExpenseCat[0]}</strong> at {currencySymbol}{topExpenseCat[1].toFixed(2)} total.
-          </p>
-        </div>
-      )}
+          <div className="dashboard-grid">
+            <div className="dashboard-left">
+              <div className="balance-board">
+                <p className="balance-label">Total Net Worth</p>
+                <h1 className="balance-amount">{currencySymbol}{balance.toFixed(2)}</h1>
+                <span className="balance-badge">All Transactions</span>
+              </div>
 
-      <div>
-        <div className="section-header">
-          <p className="section-title">Recent Activity</p>
-          <button className="section-link" onClick={navToLedger}>View All →</button>
-        </div>
-        <div className="transactions-list">
-          {transactions.slice(0, 5).length === 0 ? (
-            <div className="empty-state">
-              <p>No transactions yet.</p>
-              <p className="hint">Tap + to record your first entry.</p>
-            </div>
-          ) : (
-            transactions.slice(0, 5).map(t => {
-              const cat = t.categories || { icon: '•', name: 'Uncategorized' };
-              const pName = t.parties?.name;
-              const aName = t.accounts?.name;
-              let tag = cat.name;
-              if (pName && aName) tag = `${cat.name} · ${pName} · 🏦 ${aName}`;
-              else if (pName) tag = `${cat.name} · ${pName}`;
-              else if (aName) tag = `${cat.name} · 🏦 ${aName}`;
-              return (
-                <div
-                  key={t.id}
-                  className={`transaction-item ${t.type}`}
-                  onClick={() => openEditTransaction(t)}
-                >
-                  <div className="t-icon">{cat.icon}</div>
-                  <div className="t-details">
-                    <div className="t-type">{tag}</div>
-                    {t.note && <div className="t-note">{t.note}</div>}
-                    <div className="t-time">
-                      {t.transaction_date || new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </div>
-                  </div>
-                  <div className="t-amount">
-                    {t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}
-                  </div>
+              <div className="metrics-row">
+                <div className="metric-card metric-income">
+                  <span className="metric-label">Income</span>
+                  <span className="metric-value">+{currencySymbol}{totalIncome.toFixed(2)}</span>
                 </div>
-              );
-            })
-          )}
+                <div className="metric-card metric-expense">
+                  <span className="metric-label">Expenses</span>
+                  <span className="metric-value">-{currencySymbol}{totalExpense.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {topExpenseCat && (
+                <div className="insight-card">
+                  <span className="insight-icon">💡</span>
+                  <p className="insight-text">
+                    Your top expense is <strong>{topExpenseCat[0]}</strong> at {currencySymbol}{topExpenseCat[1].toFixed(2)} total.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="dashboard-right">
+              <div className="section-header">
+                <p className="section-title">Recent Activity</p>
+                <button className="section-link" onClick={navToLedger}>View All →</button>
+              </div>
+              <div className="transactions-list">
+                {transactions.slice(0, 8).length === 0 ? (
+                  <div className="empty-state">
+                    <p>No transactions yet.</p>
+                    <p className="hint">Click + New Transaction to record your first entry.</p>
+                  </div>
+                ) : (
+                  transactions.slice(0, 8).map(t => {
+                    const cat = t.categories || { icon: '•', name: 'Uncategorized' };
+                    const pName = t.parties?.name;
+                    const aName = t.accounts?.name;
+                    let tag = cat.name;
+                    if (pName && aName) tag = `${cat.name} · ${pName} · 🏦 ${aName}`;
+                    else if (pName) tag = `${cat.name} · ${pName}`;
+                    else if (aName) tag = `${cat.name} · 🏦 ${aName}`;
+                    return (
+                      <div
+                        key={t.id}
+                        className={`transaction-item ${t.type}`}
+                        onClick={() => openEditTransaction(t)}
+                      >
+                        <div className="t-icon">{cat.icon}</div>
+                        <div className="t-details">
+                          <div className="t-type">{tag}</div>
+                          {t.note && <div className="t-note">{t.note}</div>}
+                          <div className="t-time">
+                            {t.transaction_date || new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          </div>
+                        </div>
+                        <div className="t-amount">
+                          {t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      <FloatingNav
-        view={view}
-        onDashboard={navToDashboard}
-        onLedger={navToLedger}
-        onNewTx={navToNewTx}
-        onSettings={navToSettings}
-      />
     </div>
   );
 }
