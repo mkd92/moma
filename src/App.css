@@ -994,6 +994,7 @@
 .dropdown-item:last-child { border-bottom: none; }
 .dropdown-item:active { background: var(--primary-light); }
 .dropdown-item.disabled { color: var(--text-muted); cursor: default; font-style: italic; }
+.dropdown-item-focused { background: var(--primary-light) !important; color: var(--primary); }
 
 /* =========================================
    SETTINGS
