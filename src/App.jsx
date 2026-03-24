@@ -136,6 +136,12 @@ function App() {
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [tagSearch, setTagSearch] = useState('');
 
+  // Dropdown keyboard navigation focused indices
+  const [catFocusedIndex, setCatFocusedIndex] = useState(-1);
+  const [partyFocusedIndex, setPartyFocusedIndex] = useState(-1);
+  const [accountFocusedIndex, setAccountFocusedIndex] = useState(-1);
+  const [tagFocusedIndex, setTagFocusedIndex] = useState(-1);
+
   // Ledger Filter State
   const [filterStart, setFilterStart] = useState('');
   const [filterEnd, setFilterEnd] = useState('');
@@ -207,6 +213,30 @@ function App() {
 
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
   const currencyDropdownRef = useRef(null);
+  const catMenuRef = useRef(null);
+  const partyMenuRef = useRef(null);
+  const accountMenuRef = useRef(null);
+  const tagMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!catMenuRef.current || catFocusedIndex < 0) return;
+    catMenuRef.current.querySelectorAll('.dropdown-item:not(.disabled)')[catFocusedIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [catFocusedIndex]);
+
+  useEffect(() => {
+    if (!partyMenuRef.current || partyFocusedIndex < 0) return;
+    partyMenuRef.current.querySelectorAll('.dropdown-item:not(.disabled)')[partyFocusedIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [partyFocusedIndex]);
+
+  useEffect(() => {
+    if (!accountMenuRef.current || accountFocusedIndex < 0) return;
+    accountMenuRef.current.querySelectorAll('.dropdown-item:not(.disabled)')[accountFocusedIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [accountFocusedIndex]);
+
+  useEffect(() => {
+    if (!tagMenuRef.current || tagFocusedIndex < 0) return;
+    tagMenuRef.current.querySelectorAll('.dropdown-item:not(.disabled)')[tagFocusedIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [tagFocusedIndex]);
 
   useEffect(() => {
     if (!currencyDropdownOpen) return;
@@ -1151,6 +1181,12 @@ function App() {
   if (view === 'new_transaction') {
     const currentParents = parentCategories.filter(c => c.type === txType);
     const applicableSubs = subCategories.filter(sub => currentParents.some(p => p.id === sub.parent_id));
+    const filteredCats = [...currentParents, ...applicableSubs].filter(c => c.name.toLowerCase().includes(catSearch.toLowerCase()));
+    const filteredAccounts = accounts.filter(a => a.name.toLowerCase().includes(accountSearch.toLowerCase()));
+    const accountItems = [{ id: null, _clear: true }, ...filteredAccounts];
+    const filteredParties = parties.filter(p => p.name.toLowerCase().includes(partySearch.toLowerCase()));
+    const partyItems = [{ id: null, _clear: true }, ...filteredParties];
+    const filteredTagItems = tags.filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase()));
 
     return (
       <div className="app-shell">
@@ -1220,7 +1256,7 @@ function App() {
             <p className="selection-label">Account</p>
             <div
               className="searchable-dropdown"
-              onBlur={() => setTimeout(() => setShowAccountDropdown(false), 200)}
+              onBlur={() => setTimeout(() => { setShowAccountDropdown(false); setAccountFocusedIndex(-1); }, 200)}
             >
               <input
                 type="text"
@@ -1235,29 +1271,50 @@ function App() {
                   setAccountSearch(e.target.value);
                   setSelectedAccount(null);
                   setShowAccountDropdown(true);
+                  setAccountFocusedIndex(-1);
                 }}
                 onFocus={() => setShowAccountDropdown(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!showAccountDropdown) setShowAccountDropdown(true);
+                    setAccountFocusedIndex(i => Math.min(i + 1, accountItems.length - 1));
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setAccountFocusedIndex(i => Math.max(i - 1, 0));
+                  } else if (e.key === 'Enter' && accountFocusedIndex >= 0) {
+                    e.preventDefault();
+                    const item = accountItems[accountFocusedIndex];
+                    if (item) {
+                      if (item._clear) { setSelectedAccount(null); setAccountSearch(''); }
+                      else { setSelectedAccount(item.id); setAccountSearch(''); }
+                      setShowAccountDropdown(false);
+                      setAccountFocusedIndex(-1);
+                    }
+                  } else if (e.key === 'Escape') {
+                    setShowAccountDropdown(false);
+                    setAccountFocusedIndex(-1);
+                  }
+                }}
               />
               {showAccountDropdown && (
-                <div className="dropdown-menu">
+                <div className="dropdown-menu" ref={accountMenuRef}>
                   <div
-                    className="dropdown-item"
-                    onClick={() => { setSelectedAccount(null); setAccountSearch(''); setShowAccountDropdown(false); }}
+                    className={`dropdown-item${accountFocusedIndex === 0 ? ' dropdown-item-focused' : ''}`}
+                    onClick={() => { setSelectedAccount(null); setAccountSearch(''); setShowAccountDropdown(false); setAccountFocusedIndex(-1); }}
                   >
                     <em style={{ color: 'var(--text-muted)' }}>None / Clear</em>
                   </div>
-                  {accounts
-                    .filter(a => a.name.toLowerCase().includes(accountSearch.toLowerCase()))
-                    .map(a => (
-                      <div
-                        key={a.id}
-                        className="dropdown-item"
-                        onClick={() => { setSelectedAccount(a.id); setAccountSearch(''); setShowAccountDropdown(false); }}
-                      >
-                        <span style={{ marginRight: '0.4rem', opacity: 0.6 }}>🏦</span> {a.name}
-                      </div>
-                    ))}
-                  {accounts.filter(a => a.name.toLowerCase().includes(accountSearch.toLowerCase())).length === 0 && (
+                  {filteredAccounts.map((a, idx) => (
+                    <div
+                      key={a.id}
+                      className={`dropdown-item${accountFocusedIndex === idx + 1 ? ' dropdown-item-focused' : ''}`}
+                      onClick={() => { setSelectedAccount(a.id); setAccountSearch(''); setShowAccountDropdown(false); setAccountFocusedIndex(-1); }}
+                    >
+                      <span style={{ marginRight: '0.4rem', opacity: 0.6 }}>🏦</span> {a.name}
+                    </div>
+                  ))}
+                  {filteredAccounts.length === 0 && (
                     <div className="dropdown-item disabled">No matching account</div>
                   )}
                 </div>
@@ -1269,7 +1326,7 @@ function App() {
             <p className="selection-label">Category</p>
             <div
               className="searchable-dropdown"
-              onBlur={() => setTimeout(() => setShowCatDropdown(false), 200)}
+              onBlur={() => setTimeout(() => { setShowCatDropdown(false); setCatFocusedIndex(-1); }, 200)}
             >
               <input
                 type="text"
@@ -1284,29 +1341,43 @@ function App() {
                   setCatSearch(e.target.value);
                   setSelectedCategory(null);
                   setShowCatDropdown(true);
+                  setCatFocusedIndex(-1);
                 }}
                 onFocus={() => setShowCatDropdown(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!showCatDropdown) setShowCatDropdown(true);
+                    setCatFocusedIndex(i => Math.min(i + 1, filteredCats.length - 1));
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setCatFocusedIndex(i => Math.max(i - 1, 0));
+                  } else if (e.key === 'Enter' && catFocusedIndex >= 0) {
+                    e.preventDefault();
+                    const c = filteredCats[catFocusedIndex];
+                    if (c) { setSelectedCategory(c.id); setCatSearch(''); setShowCatDropdown(false); setCatFocusedIndex(-1); }
+                  } else if (e.key === 'Escape') {
+                    setShowCatDropdown(false);
+                    setCatFocusedIndex(-1);
+                  }
+                }}
               />
               {showCatDropdown && (
-                <div className="dropdown-menu">
-                  {[...currentParents, ...applicableSubs]
-                    .filter(c => c.name.toLowerCase().includes(catSearch.toLowerCase()))
-                    .map(c => {
-                      const isSub = !!c.parent_id;
-                      const pName = isSub ? currentParents.find(p => p.id === c.parent_id)?.name : null;
-                      return (
-                        <div
-                          key={c.id}
-                          className="dropdown-item"
-                          onClick={() => { setSelectedCategory(c.id); setCatSearch(''); setShowCatDropdown(false); }}
-                        >
-                          {c.icon} {c.name}{isSub && <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '0.3rem' }}>in {pName}</span>}
-                        </div>
-                      );
-                    })}
-                  {[...currentParents, ...applicableSubs].filter(c =>
-                    c.name.toLowerCase().includes(catSearch.toLowerCase())
-                  ).length === 0 && (
+                <div className="dropdown-menu" ref={catMenuRef}>
+                  {filteredCats.map((c, idx) => {
+                    const isSub = !!c.parent_id;
+                    const pName = isSub ? currentParents.find(p => p.id === c.parent_id)?.name : null;
+                    return (
+                      <div
+                        key={c.id}
+                        className={`dropdown-item${catFocusedIndex === idx ? ' dropdown-item-focused' : ''}`}
+                        onClick={() => { setSelectedCategory(c.id); setCatSearch(''); setShowCatDropdown(false); setCatFocusedIndex(-1); }}
+                      >
+                        {c.icon} {c.name}{isSub && <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '0.3rem' }}>in {pName}</span>}
+                      </div>
+                    );
+                  })}
+                  {filteredCats.length === 0 && (
                     <div className="dropdown-item disabled">No matching category</div>
                   )}
                 </div>
@@ -1318,7 +1389,7 @@ function App() {
             <p className="selection-label">Counterparty</p>
             <div
               className="searchable-dropdown"
-              onBlur={() => setTimeout(() => setShowPartyDropdown(false), 200)}
+              onBlur={() => setTimeout(() => { setShowPartyDropdown(false); setPartyFocusedIndex(-1); }, 200)}
             >
               <input
                 type="text"
@@ -1333,29 +1404,50 @@ function App() {
                   setPartySearch(e.target.value);
                   setSelectedParty(null);
                   setShowPartyDropdown(true);
+                  setPartyFocusedIndex(-1);
                 }}
                 onFocus={() => setShowPartyDropdown(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!showPartyDropdown) setShowPartyDropdown(true);
+                    setPartyFocusedIndex(i => Math.min(i + 1, partyItems.length - 1));
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setPartyFocusedIndex(i => Math.max(i - 1, 0));
+                  } else if (e.key === 'Enter' && partyFocusedIndex >= 0) {
+                    e.preventDefault();
+                    const item = partyItems[partyFocusedIndex];
+                    if (item) {
+                      if (item._clear) { setSelectedParty(null); setPartySearch(''); }
+                      else { setSelectedParty(item.id); setPartySearch(''); }
+                      setShowPartyDropdown(false);
+                      setPartyFocusedIndex(-1);
+                    }
+                  } else if (e.key === 'Escape') {
+                    setShowPartyDropdown(false);
+                    setPartyFocusedIndex(-1);
+                  }
+                }}
               />
               {showPartyDropdown && (
-                <div className="dropdown-menu">
+                <div className="dropdown-menu" ref={partyMenuRef}>
                   <div
-                    className="dropdown-item"
-                    onClick={() => { setSelectedParty(null); setPartySearch(''); setShowPartyDropdown(false); }}
+                    className={`dropdown-item${partyFocusedIndex === 0 ? ' dropdown-item-focused' : ''}`}
+                    onClick={() => { setSelectedParty(null); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); }}
                   >
                     <em style={{ color: 'var(--text-muted)' }}>None / Clear</em>
                   </div>
-                  {parties
-                    .filter(p => p.name.toLowerCase().includes(partySearch.toLowerCase()))
-                    .map(p => (
-                      <div
-                        key={p.id}
-                        className="dropdown-item"
-                        onClick={() => { setSelectedParty(p.id); setPartySearch(''); setShowPartyDropdown(false); }}
-                      >
-                        <span style={{ marginRight: '0.4rem', opacity: 0.6 }}>👥</span> {p.name}
-                      </div>
-                    ))}
-                  {parties.filter(p => p.name.toLowerCase().includes(partySearch.toLowerCase())).length === 0 && (
+                  {filteredParties.map((p, idx) => (
+                    <div
+                      key={p.id}
+                      className={`dropdown-item${partyFocusedIndex === idx + 1 ? ' dropdown-item-focused' : ''}`}
+                      onClick={() => { setSelectedParty(p.id); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); }}
+                    >
+                      <span style={{ marginRight: '0.4rem', opacity: 0.6 }}>👥</span> {p.name}
+                    </div>
+                  ))}
+                  {filteredParties.length === 0 && (
                     <div className="dropdown-item disabled">No matching party</div>
                   )}
                 </div>
@@ -1385,31 +1477,46 @@ function App() {
             )}
             <div
               className="searchable-dropdown"
-              onBlur={() => setTimeout(() => setShowTagDropdown(false), 200)}
+              onBlur={() => setTimeout(() => { setShowTagDropdown(false); setTagFocusedIndex(-1); }, 200)}
             >
               <input
                 type="text"
                 className="text-input"
                 placeholder="Add tags (optional)..."
                 value={tagSearch}
-                onChange={(e) => { setTagSearch(e.target.value); setShowTagDropdown(true); }}
+                onChange={(e) => { setTagSearch(e.target.value); setShowTagDropdown(true); setTagFocusedIndex(-1); }}
                 onFocus={() => setShowTagDropdown(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!showTagDropdown) setShowTagDropdown(true);
+                    setTagFocusedIndex(i => Math.min(i + 1, filteredTagItems.length - 1));
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setTagFocusedIndex(i => Math.max(i - 1, 0));
+                  } else if (e.key === 'Enter' && tagFocusedIndex >= 0) {
+                    e.preventDefault();
+                    const t = filteredTagItems[tagFocusedIndex];
+                    if (t) { handleToggleTag(t.id); setTagSearch(''); }
+                  } else if (e.key === 'Escape') {
+                    setShowTagDropdown(false);
+                    setTagFocusedIndex(-1);
+                  }
+                }}
               />
               {showTagDropdown && (
-                <div className="dropdown-menu">
-                  {tags
-                    .filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase()))
-                    .map(t => (
-                      <div
-                        key={t.id}
-                        className={`dropdown-item${selectedTags.includes(t.id) ? ' tag-item-selected' : ''}`}
-                        onMouseDown={(e) => { e.preventDefault(); handleToggleTag(t.id); setTagSearch(''); }}
-                      >
-                        <span className="tag-checkbox">{selectedTags.includes(t.id) ? '☑' : '☐'}</span>
-                        {t.name}
-                      </div>
-                    ))}
-                  {tags.filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase())).length === 0 && (
+                <div className="dropdown-menu" ref={tagMenuRef}>
+                  {filteredTagItems.map((t, idx) => (
+                    <div
+                      key={t.id}
+                      className={`dropdown-item${selectedTags.includes(t.id) ? ' tag-item-selected' : ''}${tagFocusedIndex === idx ? ' dropdown-item-focused' : ''}`}
+                      onMouseDown={(e) => { e.preventDefault(); handleToggleTag(t.id); setTagSearch(''); }}
+                    >
+                      <span className="tag-checkbox">{selectedTags.includes(t.id) ? '☑' : '☐'}</span>
+                      {t.name}
+                    </div>
+                  ))}
+                  {filteredTagItems.length === 0 && (
                     <div className="dropdown-item disabled">No matching tag</div>
                   )}
                 </div>
