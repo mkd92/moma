@@ -361,6 +361,58 @@ function App() {
   // Dashboard period filter
   const [dashPeriod, setDashPeriod] = useState('this_month');
 
+  // Settings / Category Manager State
+  const [settingsType, setSettingsType] = useState('expense');
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('🔖');
+  const [newCatParent, setNewCatParent] = useState('');
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [editCatName, setEditCatName] = useState('');
+  const [editCatIcon, setEditCatIcon] = useState('');
+  const [editCatParent, setEditCatParent] = useState('');
+
+  // Party / Tag Manager State
+  const [newPartyName, setNewPartyName] = useState('');
+  const [newTagName, setNewTagName] = useState('');
+
+  // Account Manager State
+  const [newAccountName, setNewAccountName] = useState('');
+  const [newAccountBalance, setNewAccountBalance] = useState('');
+  const [editingAccountId, setEditingAccountId] = useState(null);
+  const [editAccountName, setEditAccountName] = useState('');
+  const [editBalanceMode, setEditBalanceMode] = useState('initial');
+  const [editBalanceValue, setEditBalanceValue] = useState('');
+
+  // Currency Dropdown State
+  const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
+  const currencyDropdownRef = useRef(null);
+
+  // Transaction Form Dropdown State
+  const [partySearch, setPartySearch] = useState('');
+  const [showPartyDropdown, setShowPartyDropdown] = useState(false);
+  const [partyFocusedIndex, setPartyFocusedIndex] = useState(-1);
+  const [showCatDropdown, setShowCatDropdown] = useState(false);
+  const [catFocusedIndex, setCatFocusedIndex] = useState(-1);
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false);
+  const [accountFocusedIndex, setAccountFocusedIndex] = useState(-1);
+  const [tagSearch, setTagSearch] = useState('');
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [tagFocusedIndex, setTagFocusedIndex] = useState(-1);
+  const [transferFromSearch, setTransferFromSearch] = useState('');
+  const [transferToSearch, setTransferToSearch] = useState('');
+  const [showTransferFromDropdown, setShowTransferFromDropdown] = useState(false);
+  const [showTransferToDropdown, setShowTransferToDropdown] = useState(false);
+  const [transferFromFocusedIndex, setTransferFromFocusedIndex] = useState(-1);
+  const [transferToFocusedIndex, setTransferToFocusedIndex] = useState(-1);
+
+  // Dropdown Refs
+  const catMenuRef = useRef(null);
+  const partyMenuRef = useRef(null);
+  const accountMenuRef = useRef(null);
+  const tagMenuRef = useRef(null);
+  const transferFromMenuRef = useRef(null);
+  const transferToMenuRef = useRef(null);
+
   const updateFilter = useCallback((key, value) => {
     setFilterOptions(prev => ({ ...prev, [key]: value, preset: key === 'preset' ? value : 'custom' }));
   }, []);
@@ -834,6 +886,118 @@ function App() {
     setView('ledger');
   }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm, accounts]);
 
+  const handleDeleteTransaction = useCallback(async () => {
+    if (!session || !txToEdit) return;
+    if (txToEdit.transfer_id) {
+      await supabase.from('transactions').delete().eq('transfer_id', txToEdit.transfer_id);
+    } else {
+      await supabase.from('transactions').delete().eq('id', txToEdit.id);
+    }
+    fetchTransactions();
+    resetForm();
+    setView('ledger');
+  }, [session, txToEdit, resetForm]);
+
+  const handleCreateCategory = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newCatName.trim() || !newCatIcon.trim()) return;
+    const { error } = await supabase.from('categories').insert([{ user_id: session.user.id, name: newCatName.trim(), icon: newCatIcon.trim(), type: settingsType, parent_id: newCatParent || null, is_system: false }]);
+    if (!error) { setNewCatName(''); setNewCatIcon('🔖'); setNewCatParent(''); fetchCategories(); }
+  }, [session, newCatName, newCatIcon, settingsType, newCatParent]);
+
+  const handleDeleteCategory = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('categories').delete().eq('id', id);
+    fetchCategories();
+  }, [session]);
+
+  const handleUpdateCategory = useCallback(async (id, updates) => {
+    if (!session) return;
+    await supabase.from('categories').update(updates).eq('id', id);
+    setEditingCatId(null);
+    fetchCategories();
+  }, [session]);
+
+  const handleCreateParty = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newPartyName.trim()) return;
+    const { error } = await supabase.from('parties').insert([{ user_id: session.user.id, name: newPartyName.trim() }]);
+    if (!error) { setNewPartyName(''); fetchParties(); }
+    else if (error.code === '23505') alert('A party with that name already exists.');
+  }, [session, newPartyName]);
+
+  const handleDeleteParty = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('parties').delete().eq('id', id);
+    fetchParties();
+  }, [session]);
+
+  const handleCreateAndSelectParty = useCallback(async (name) => {
+    if (!session || !name.trim()) return;
+    const { data, error } = await supabase.from('parties').insert([{ user_id: session.user.id, name: name.trim() }]).select('id').single();
+    if (!error && data) { await fetchParties(); setSelectedParty(data.id); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); }
+  }, [session]);
+
+  const handleCreateTag = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newTagName.trim()) return;
+    const { error } = await supabase.from('tags').insert([{ user_id: session.user.id, name: newTagName.trim() }]);
+    if (!error) { setNewTagName(''); fetchTags(); }
+    else if (error.code === '23505') alert('A tag with that name already exists.');
+  }, [session, newTagName]);
+
+  const handleDeleteTag = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('tags').delete().eq('id', id);
+    fetchTags();
+  }, [session]);
+
+  const handleToggleTag = useCallback((tagId) => {
+    setSelectedTags(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]);
+  }, []);
+
+  const handleCreateAccount = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newAccountName.trim()) return;
+    const { error } = await supabase.from('accounts').insert([{ user_id: session.user.id, name: newAccountName.trim(), initial_balance: parseFloat(newAccountBalance) || 0 }]);
+    if (!error) { setNewAccountName(''); setNewAccountBalance(''); fetchAccounts(); }
+  }, [session, newAccountName, newAccountBalance]);
+
+  const handleDeleteAccount = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('accounts').delete().eq('id', id);
+    fetchAccounts();
+  }, [session]);
+
+  const handleUpdateAccount = useCallback(async (id, { name, initial_balance }) => {
+    if (!session) return;
+    await supabase.from('accounts').update({ name, initial_balance }).eq('id', id);
+    setEditingAccountId(null);
+    fetchAccounts();
+  }, [session]);
+
+  const handleSetDefaultAccount = useCallback(async (id) => {
+    if (!session) return;
+    const newDefault = defaultAccountId === id ? null : id;
+    setDefaultAccountId(newDefault);
+    await supabase.from('profiles').update({ default_account_id: newDefault }).eq('id', session.user.id);
+  }, [session, defaultAccountId]);
+
+  const handleCurrencyChange = useCallback(async (newCur) => {
+    setCurrencyCode(newCur);
+    setCurrencySymbol(CURRENCY_SYMBOLS[newCur] || '$');
+    setCurrencyDropdownOpen(false);
+    await supabase.from('profiles').update({ currency_preference: newCur }).eq('id', session.user.id);
+  }, [session]);
+
+  // Close currency dropdown on outside click
+  useEffect(() => {
+    if (!currencyDropdownOpen) return;
+    const handler = (e) => { if (currencyDropdownRef.current && !currencyDropdownRef.current.contains(e.target)) setCurrencyDropdownOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [currencyDropdownOpen]);
+
   // Analytics filter state — initialised to this month
   const [analyticsFilters, setAnalyticsFilters] = useState(() => {
     const today = new Date();
@@ -1022,6 +1186,9 @@ function App() {
     });
     return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
   }, [filteredLedger]);
+
+  const parentCategories = useMemo(() => categories.filter(c => !c.parent_id), [categories]);
+  const subCategories = useMemo(() => categories.filter(c => c.parent_id), [categories]);
 
   const navToDashboard = useCallback(() => setView('dashboard'), []);
   const navToLedger = useCallback(() => { resetForm(); setView('ledger'); }, [resetForm]);
