@@ -1059,6 +1059,434 @@ function App() {
     );
   }
 
+  if (view === 'settings') {
+    return (
+      <PageShell {...shellProps}>
+        <div className="page-inner fade-in">
+          <div className="page-header">
+            <h2 className="page-title">Settings</h2>
+          </div>
+          <div className="settings-panel">
+            <div className="settings-section">
+              <p className="settings-label">Preferences</p>
+              <div className="settings-group">
+                <div className="settings-card">
+                  <span className="sc-text">Currency</span>
+                  <div className="currency-dropdown" ref={currencyDropdownRef}>
+                    <button className="currency-dropdown-trigger" onClick={() => setCurrencyDropdownOpen(o => !o)}>
+                      {currencyCode} ({CURRENCY_SYMBOLS[currencyCode]})
+                      <span className="currency-dropdown-arrow">{currencyDropdownOpen ? '▲' : '▼'}</span>
+                    </button>
+                    {currencyDropdownOpen && (
+                      <ul className="currency-dropdown-menu">
+                        {Object.keys(CURRENCY_SYMBOLS).map(code => (
+                          <li key={code}>
+                            <button className={`currency-dropdown-item${code === currencyCode ? ' active' : ''}`} onClick={() => handleCurrencyChange(code)}>
+                              {code} ({CURRENCY_SYMBOLS[code]})
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="settings-section">
+              <p className="settings-label">Manage</p>
+              <div className="settings-group">
+                <button className="settings-nav-btn" onClick={() => setView('account_management')}>Accounts <span className="arrow">›</span></button>
+                <button className="settings-nav-btn" onClick={() => setView('category_management')}>Categories <span className="arrow">›</span></button>
+                <button className="settings-nav-btn" onClick={() => setView('party_management')}>Parties <span className="arrow">›</span></button>
+                <button className="settings-nav-btn" onClick={() => setView('tag_management')}>Tags <span className="arrow">›</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (view === 'account_management') {
+    return (
+      <PageShell {...shellProps}>
+        <div className="page-inner slide-up">
+          <div className="page-header">
+            <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
+            <h2 className="page-title">Accounts</h2>
+          </div>
+          <div className="settings-controls fade-in">
+            <div className="category-manager">
+              {accounts.length === 0 ? (
+                <div className="empty-state"><p>No accounts added yet.</p></div>
+              ) : (
+                accounts.map(acc => {
+                  const currentBal = accountBalances[acc.id] || 0;
+                  const netTx = currentBal - parseFloat(acc.initial_balance || 0);
+                  const isEditing = editingAccountId === acc.id;
+                  if (isEditing) {
+                    const resolvedInitial = editBalanceMode === 'initial' ? parseFloat(editBalanceValue) || 0 : (parseFloat(editBalanceValue) || 0) - netTx;
+                    return (
+                      <div key={acc.id} className="settings-cat-block" style={{ flexDirection: 'column', padding: '1rem' }}>
+                        <div style={{ fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text)' }}>Edit Account</div>
+                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Account Name</label>
+                        <input type="text" className="text-input" value={editAccountName} onChange={(e) => setEditAccountName(e.target.value)} style={{ marginBottom: '0.75rem' }} />
+                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Balance Mode</label>
+                        <div className="type-toggle-bar" style={{ marginBottom: '0.5rem' }}>
+                          <button type="button" className={`type-btn ${editBalanceMode === 'initial' ? 'active-income' : ''}`} onClick={() => setEditBalanceMode('initial')}>Set Initial</button>
+                          <button type="button" className={`type-btn ${editBalanceMode === 'current' ? 'active-income' : ''}`} onClick={() => setEditBalanceMode('current')}>Set Current</button>
+                        </div>
+                        <input type="number" step="0.01" className="text-input" placeholder={editBalanceMode === 'initial' ? 'Initial Balance' : 'Desired Current Balance'} value={editBalanceValue} onChange={(e) => setEditBalanceValue(e.target.value)} style={{ marginBottom: '0.25rem' }} />
+                        {editBalanceMode === 'current' && editBalanceValue !== '' && (
+                          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>→ Initial balance will be set to {currencySymbol}{resolvedInitial.toFixed(2)}</p>
+                        )}
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          <button className="add-cat-btn" style={{ flex: 1 }} onClick={() => handleUpdateAccount(acc.id, { name: editAccountName.trim() || acc.name, initial_balance: resolvedInitial })}>Save</button>
+                          <button className="settings-logout-btn" style={{ flex: 1, marginTop: 0 }} onClick={() => setEditingAccountId(null)}>Cancel</button>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={acc.id} className="settings-cat-block">
+                      <div className="settings-cat-parent">
+                        <span className="cat-icon">🏦</span>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                          <span className="cat-name">{acc.name}{defaultAccountId === acc.id && <span style={{ marginLeft: '0.5rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary)', background: 'var(--primary-light)', borderRadius: '10px', padding: '0.1rem 0.45rem' }}>default</span>}</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Current: {currencySymbol}{currentBal.toFixed(2)} | Initial: {currencySymbol}{parseFloat(acc.initial_balance).toFixed(2)}</span>
+                        </div>
+                        <button className="icon-btn-text" style={{ padding: '0 0.5rem', fontSize: '1rem', color: defaultAccountId === acc.id ? 'var(--primary)' : 'var(--text-muted)', marginRight: '0.25rem' }} onClick={() => handleSetDefaultAccount(acc.id)}>★</button>
+                        <button className="icon-btn-text" style={{ padding: '0 0.5rem', color: 'var(--primary)', marginRight: '0.5rem' }} onClick={() => { setEditingAccountId(acc.id); setEditAccountName(acc.name); setEditBalanceMode('initial'); setEditBalanceValue(acc.initial_balance.toString()); }}>✎</button>
+                        <button className="delete-btn" onClick={() => handleDeleteAccount(acc.id)}>✕</button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <form onSubmit={handleCreateAccount} className="add-category-form">
+              <h3>Add Account</h3>
+              <div className="form-row">
+                <input type="text" placeholder="Account Name (e.g. Checking)" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required style={{ flex: 1 }} />
+              </div>
+              <div className="form-row" style={{ marginTop: '0.5rem' }}>
+                <input type="number" step="0.01" placeholder="Initial Balance" value={newAccountBalance} onChange={(e) => setNewAccountBalance(e.target.value)} required style={{ flex: 1 }} />
+              </div>
+              <button type="submit" className="add-cat-btn" style={{ marginTop: '1rem' }}>Add Account</button>
+            </form>
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (view === 'party_management') {
+    return (
+      <PageShell {...shellProps}>
+        <div className="page-inner slide-up">
+          <div className="page-header">
+            <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
+            <h2 className="page-title">Parties</h2>
+          </div>
+          <div className="settings-controls fade-in">
+            <div className="category-manager">
+              {parties.length === 0 ? (
+                <div className="empty-state"><p>No parties added yet.</p></div>
+              ) : (
+                parties.map(party => (
+                  <div key={party.id} className="settings-cat-block">
+                    <div className="settings-cat-parent">
+                      <span className="cat-icon">👥</span>
+                      <span className="cat-name">{party.name}</span>
+                      <button className="delete-btn" onClick={() => handleDeleteParty(party.id)}>✕</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <form onSubmit={handleCreateParty} className="add-category-form">
+              <h3>Add Counterparty</h3>
+              <div className="form-row">
+                <input type="text" placeholder="Party Name (e.g. Amazon, Landlord)" value={newPartyName} onChange={(e) => setNewPartyName(e.target.value)} required style={{ flex: 1 }} />
+              </div>
+              <button type="submit" className="add-cat-btn">Add Party</button>
+            </form>
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (view === 'tag_management') {
+    return (
+      <PageShell {...shellProps}>
+        <div className="page-inner slide-up">
+          <div className="page-header">
+            <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
+            <h2 className="page-title">Tags</h2>
+          </div>
+          <div className="settings-controls fade-in">
+            <div className="category-manager">
+              {tags.length === 0 ? (
+                <div className="empty-state"><p>No tags added yet.</p></div>
+              ) : (
+                tags.map(tag => (
+                  <div key={tag.id} className="settings-cat-block">
+                    <div className="settings-cat-parent">
+                      <span className="cat-name">{tag.name}</span>
+                      <button className="delete-btn" onClick={() => handleDeleteTag(tag.id)}>✕</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <form onSubmit={handleCreateTag} className="add-category-form">
+              <h3>Add Tag</h3>
+              <div className="form-row">
+                <input type="text" placeholder="Tag Name (e.g. Vacation, Reimbursable)" value={newTagName} onChange={(e) => setNewTagName(e.target.value)} required style={{ flex: 1 }} />
+              </div>
+              <button type="submit" className="add-cat-btn">Add Tag</button>
+            </form>
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (view === 'category_management') {
+    const parents = parentCategories.filter(c => c.type === settingsType);
+    return (
+      <PageShell {...shellProps}>
+        <div className="page-inner slide-up">
+          <div className="page-header">
+            <button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button>
+            <h2 className="page-title">Categories</h2>
+          </div>
+          <div className="settings-controls fade-in">
+            <div className="type-toggle-bar">
+              <button className={`type-btn ${settingsType === 'expense' ? 'active-expense' : ''}`} onClick={() => { setSettingsType('expense'); setNewCatParent(''); }}>Expense</button>
+              <button className={`type-btn ${settingsType === 'income' ? 'active-income' : ''}`} onClick={() => { setSettingsType('income'); setNewCatParent(''); }}>Income</button>
+            </div>
+            <div className="category-manager">
+              {parents.length === 0 ? (
+                <div className="empty-state"><p>No {settingsType} categories found.</p></div>
+              ) : (
+                parents.map(parent => (
+                  <div key={parent.id} className="settings-cat-block">
+                    {editingCatId === parent.id ? (
+                      <div style={{ padding: '0.875rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <input type="text" maxLength="2" value={editCatIcon} onChange={(e) => setEditCatIcon(e.target.value)} className="icon-input" style={{ flexShrink: 0 }} />
+                          <input type="text" value={editCatName} onChange={(e) => setEditCatName(e.target.value)} className="text-input" style={{ flex: 1 }} autoFocus />
+                        </div>
+                        <select value={editCatParent} onChange={(e) => setEditCatParent(e.target.value)} className="text-input" style={{ fontSize: '0.875rem' }}>
+                          <option value="">— Root Category (no parent) —</option>
+                          {parents.filter(p => p.id !== parent.id).map(p => (<option key={p.id} value={p.id}>Subcategory of: {p.icon} {p.name}</option>))}
+                        </select>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button className="add-cat-btn" style={{ padding: '0.5rem 0.875rem' }} onClick={() => handleUpdateCategory(parent.id, { name: editCatName.trim() || parent.name, icon: editCatIcon || parent.icon, parent_id: editCatParent || null })}>Save</button>
+                          <button className="icon-btn-text" onClick={() => setEditingCatId(null)}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="settings-cat-parent">
+                        <span className="cat-icon">{parent.icon}</span>
+                        <span className="cat-name">{parent.name}</span>
+                        {!parent.is_system && (
+                          <>
+                            <button className="icon-btn-text" style={{ padding: '0 0.5rem', color: 'var(--primary)', marginRight: '0.25rem' }} onClick={() => { setEditingCatId(parent.id); setEditCatName(parent.name); setEditCatIcon(parent.icon); setEditCatParent(parent.parent_id || ''); }}>✎</button>
+                            <button className="delete-btn" onClick={() => handleDeleteCategory(parent.id)}>✕</button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {subCategories.filter(sub => sub.parent_id === parent.id).length > 0 && (
+                      <div className="settings-cat-children">
+                        {subCategories.filter(sub => sub.parent_id === parent.id).map(sub => (
+                          <div key={sub.id}>
+                            {editingCatId === sub.id ? (
+                              <div style={{ padding: '0.875rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderBottom: '1px solid var(--border)' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                  <input type="text" maxLength="2" value={editCatIcon} onChange={(e) => setEditCatIcon(e.target.value)} className="icon-input" style={{ flexShrink: 0 }} />
+                                  <input type="text" value={editCatName} onChange={(e) => setEditCatName(e.target.value)} className="text-input" style={{ flex: 1 }} autoFocus />
+                                </div>
+                                <select value={editCatParent} onChange={(e) => setEditCatParent(e.target.value)} className="text-input" style={{ fontSize: '0.875rem' }}>
+                                  <option value="">— Root Category (no parent) —</option>
+                                  {parents.filter(p => p.id !== sub.id).map(p => (<option key={p.id} value={p.id}>Subcategory of: {p.icon} {p.name}</option>))}
+                                </select>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                  <button className="add-cat-btn" style={{ padding: '0.5rem 0.875rem' }} onClick={() => handleUpdateCategory(sub.id, { name: editCatName.trim() || sub.name, icon: editCatIcon || sub.icon, parent_id: editCatParent || null })}>Save</button>
+                                  <button className="icon-btn-text" onClick={() => setEditingCatId(null)}>Cancel</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="settings-cat-child">
+                                <span className="cat-icon">{sub.icon}</span>
+                                <span className="cat-name">{sub.name}</span>
+                                <button className="icon-btn-text" style={{ padding: '0 0.5rem', color: 'var(--primary)', marginRight: '0.25rem' }} onClick={() => { setEditingCatId(sub.id); setEditCatName(sub.name); setEditCatIcon(sub.icon); setEditCatParent(sub.parent_id || ''); }}>✎</button>
+                                <button className="delete-btn" onClick={() => handleDeleteCategory(sub.id)}>✕</button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            <form onSubmit={handleCreateCategory} className="add-category-form">
+              <h3>Add Custom Category</h3>
+              <div className="form-row">
+                <input type="text" maxLength="2" placeholder="💰" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} className="icon-input" required />
+                <input type="text" placeholder="Category Name" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} required style={{ flex: 1 }} />
+              </div>
+              <select value={newCatParent} onChange={(e) => setNewCatParent(e.target.value)}>
+                <option value="">-- Root Category --</option>
+                {parents.map(p => (<option key={p.id} value={p.id}>Subcategory of: {p.name}</option>))}
+              </select>
+              <button type="submit" className="add-cat-btn">Save Category</button>
+            </form>
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (view === 'new_transaction') {
+    const currentParents = parentCategories.filter(c => c.type === txType);
+    const applicableSubs = subCategories.filter(sub => currentParents.some(p => p.id === sub.parent_id));
+    const filteredCats = [...currentParents, ...applicableSubs].filter(c => c.name.toLowerCase().includes(catSearch.toLowerCase()));
+    const filteredAccounts = accounts.filter(a => a.name.toLowerCase().includes(accountSearch.toLowerCase()));
+    const accountItems = [{ id: null, _clear: true }, ...filteredAccounts];
+    const filteredParties = parties.filter(p => p.name.toLowerCase().includes(partySearch.toLowerCase()));
+    const showCreateParty = partySearch.trim() !== '' && !parties.some(p => p.name.toLowerCase() === partySearch.trim().toLowerCase());
+    const partyItems = [{ id: null, _clear: true }, ...(showCreateParty ? [{ id: null, _create: true, name: partySearch.trim() }] : []), ...filteredParties];
+    const filteredTagItems = tags.filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase()));
+    const filteredTransferFromAccounts = accounts.filter(a => a.name.toLowerCase().includes(transferFromSearch.toLowerCase()));
+    const filteredTransferToAccounts = accounts.filter(a => a.name.toLowerCase().includes(transferToSearch.toLowerCase()));
+
+    return (
+      <PageShell {...shellProps}>
+        <div className="page-inner slide-up" style={{ maxWidth: '640px' }}>
+          <div className="page-header">
+            <button className="icon-btn-text" onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}>← Cancel</button>
+            <h2 className="page-title">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2>
+          </div>
+          <div className="fluid-input-area fade-in">
+            <div className="type-toggle-bar">
+              <button className={`type-btn ${txType === 'expense' ? 'active-expense' : ''}`} onClick={() => { setTxType('expense'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Expense</button>
+              <button className={`type-btn ${txType === 'income' ? 'active-income' : ''}`} onClick={() => { setTxType('income'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Income</button>
+              <button className={`type-btn ${txType === 'transfer' ? 'active-transfer' : ''}`} onClick={() => { setTxType('transfer'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Transfer</button>
+            </div>
+            <div className="amount-input-wrapper">
+              <span className="currency-prefix">{currencySymbol}</span>
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="amount-input" autoFocus />
+            </div>
+            <div className="category-selection-area" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1.25rem' }}>
+              <p className="selection-label">Date</p>
+              <input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} className="text-input" />
+            </div>
+            <div className="category-selection-area">
+              <p className="selection-label">Note</p>
+              <input type="text" placeholder="Description (optional)" value={note} onChange={(e) => setNote(e.target.value)} className="text-input" />
+            </div>
+            {txType === 'transfer' && (<>
+              <div className="category-selection-area" style={{ position: 'relative', borderBottom: '1px solid var(--border)', paddingBottom: '1.25rem', marginBottom: '1.25rem' }}>
+                <p className="selection-label">From Account</p>
+                <div className="searchable-dropdown" onBlur={() => setTimeout(() => { setShowTransferFromDropdown(false); setTransferFromFocusedIndex(-1); }, 200)}>
+                  <input type="text" className="text-input" placeholder="From Account..." value={transferFromAccount ? accounts.find(a => a.id === transferFromAccount)?.name ?? transferFromSearch : transferFromSearch} onChange={(e) => { setTransferFromSearch(e.target.value); setTransferFromAccount(null); setShowTransferFromDropdown(true); setTransferFromFocusedIndex(-1); }} onFocus={() => setShowTransferFromDropdown(true)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); if (!showTransferFromDropdown) setShowTransferFromDropdown(true); setTransferFromFocusedIndex(i => Math.min(i + 1, filteredTransferFromAccounts.length - 1)); } else if (e.key === 'ArrowUp') { e.preventDefault(); setTransferFromFocusedIndex(i => Math.max(i - 1, 0)); } else if (e.key === 'Enter' && transferFromFocusedIndex >= 0) { e.preventDefault(); const a = filteredTransferFromAccounts[transferFromFocusedIndex]; if (a) { setTransferFromAccount(a.id); setTransferFromSearch(''); setShowTransferFromDropdown(false); setTransferFromFocusedIndex(-1); } } else if (e.key === 'Escape') { setShowTransferFromDropdown(false); setTransferFromFocusedIndex(-1); } }} />
+                  {showTransferFromDropdown && (
+                    <div className="dropdown-menu" ref={transferFromMenuRef}>
+                      {filteredTransferFromAccounts.map((a, idx) => (<div key={a.id} className={`dropdown-item${transferFromFocusedIndex === idx ? ' dropdown-item-focused' : ''}`} onClick={() => { setTransferFromAccount(a.id); setTransferFromSearch(''); setShowTransferFromDropdown(false); setTransferFromFocusedIndex(-1); }}><span style={{ marginRight: '0.4rem', opacity: 0.6 }}>🏦</span> {a.name}</div>))}
+                      {filteredTransferFromAccounts.length === 0 && <div className="dropdown-item disabled">No matching account</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="category-selection-area" style={{ position: 'relative' }}>
+                <p className="selection-label">To Account</p>
+                <div className="searchable-dropdown" onBlur={() => setTimeout(() => { setShowTransferToDropdown(false); setTransferToFocusedIndex(-1); }, 200)}>
+                  <input type="text" className="text-input" placeholder="To Account..." value={transferToAccount ? accounts.find(a => a.id === transferToAccount)?.name ?? transferToSearch : transferToSearch} onChange={(e) => { setTransferToSearch(e.target.value); setTransferToAccount(null); setShowTransferToDropdown(true); setTransferToFocusedIndex(-1); }} onFocus={() => setShowTransferToDropdown(true)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); if (!showTransferToDropdown) setShowTransferToDropdown(true); setTransferToFocusedIndex(i => Math.min(i + 1, filteredTransferToAccounts.length - 1)); } else if (e.key === 'ArrowUp') { e.preventDefault(); setTransferToFocusedIndex(i => Math.max(i - 1, 0)); } else if (e.key === 'Enter' && transferToFocusedIndex >= 0) { e.preventDefault(); const a = filteredTransferToAccounts[transferToFocusedIndex]; if (a) { setTransferToAccount(a.id); setTransferToSearch(''); setShowTransferToDropdown(false); setTransferToFocusedIndex(-1); } } else if (e.key === 'Escape') { setShowTransferToDropdown(false); setTransferToFocusedIndex(-1); } }} />
+                  {showTransferToDropdown && (
+                    <div className="dropdown-menu" ref={transferToMenuRef}>
+                      {filteredTransferToAccounts.map((a, idx) => (<div key={a.id} className={`dropdown-item${transferToFocusedIndex === idx ? ' dropdown-item-focused' : ''}`} onClick={() => { setTransferToAccount(a.id); setTransferToSearch(''); setShowTransferToDropdown(false); setTransferToFocusedIndex(-1); }}><span style={{ marginRight: '0.4rem', opacity: 0.6 }}>🏦</span> {a.name}</div>))}
+                      {filteredTransferToAccounts.length === 0 && <div className="dropdown-item disabled">No matching account</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>)}
+            {txType !== 'transfer' && (<>
+              <div className="category-selection-area" style={{ position: 'relative', borderBottom: '1px solid var(--border)', paddingBottom: '1.25rem', marginBottom: '1.25rem' }}>
+                <p className="selection-label">Account</p>
+                <div className="searchable-dropdown" onBlur={() => setTimeout(() => { setShowAccountDropdown(false); setAccountFocusedIndex(-1); }, 200)}>
+                  <input type="text" className="text-input" placeholder="Select Account (optional)..." value={selectedAccount ? accounts.find(a => a.id === selectedAccount)?.name ?? accountSearch : accountSearch} onChange={(e) => { setAccountSearch(e.target.value); setSelectedAccount(null); setShowAccountDropdown(true); setAccountFocusedIndex(-1); }} onFocus={() => setShowAccountDropdown(true)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); if (!showAccountDropdown) setShowAccountDropdown(true); setAccountFocusedIndex(i => Math.min(i + 1, accountItems.length - 1)); } else if (e.key === 'ArrowUp') { e.preventDefault(); setAccountFocusedIndex(i => Math.max(i - 1, 0)); } else if (e.key === 'Enter' && accountFocusedIndex >= 0) { e.preventDefault(); const item = accountItems[accountFocusedIndex]; if (item) { if (item._clear) { setSelectedAccount(null); setAccountSearch(''); } else { setSelectedAccount(item.id); setAccountSearch(''); } setShowAccountDropdown(false); setAccountFocusedIndex(-1); } } else if (e.key === 'Escape') { setShowAccountDropdown(false); setAccountFocusedIndex(-1); } }} />
+                  {showAccountDropdown && (
+                    <div className="dropdown-menu" ref={accountMenuRef}>
+                      <div className={`dropdown-item${accountFocusedIndex === 0 ? ' dropdown-item-focused' : ''}`} onClick={() => { setSelectedAccount(null); setAccountSearch(''); setShowAccountDropdown(false); setAccountFocusedIndex(-1); }}><em style={{ color: 'var(--text-muted)' }}>None / Clear</em></div>
+                      {filteredAccounts.map((a, idx) => (<div key={a.id} className={`dropdown-item${accountFocusedIndex === idx + 1 ? ' dropdown-item-focused' : ''}`} onClick={() => { setSelectedAccount(a.id); setAccountSearch(''); setShowAccountDropdown(false); setAccountFocusedIndex(-1); }}><span style={{ marginRight: '0.4rem', opacity: 0.6 }}>🏦</span> {a.name}</div>))}
+                      {filteredAccounts.length === 0 && <div className="dropdown-item disabled">No matching account</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="category-selection-area" style={{ position: 'relative' }}>
+                <p className="selection-label">Category</p>
+                <div className="searchable-dropdown" onBlur={() => setTimeout(() => { setShowCatDropdown(false); setCatFocusedIndex(-1); }, 200)}>
+                  <input type="text" className="text-input" placeholder="Search Category..." value={selectedCategory ? [...currentParents, ...applicableSubs].find(c => c.id === selectedCategory)?.name ?? catSearch : catSearch} onChange={(e) => { setCatSearch(e.target.value); setSelectedCategory(null); setShowCatDropdown(true); setCatFocusedIndex(-1); }} onFocus={() => setShowCatDropdown(true)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); if (!showCatDropdown) setShowCatDropdown(true); setCatFocusedIndex(i => Math.min(i + 1, filteredCats.length - 1)); } else if (e.key === 'ArrowUp') { e.preventDefault(); setCatFocusedIndex(i => Math.max(i - 1, 0)); } else if (e.key === 'Enter' && catFocusedIndex >= 0) { e.preventDefault(); const c = filteredCats[catFocusedIndex]; if (c) { setSelectedCategory(c.id); setCatSearch(''); setShowCatDropdown(false); setCatFocusedIndex(-1); } } else if (e.key === 'Escape') { setShowCatDropdown(false); setCatFocusedIndex(-1); } }} />
+                  {showCatDropdown && (
+                    <div className="dropdown-menu" ref={catMenuRef}>
+                      {filteredCats.map((c, idx) => { const isSub = !!c.parent_id; const pName = isSub ? currentParents.find(p => p.id === c.parent_id)?.name : null; return (<div key={c.id} className={`dropdown-item${catFocusedIndex === idx ? ' dropdown-item-focused' : ''}`} onClick={() => { setSelectedCategory(c.id); setCatSearch(''); setShowCatDropdown(false); setCatFocusedIndex(-1); }}>{c.icon} {c.name}{isSub && <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '0.3rem' }}>in {pName}</span>}</div>); })}
+                      {filteredCats.length === 0 && <div className="dropdown-item disabled">No matching category</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="category-selection-area" style={{ position: 'relative' }}>
+                <p className="selection-label">Counterparty</p>
+                <div className="searchable-dropdown" onBlur={() => setTimeout(() => { setShowPartyDropdown(false); setPartyFocusedIndex(-1); }, 200)}>
+                  <input type="text" className="text-input" placeholder="Select Party (optional)..." value={selectedParty ? parties.find(p => p.id === selectedParty)?.name ?? partySearch : partySearch} onChange={(e) => { setPartySearch(e.target.value); setSelectedParty(null); setShowPartyDropdown(true); setPartyFocusedIndex(-1); }} onFocus={() => setShowPartyDropdown(true)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); if (!showPartyDropdown) setShowPartyDropdown(true); setPartyFocusedIndex(i => Math.min(i + 1, partyItems.length - 1)); } else if (e.key === 'ArrowUp') { e.preventDefault(); setPartyFocusedIndex(i => Math.max(i - 1, 0)); } else if (e.key === 'Enter') { e.preventDefault(); if (partyFocusedIndex >= 0) { const item = partyItems[partyFocusedIndex]; if (item) { if (item._clear) { setSelectedParty(null); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); } else if (item._create) { handleCreateAndSelectParty(item.name); } else { setSelectedParty(item.id); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); } } } else if (showCreateParty) { handleCreateAndSelectParty(partySearch); } } else if (e.key === 'Escape') { setShowPartyDropdown(false); setPartyFocusedIndex(-1); } }} />
+                  {showPartyDropdown && (
+                    <div className="dropdown-menu" ref={partyMenuRef}>
+                      <div className={`dropdown-item${partyFocusedIndex === 0 ? ' dropdown-item-focused' : ''}`} onClick={() => { setSelectedParty(null); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); }}><em style={{ color: 'var(--text-muted)' }}>None / Clear</em></div>
+                      {showCreateParty && <div className={`dropdown-item${partyFocusedIndex === 1 ? ' dropdown-item-focused' : ''}`} onClick={() => handleCreateAndSelectParty(partySearch)}><span style={{ marginRight: '0.4rem' }}>➕</span>Create <strong>"{partySearch.trim()}"</strong></div>}
+                      {filteredParties.map((p, idx) => (<div key={p.id} className={`dropdown-item${partyFocusedIndex === idx + (showCreateParty ? 2 : 1) ? ' dropdown-item-focused' : ''}`} onClick={() => { setSelectedParty(p.id); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); }}><span style={{ marginRight: '0.4rem', opacity: 0.6 }}>👥</span> {p.name}</div>))}
+                      {filteredParties.length === 0 && !showCreateParty && <div className="dropdown-item disabled">No matching party</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="category-selection-area" style={{ position: 'relative' }}>
+                <p className="selection-label">Tags</p>
+                {selectedTags.length > 0 && (
+                  <div className="tag-chips-row">
+                    {selectedTags.map(tagId => { const tag = tags.find(t => t.id === tagId); if (!tag) return null; return (<span key={tagId} className="tag-chip">{tag.name}<button type="button" className="tag-chip-remove" onClick={() => handleToggleTag(tagId)}>×</button></span>); })}
+                  </div>
+                )}
+                <div className="searchable-dropdown" onBlur={() => setTimeout(() => { setShowTagDropdown(false); setTagFocusedIndex(-1); }, 200)}>
+                  <input type="text" className="text-input" placeholder="Add tags (optional)..." value={tagSearch} onChange={(e) => { setTagSearch(e.target.value); setShowTagDropdown(true); setTagFocusedIndex(-1); }} onFocus={() => setShowTagDropdown(true)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); if (!showTagDropdown) setShowTagDropdown(true); setTagFocusedIndex(i => Math.min(i + 1, filteredTagItems.length - 1)); } else if (e.key === 'ArrowUp') { e.preventDefault(); setTagFocusedIndex(i => Math.max(i - 1, 0)); } else if (e.key === 'Enter' && tagFocusedIndex >= 0) { e.preventDefault(); const t = filteredTagItems[tagFocusedIndex]; if (t) { handleToggleTag(t.id); setTagSearch(''); } } else if (e.key === 'Escape') { setShowTagDropdown(false); setTagFocusedIndex(-1); } }} />
+                  {showTagDropdown && (
+                    <div className="dropdown-menu" ref={tagMenuRef}>
+                      {filteredTagItems.map((t, idx) => (<div key={t.id} className={`dropdown-item${selectedTags.includes(t.id) ? ' tag-item-selected' : ''}${tagFocusedIndex === idx ? ' dropdown-item-focused' : ''}`} onMouseDown={(e) => { e.preventDefault(); handleToggleTag(t.id); setTagSearch(''); }}><span className="tag-checkbox">{selectedTags.includes(t.id) ? '☑' : '☐'}</span>{t.name}</div>))}
+                      {filteredTagItems.length === 0 && <div className="dropdown-item disabled">No matching tag</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>)}
+            <button className={`submit-tx-btn bg-${txType}`} onClick={handleTransaction} disabled={txType === 'transfer' ? (!amount || !transferFromAccount || !transferToAccount) : (!amount || !selectedCategory)}>
+              {txToEdit ? `Update ${txType === 'transfer' ? 'Transfer' : 'Transaction'}` : `Save ${txType === 'transfer' ? 'Transfer' : 'Transaction'}`}
+            </button>
+            {txToEdit && (
+              <button className="settings-logout-btn" style={{ marginTop: '0.75rem', textAlign: 'center' }} onClick={handleDeleteTransaction}>Delete Transaction</button>
+            )}
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
   if (view === 'ledger') {
     const activeFiltersCount =
       (filterOptions.type !== 'all' ? 1 : 0) +
