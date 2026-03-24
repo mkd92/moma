@@ -93,6 +93,7 @@ function App() {
   // Profile State
   const [currencySymbol, setCurrencySymbol] = useState('$');
   const [currencyCode, setCurrencyCode] = useState('USD');
+  const [defaultAccountId, setDefaultAccountId] = useState(null);
 
   // Transaction Form State
   const [txToEdit, setTxToEdit] = useState(null);
@@ -194,13 +195,14 @@ function App() {
     if (!activeSession) return;
     const { data } = await supabase
       .from('profiles')
-      .select('currency_preference')
+      .select('currency_preference, default_account_id')
       .eq('id', activeSession.user.id)
       .maybeSingle();
     if (data?.currency_preference) {
       setCurrencyCode(data.currency_preference);
       setCurrencySymbol(CURRENCY_SYMBOLS[data.currency_preference] || '$');
     }
+    if (data?.default_account_id) setDefaultAccountId(data.default_account_id);
   };
 
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
@@ -223,6 +225,13 @@ function App() {
     setCurrencyDropdownOpen(false);
     await supabase.from('profiles').update({ currency_preference: newCur }).eq('id', session.user.id);
   }, [session]);
+
+  const handleSetDefaultAccount = useCallback(async (id) => {
+    if (!session) return;
+    const newDefault = defaultAccountId === id ? null : id;
+    setDefaultAccountId(newDefault);
+    await supabase.from('profiles').update({ default_account_id: newDefault }).eq('id', session.user.id);
+  }, [session, defaultAccountId]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*').order('name');
@@ -317,7 +326,7 @@ function App() {
     setSelectedCategory(null);
     setSelectedSubcategory(null);
     setSelectedParty(null);
-    setSelectedAccount(null);
+    setSelectedAccount(defaultAccountId);
     setNote('');
     setTxDate(new Date().toISOString().split('T')[0]);
     setPartySearch('');
@@ -329,7 +338,7 @@ function App() {
     setSelectedTags([]);
     setTagSearch('');
     setShowTagDropdown(false);
-  }, []);
+  }, [defaultAccountId]);
 
   const openEditTransaction = useCallback((t) => {
     setTxToEdit(t);
@@ -779,11 +788,22 @@ function App() {
                     <div className="settings-cat-parent">
                       <span className="cat-icon">🏦</span>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <span className="cat-name">{acc.name}</span>
+                        <span className="cat-name">
+                          {acc.name}
+                          {defaultAccountId === acc.id && (
+                            <span style={{ marginLeft: '0.5rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary)', background: 'var(--primary-light)', borderRadius: '10px', padding: '0.1rem 0.45rem' }}>default</span>
+                          )}
+                        </span>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                           Current: {currencySymbol}{currentBal.toFixed(2)} | Initial: {currencySymbol}{parseFloat(acc.initial_balance).toFixed(2)}
                         </span>
                       </div>
+                      <button
+                        className="icon-btn-text"
+                        style={{ padding: '0 0.5rem', fontSize: '1rem', color: defaultAccountId === acc.id ? 'var(--primary)' : 'var(--text-muted)', marginRight: '0.25rem' }}
+                        title={defaultAccountId === acc.id ? 'Remove default' : 'Set as default'}
+                        onClick={() => handleSetDefaultAccount(acc.id)}
+                      >★</button>
                       <button
                         className="icon-btn-text"
                         style={{ padding: '0 0.5rem', color: 'var(--primary)', marginRight: '0.5rem' }}
