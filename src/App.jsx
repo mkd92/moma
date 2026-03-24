@@ -157,12 +157,12 @@ function App() {
       }
     });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      if (session) {
+      if (event === 'SIGNED_IN') {
         setView('dashboard');
         fetchInitialData(session);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setView('landing');
       }
     });
