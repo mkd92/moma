@@ -117,6 +117,11 @@ function App() {
   const [newCatIcon, setNewCatIcon] = useState('🔖');
   const [newCatParent, setNewCatParent] = useState('');
 
+  // Category Edit State
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [editCatName, setEditCatName] = useState('');
+  const [editCatIcon, setEditCatIcon] = useState('');
+
   // Party Manager State
   const [newPartyName, setNewPartyName] = useState('');
 
@@ -375,6 +380,12 @@ function App() {
     if (!session) return;
     await supabase.from('categories').delete().eq('id', id);
     fetchCategories();
+  }, [session]);
+
+  const handleUpdateCategory = useCallback(async (id, updates) => {
+    if (!session) return;
+    const { error } = await supabase.from('categories').update(updates).eq('id', id);
+    if (!error) { setEditingCatId(null); fetchCategories(); }
   }, [session]);
 
   const handleCreateParty = useCallback(async (e) => {
@@ -852,20 +863,94 @@ function App() {
             ) : (
               parents.map(parent => (
                 <div key={parent.id} className="settings-cat-block">
-                  <div className="settings-cat-parent">
-                    <span className="cat-icon">{parent.icon}</span>
-                    <span className="cat-name">{parent.name}</span>
-                    {!parent.is_system && (
-                      <button className="delete-btn" onClick={() => handleDeleteCategory(parent.id)}>✕</button>
-                    )}
-                  </div>
+                  {editingCatId === parent.id ? (
+                    <div style={{ padding: '0.875rem 1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        maxLength="2"
+                        value={editCatIcon}
+                        onChange={(e) => setEditCatIcon(e.target.value)}
+                        className="icon-input"
+                        style={{ flexShrink: 0 }}
+                      />
+                      <input
+                        type="text"
+                        value={editCatName}
+                        onChange={(e) => setEditCatName(e.target.value)}
+                        className="text-input"
+                        style={{ flex: 1 }}
+                        autoFocus
+                      />
+                      <button
+                        className="add-cat-btn"
+                        style={{ padding: '0.5rem 0.875rem', whiteSpace: 'nowrap' }}
+                        onClick={() => handleUpdateCategory(parent.id, { name: editCatName.trim() || parent.name, icon: editCatIcon || parent.icon })}
+                      >Save</button>
+                      <button
+                        className="icon-btn-text"
+                        onClick={() => setEditingCatId(null)}
+                      >Cancel</button>
+                    </div>
+                  ) : (
+                    <div className="settings-cat-parent">
+                      <span className="cat-icon">{parent.icon}</span>
+                      <span className="cat-name">{parent.name}</span>
+                      {!parent.is_system && (
+                        <>
+                          <button
+                            className="icon-btn-text"
+                            style={{ padding: '0 0.5rem', color: 'var(--primary)', marginRight: '0.25rem' }}
+                            onClick={() => { setEditingCatId(parent.id); setEditCatName(parent.name); setEditCatIcon(parent.icon); }}
+                          >✎</button>
+                          <button className="delete-btn" onClick={() => handleDeleteCategory(parent.id)}>✕</button>
+                        </>
+                      )}
+                    </div>
+                  )}
                   {subCategories.filter(sub => sub.parent_id === parent.id).length > 0 && (
                     <div className="settings-cat-children">
                       {subCategories.filter(sub => sub.parent_id === parent.id).map(sub => (
-                        <div key={sub.id} className="settings-cat-child">
-                          <span className="cat-icon">{sub.icon}</span>
-                          <span className="cat-name">{sub.name}</span>
-                          <button className="delete-btn" onClick={() => handleDeleteCategory(sub.id)}>✕</button>
+                        <div key={sub.id}>
+                          {editingCatId === sub.id ? (
+                            <div style={{ padding: '0.65rem 1rem 0.65rem 3.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
+                              <input
+                                type="text"
+                                maxLength="2"
+                                value={editCatIcon}
+                                onChange={(e) => setEditCatIcon(e.target.value)}
+                                className="icon-input"
+                                style={{ flexShrink: 0 }}
+                              />
+                              <input
+                                type="text"
+                                value={editCatName}
+                                onChange={(e) => setEditCatName(e.target.value)}
+                                className="text-input"
+                                style={{ flex: 1 }}
+                                autoFocus
+                              />
+                              <button
+                                className="add-cat-btn"
+                                style={{ padding: '0.5rem 0.875rem', whiteSpace: 'nowrap' }}
+                                onClick={() => handleUpdateCategory(sub.id, { name: editCatName.trim() || sub.name, icon: editCatIcon || sub.icon })}
+                              >Save</button>
+                              <button
+                                className="icon-btn-text"
+                                onClick={() => setEditingCatId(null)}
+                              >Cancel</button>
+                            </div>
+                          ) : (
+                            <div className="settings-cat-child">
+                              <span className="cat-icon">{sub.icon}</span>
+                              <span className="cat-name">{sub.name}</span>
+                              <button
+                                className="icon-btn-text"
+                                style={{ padding: '0 0.5rem', color: 'var(--primary)', marginRight: '0.25rem' }}
+                                onClick={() => { setEditingCatId(sub.id); setEditCatName(sub.name); setEditCatIcon(sub.icon); }}
+                              >✎</button>
+                              <button className="delete-btn" onClick={() => handleDeleteCategory(sub.id)}>✕</button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
