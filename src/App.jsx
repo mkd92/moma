@@ -103,7 +103,7 @@ function App() {
   const [selectedParty, setSelectedParty] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [note, setNote] = useState('');
-  const [txDate, setTxDate] = useState('');
+  const [txDate, setTxDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [partySearch, setPartySearch] = useState('');
   const [showPartyDropdown, setShowPartyDropdown] = useState(false);
   const [catSearch, setCatSearch] = useState('');
@@ -296,7 +296,7 @@ function App() {
     setSelectedParty(null);
     setSelectedAccount(null);
     setNote('');
-    setTxDate('');
+    setTxDate(new Date().toISOString().split('T')[0]);
     setPartySearch('');
     setShowPartyDropdown(false);
     setCatSearch('');
@@ -329,7 +329,7 @@ function App() {
       party_id: selectedParty,
       account_id: selectedAccount,
       note: note.trim() || null,
-      transaction_date: txDate || new Date().toISOString().split('T')[0],
+      transaction_date: txDate,
     };
 
     if (session) {
