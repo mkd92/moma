@@ -477,6 +477,22 @@ function App() {
     fetchParties();
   }, [session]);
 
+  const handleCreateAndSelectParty = useCallback(async (name) => {
+    if (!session || !name.trim()) return;
+    const { data, error } = await supabase
+      .from('parties')
+      .insert([{ user_id: session.user.id, name: name.trim() }])
+      .select('id')
+      .single();
+    if (!error && data) {
+      await fetchParties();
+      setSelectedParty(data.id);
+      setPartySearch('');
+      setShowPartyDropdown(false);
+      setPartyFocusedIndex(-1);
+    }
+  }, [session]);
+
   const handleCreateTag = useCallback(async (e) => {
     e.preventDefault();
     if (!session || !newTagName.trim()) return;
@@ -1185,7 +1201,12 @@ function App() {
     const filteredAccounts = accounts.filter(a => a.name.toLowerCase().includes(accountSearch.toLowerCase()));
     const accountItems = [{ id: null, _clear: true }, ...filteredAccounts];
     const filteredParties = parties.filter(p => p.name.toLowerCase().includes(partySearch.toLowerCase()));
-    const partyItems = [{ id: null, _clear: true }, ...filteredParties];
+    const showCreateParty = partySearch.trim() !== '' && !parties.some(p => p.name.toLowerCase() === partySearch.trim().toLowerCase());
+    const partyItems = [
+      { id: null, _clear: true },
+      ...(showCreateParty ? [{ id: null, _create: true, name: partySearch.trim() }] : []),
+      ...filteredParties,
+    ];
     const filteredTagItems = tags.filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase()));
 
     return (
@@ -1415,14 +1436,17 @@ function App() {
                   } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     setPartyFocusedIndex(i => Math.max(i - 1, 0));
-                  } else if (e.key === 'Enter' && partyFocusedIndex >= 0) {
+                  } else if (e.key === 'Enter') {
                     e.preventDefault();
-                    const item = partyItems[partyFocusedIndex];
-                    if (item) {
-                      if (item._clear) { setSelectedParty(null); setPartySearch(''); }
-                      else { setSelectedParty(item.id); setPartySearch(''); }
-                      setShowPartyDropdown(false);
-                      setPartyFocusedIndex(-1);
+                    if (partyFocusedIndex >= 0) {
+                      const item = partyItems[partyFocusedIndex];
+                      if (item) {
+                        if (item._clear) { setSelectedParty(null); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); }
+                        else if (item._create) { handleCreateAndSelectParty(item.name); }
+                        else { setSelectedParty(item.id); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); }
+                      }
+                    } else if (showCreateParty) {
+                      handleCreateAndSelectParty(partySearch);
                     }
                   } else if (e.key === 'Escape') {
                     setShowPartyDropdown(false);
@@ -1438,16 +1462,25 @@ function App() {
                   >
                     <em style={{ color: 'var(--text-muted)' }}>None / Clear</em>
                   </div>
+                  {showCreateParty && (
+                    <div
+                      className={`dropdown-item${partyFocusedIndex === 1 ? ' dropdown-item-focused' : ''}`}
+                      onClick={() => handleCreateAndSelectParty(partySearch)}
+                    >
+                      <span style={{ marginRight: '0.4rem' }}>➕</span>
+                      Create <strong>"{partySearch.trim()}"</strong>
+                    </div>
+                  )}
                   {filteredParties.map((p, idx) => (
                     <div
                       key={p.id}
-                      className={`dropdown-item${partyFocusedIndex === idx + 1 ? ' dropdown-item-focused' : ''}`}
+                      className={`dropdown-item${partyFocusedIndex === idx + (showCreateParty ? 2 : 1) ? ' dropdown-item-focused' : ''}`}
                       onClick={() => { setSelectedParty(p.id); setPartySearch(''); setShowPartyDropdown(false); setPartyFocusedIndex(-1); }}
                     >
                       <span style={{ marginRight: '0.4rem', opacity: 0.6 }}>👥</span> {p.name}
                     </div>
                   ))}
-                  {filteredParties.length === 0 && (
+                  {filteredParties.length === 0 && !showCreateParty && (
                     <div className="dropdown-item disabled">No matching party</div>
                   )}
                 </div>
