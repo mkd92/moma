@@ -506,13 +506,109 @@
   gap: 1rem;
 }
 
-.dash-period-bar {
+/* =========================================
+   LEDGER OPTIMIZATIONS
+   ========================================= */
+.ledger-date-group {
+  margin-top: 2rem;
+}
+
+.ledger-date-header {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  padding: 1rem 0;
+  z-index: 10;
   display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ledger-date-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ghost-border);
+}
+
+.ledger-date-text {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+}
+
+.editorial-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.editorial-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: var(--primary);
+  transition: width 0.2s ease;
+}
+
+.editorial-item:hover::before {
+  width: 4px;
+}
+
+.filter-active-summary {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.4rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
   background: var(--surface-container-low);
   border-radius: var(--radius-md);
-  align-self: flex-start;
+  align-items: center;
+}
+
+.active-filter-tag {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.active-filter-remove {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.active-filter-remove:hover { opacity: 1; }
+
+.empty-ledger-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  text-align: center;
+  background: var(--surface-container-low);
+  border-radius: var(--radius-lg);
+  gap: 1.5rem;
+}
+
+.empty-ledger-graphic {
+  width: 80px;
+  height: 80px;
+  opacity: 0.2;
+  color: var(--on-surface);
 }
 
 .dash-period-btn {

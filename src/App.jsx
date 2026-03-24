@@ -652,6 +652,16 @@ function App() {
     });
   }, [transactions, filterOptions, categories]);
 
+  const groupedLedger = useMemo(() => {
+    const groups = {};
+    filteredLedger.forEach(t => {
+      const d = t.transaction_date || t.created_at.split('T')[0];
+      if (!groups[d]) groups[d] = [];
+      groups[d].push(t);
+    });
+    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+  }, [filteredLedger]);
+
   const navToDashboard = useCallback(() => setView('dashboard'), []);
   const navToLedger = useCallback(() => { resetForm(); setView('ledger'); }, [resetForm]);
   const navToNewTx = useCallback(() => { resetForm(); setView('new_transaction'); }, [resetForm]);
@@ -695,15 +705,18 @@ function App() {
   }
 
   if (view === 'ledger') {
+    const activeFiltersCount = (filterOptions.type !== 'all' ? 1 : 0) + (filterOptions.dateRange.start ? 1 : 0) + (filterOptions.dateRange.end ? 1 : 0) + filterOptions.categoryIds.length + filterOptions.tagIds.length;
+
     return (
       <PageShell>
         <div className="page-inner fade-in">
           <div className="section-header-row">
             <h2 className="section-title-editorial">Transactions</h2>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <button className="filter-toggle-btn" onClick={() => setShowFilters(!showAdvancedFilters)}>
+              <button className={`filter-toggle-btn ${showAdvancedFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showAdvancedFilters)}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                 {showAdvancedFilters ? 'Hide Filters' : 'Deep Filter'}
+                {activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}
               </button>
               <button className="section-action-link" onClick={navToDashboard}>Dashboard</button>
             </div>
@@ -736,6 +749,22 @@ function App() {
             ))}
           </div>
 
+          {activeFiltersCount > 0 && !showAdvancedFilters && (
+            <div className="filter-active-summary slide-up">
+              <span className="label-sm" style={{ marginRight: '0.5rem' }}>Active:</span>
+              {filterOptions.type !== 'all' && <span className="active-filter-tag">{filterOptions.type} <span className="active-filter-remove" onClick={() => updateFilter('type', 'all')}>✕</span></span>}
+              {filterOptions.categoryIds.map(id => {
+                const c = categories.find(x => x.id === id);
+                return c ? <span key={id} className="active-filter-tag">{c.icon} {c.name} <span className="active-filter-remove" onClick={() => updateFilter('categoryIds', filterOptions.categoryIds.filter(x => x !== id))}>✕</span></span> : null;
+              })}
+              {filterOptions.tagIds.map(id => {
+                const t = tags.find(x => x.id === id);
+                return t ? <span key={id} className="active-filter-tag">#{t.name} <span className="active-filter-remove" onClick={() => updateFilter('tagIds', filterOptions.tagIds.filter(x => x !== id))}>✕</span></span> : null;
+              })}
+              <button className="section-action-link" style={{ marginLeft: 'auto', fontSize: '0.7rem' }} onClick={resetFilters}>Clear All</button>
+            </div>
+          )}
+
           {showAdvancedFilters && (
             <FilterPanel
               categories={categories}
@@ -746,28 +775,50 @@ function App() {
             />
           )}
 
-          <div className="editorial-list" style={{ marginTop: '2rem' }}>
-            {filteredLedger.map(t => {
-              const cat = t.categories || { icon: '•', name: 'Uncategorized' };
-              return (
-                <div key={t.id} className="editorial-item" onClick={() => openEditTransaction(t)}>
-                  <div className="editorial-icon">{cat.icon}</div>
-                  <div className="editorial-info">
-                    <div className="editorial-title">{t.parties?.name || cat.name}</div>
-                    <div className="editorial-meta">{formatGroupDate(t.transaction_date)} · {t.accounts?.name || 'Cash'}</div>
-                  </div>
-                  <div className="editorial-amount-wrap">
-                    <div className={`editorial-amount ${t.type}`}>{t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div>
-                    <div className="editorial-status">CLEARED</div>
-                  </div>
+          <div className="editorial-list" style={{ marginTop: '1rem' }}>
+            {groupedLedger.map(([date, txs]) => (
+              <div key={date} className="ledger-date-group">
+                <div className="ledger-date-header">
+                  <span className="ledger-date-text">{formatGroupDate(date)}</span>
                 </div>
-              );
-            })}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+                  {txs.map(t => {
+                    const cat = t.categories || { icon: '•', name: 'Uncategorized' };
+                    return (
+                      <div key={t.id} className="editorial-item" onClick={() => openEditTransaction(t)}>
+                        <div className="editorial-icon">{cat.icon}</div>
+                        <div className="editorial-info">
+                          <div className="editorial-title">{t.parties?.name || cat.name}</div>
+                          <div className="editorial-meta">
+                            {cat.name} · {t.accounts?.name || 'Cash'}
+                            {t.transaction_tags?.length > 0 && (
+                              <span style={{ marginLeft: '0.5rem', opacity: 0.6 }}>
+                                {t.transaction_tags.map(tt => `#${tt.tags?.name}`).join(' ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="editorial-amount-wrap">
+                          <div className={`editorial-amount ${t.type}`}>{t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div>
+                          <div className="editorial-status">{t.transfer_id ? 'TRANSFER' : 'CLEARED'}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            
             {filteredLedger.length === 0 && (
-              <div className="empty-state" style={{ background: 'var(--surface-container-low)', padding: '4rem' }}>
-                <p className="title-lg">No transactions found</p>
-                <p className="body-md">Try adjusting your filters or search term.</p>
-                <button className="section-action-link" style={{ marginTop: '1rem' }} onClick={resetFilters}>Clear All Filters</button>
+              <div className="empty-ledger-state fade-in">
+                <svg className="empty-ledger-graphic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                </svg>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <p className="title-lg">Architectural Silence</p>
+                  <p className="body-md">No transactions match your current lens. Try clearing your filters to reveal the ledger.</p>
+                </div>
+                <button className="launch-btn" style={{ maxWidth: '200px', marginTop: '1rem' }} onClick={resetFilters}>Reset Filters</button>
               </div>
             )}
           </div>
