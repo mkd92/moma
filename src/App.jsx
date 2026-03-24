@@ -112,6 +112,16 @@ function App() {
   const [accountSearch, setAccountSearch] = useState('');
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
 
+  // Transfer Form State
+  const [transferFromAccount, setTransferFromAccount] = useState(null);
+  const [transferToAccount, setTransferToAccount] = useState(null);
+  const [transferFromSearch, setTransferFromSearch] = useState('');
+  const [transferToSearch, setTransferToSearch] = useState('');
+  const [showTransferFromDropdown, setShowTransferFromDropdown] = useState(false);
+  const [showTransferToDropdown, setShowTransferToDropdown] = useState(false);
+  const [transferFromFocusedIndex, setTransferFromFocusedIndex] = useState(-1);
+  const [transferToFocusedIndex, setTransferToFocusedIndex] = useState(-1);
+
   // Category Manager State
   const [settingsType, setSettingsType] = useState('expense');
   const [newCatName, setNewCatName] = useState('');
@@ -151,6 +161,7 @@ function App() {
   const { balance, totalIncome, totalExpense } = useMemo(() => {
     let inc = 0, exp = 0;
     transactions.forEach(t => {
+      if (t.transfer_id) return; // exclude transfer legs from totals
       if (t.type === 'income') inc += parseFloat(t.amount);
       if (t.type === 'expense') exp += parseFloat(t.amount);
     });
@@ -217,6 +228,8 @@ function App() {
   const partyMenuRef = useRef(null);
   const accountMenuRef = useRef(null);
   const tagMenuRef = useRef(null);
+  const transferFromMenuRef = useRef(null);
+  const transferToMenuRef = useRef(null);
 
   useEffect(() => {
     if (!catMenuRef.current || catFocusedIndex < 0) return;
@@ -237,6 +250,16 @@ function App() {
     if (!tagMenuRef.current || tagFocusedIndex < 0) return;
     tagMenuRef.current.querySelectorAll('.dropdown-item:not(.disabled)')[tagFocusedIndex]?.scrollIntoView({ block: 'nearest' });
   }, [tagFocusedIndex]);
+
+  useEffect(() => {
+    if (!transferFromMenuRef.current || transferFromFocusedIndex < 0) return;
+    transferFromMenuRef.current.querySelectorAll('.dropdown-item:not(.disabled)')[transferFromFocusedIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [transferFromFocusedIndex]);
+
+  useEffect(() => {
+    if (!transferToMenuRef.current || transferToFocusedIndex < 0) return;
+    transferToMenuRef.current.querySelectorAll('.dropdown-item:not(.disabled)')[transferToFocusedIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [transferToFocusedIndex]);
 
   useEffect(() => {
     if (!currencyDropdownOpen) return;
@@ -368,25 +391,71 @@ function App() {
     setSelectedTags([]);
     setTagSearch('');
     setShowTagDropdown(false);
+    setTransferFromAccount(null);
+    setTransferToAccount(null);
+    setTransferFromSearch('');
+    setTransferToSearch('');
+    setShowTransferFromDropdown(false);
+    setShowTransferToDropdown(false);
+    setTransferFromFocusedIndex(-1);
+    setTransferToFocusedIndex(-1);
   }, [defaultAccountId]);
 
   const openEditTransaction = useCallback((t) => {
     setTxToEdit(t);
-    setTxType(t.type);
     setAmount(t.amount.toString());
-    setSelectedCategory(t.category_id);
-    setSelectedParty(t.party_id);
-    setSelectedAccount(t.account_id);
     setNote(t.note || '');
     setTxDate(t.transaction_date || t.created_at.split('T')[0]);
-    setSelectedTags((t.transaction_tags || []).map(tt => tt.tag_id));
+    if (t.transfer_id) {
+      const pair = transactions.find(tx => tx.transfer_id === t.transfer_id && tx.id !== t.id);
+      const expenseLeg = t.type === 'expense' ? t : pair;
+      const incomeLeg = t.type === 'income' ? t : pair;
+      setTxType('transfer');
+      setTransferFromAccount(expenseLeg?.account_id || null);
+      setTransferToAccount(incomeLeg?.account_id || null);
+    } else {
+      setTxType(t.type);
+      setSelectedCategory(t.category_id);
+      setSelectedParty(t.party_id);
+      setSelectedAccount(t.account_id);
+      setSelectedTags((t.transaction_tags || []).map(tt => tt.tag_id));
+    }
     setView('new_transaction');
-  }, []);
+  }, [transactions]);
 
   const handleTransaction = useCallback(async () => {
     const val = parseFloat(amount);
     if (!val || val <= 0) return;
+    if (!session) return;
 
+    // --- Transfer ---
+    if (txType === 'transfer') {
+      if (!transferFromAccount || !transferToAccount) return;
+      if (transferFromAccount === transferToAccount) { alert('From and To accounts must be different.'); return; }
+      const base = { amount: val, note: note.trim() || null, transaction_date: txDate };
+      if (txToEdit?.transfer_id) {
+        const { error: e1 } = await supabase.from('transactions')
+          .update({ ...base, account_id: transferFromAccount })
+          .eq('transfer_id', txToEdit.transfer_id).eq('type', 'expense');
+        const { error: e2 } = await supabase.from('transactions')
+          .update({ ...base, account_id: transferToAccount })
+          .eq('transfer_id', txToEdit.transfer_id).eq('type', 'income');
+        if (e1 || e2) { alert('Database error updating transfer.'); return; }
+      } else {
+        const transferId = crypto.randomUUID();
+        const { error } = await supabase.from('transactions').insert([
+          { ...base, type: 'expense', account_id: transferFromAccount, user_id: session.user.id, transfer_id: transferId },
+          { ...base, type: 'income',  account_id: transferToAccount,   user_id: session.user.id, transfer_id: transferId },
+        ]);
+        if (error) { alert('Database error: ' + error.message); return; }
+      }
+      fetchTransactions();
+      resetForm();
+      setView('ledger');
+      return;
+    }
+
+    // --- Normal expense / income ---
     const finalCategoryId = selectedSubcategory || selectedCategory;
     const payload = {
       amount: val,
@@ -398,37 +467,37 @@ function App() {
       transaction_date: txDate,
     };
 
-    if (session) {
-      let transactionId;
-      if (txToEdit) {
-        const { error } = await supabase.from('transactions').update(payload).eq('id', txToEdit.id);
-        if (error) { alert('Database error: ' + error.message); return; }
-        transactionId = txToEdit.id;
-      } else {
-        payload.user_id = session.user.id;
-        const { data, error } = await supabase.from('transactions').insert([payload]).select('id').single();
-        if (error) { alert('Database error: ' + error.message); return; }
-        transactionId = data.id;
-      }
-      // Sync tags
-      await supabase.from('transaction_tags').delete().eq('transaction_id', transactionId);
-      if (selectedTags.length > 0) {
-        await supabase.from('transaction_tags').insert(
-          selectedTags.map(tagId => ({ transaction_id: transactionId, tag_id: tagId }))
-        );
-      }
-      fetchTransactions();
+    let transactionId;
+    if (txToEdit) {
+      const { error } = await supabase.from('transactions').update(payload).eq('id', txToEdit.id);
+      if (error) { alert('Database error: ' + error.message); return; }
+      transactionId = txToEdit.id;
+    } else {
+      payload.user_id = session.user.id;
+      const { data, error } = await supabase.from('transactions').insert([payload]).select('id').single();
+      if (error) { alert('Database error: ' + error.message); return; }
+      transactionId = data.id;
     }
-
+    // Sync tags
+    await supabase.from('transaction_tags').delete().eq('transaction_id', transactionId);
+    if (selectedTags.length > 0) {
+      await supabase.from('transaction_tags').insert(
+        selectedTags.map(tagId => ({ transaction_id: transactionId, tag_id: tagId }))
+      );
+    }
+    fetchTransactions();
     resetForm();
     setView('ledger');
-  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, resetForm]);
+  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm]);
 
   const handleDeleteTransaction = useCallback(async () => {
     if (!session || !txToEdit) return;
-    if (!window.confirm('Delete this transaction?')) return;
+    const isTransfer = !!txToEdit.transfer_id;
+    if (!window.confirm(isTransfer ? 'Delete this transfer (both legs)?' : 'Delete this transaction?')) return;
 
-    const { error } = await supabase.from('transactions').delete().eq('id', txToEdit.id);
+    const { error } = isTransfer
+      ? await supabase.from('transactions').delete().eq('transfer_id', txToEdit.transfer_id)
+      : await supabase.from('transactions').delete().eq('id', txToEdit.id);
     if (error) alert('Deletion error: ' + error.message);
     else {
       fetchTransactions();
@@ -1208,6 +1277,8 @@ function App() {
       ...filteredParties,
     ];
     const filteredTagItems = tags.filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase()));
+    const filteredTransferFromAccounts = accounts.filter(a => a.name.toLowerCase().includes(transferFromSearch.toLowerCase()));
+    const filteredTransferToAccounts = accounts.filter(a => a.name.toLowerCase().includes(transferToSearch.toLowerCase()));
 
     return (
       <div className="app-shell">
@@ -1237,6 +1308,12 @@ function App() {
               onClick={() => { setTxType('income'); setSelectedCategory(null); setSelectedSubcategory(null); }}
             >
               Income
+            </button>
+            <button
+              className={`type-btn ${txType === 'transfer' ? 'active-transfer' : ''}`}
+              onClick={() => { setTxType('transfer'); setSelectedCategory(null); setSelectedSubcategory(null); }}
+            >
+              Transfer
             </button>
           </div>
 
@@ -1273,6 +1350,69 @@ function App() {
             />
           </div>
 
+          {txType === 'transfer' && (<>
+          <div className="category-selection-area" style={{ position: 'relative', borderBottom: '1px solid var(--border)', paddingBottom: '1.25rem', marginBottom: '1.25rem' }}>
+            <p className="selection-label">From Account</p>
+            <div className="searchable-dropdown" onBlur={() => setTimeout(() => { setShowTransferFromDropdown(false); setTransferFromFocusedIndex(-1); }, 200)}>
+              <input
+                type="text"
+                className="text-input"
+                placeholder="From Account..."
+                value={transferFromAccount ? accounts.find(a => a.id === transferFromAccount)?.name ?? transferFromSearch : transferFromSearch}
+                onChange={(e) => { setTransferFromSearch(e.target.value); setTransferFromAccount(null); setShowTransferFromDropdown(true); setTransferFromFocusedIndex(-1); }}
+                onFocus={() => setShowTransferFromDropdown(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') { e.preventDefault(); if (!showTransferFromDropdown) setShowTransferFromDropdown(true); setTransferFromFocusedIndex(i => Math.min(i + 1, filteredTransferFromAccounts.length - 1)); }
+                  else if (e.key === 'ArrowUp') { e.preventDefault(); setTransferFromFocusedIndex(i => Math.max(i - 1, 0)); }
+                  else if (e.key === 'Enter' && transferFromFocusedIndex >= 0) { e.preventDefault(); const a = filteredTransferFromAccounts[transferFromFocusedIndex]; if (a) { setTransferFromAccount(a.id); setTransferFromSearch(''); setShowTransferFromDropdown(false); setTransferFromFocusedIndex(-1); } }
+                  else if (e.key === 'Escape') { setShowTransferFromDropdown(false); setTransferFromFocusedIndex(-1); }
+                }}
+              />
+              {showTransferFromDropdown && (
+                <div className="dropdown-menu" ref={transferFromMenuRef}>
+                  {filteredTransferFromAccounts.map((a, idx) => (
+                    <div key={a.id} className={`dropdown-item${transferFromFocusedIndex === idx ? ' dropdown-item-focused' : ''}`} onClick={() => { setTransferFromAccount(a.id); setTransferFromSearch(''); setShowTransferFromDropdown(false); setTransferFromFocusedIndex(-1); }}>
+                      <span style={{ marginRight: '0.4rem', opacity: 0.6 }}>🏦</span> {a.name}
+                    </div>
+                  ))}
+                  {filteredTransferFromAccounts.length === 0 && <div className="dropdown-item disabled">No matching account</div>}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="category-selection-area" style={{ position: 'relative' }}>
+            <p className="selection-label">To Account</p>
+            <div className="searchable-dropdown" onBlur={() => setTimeout(() => { setShowTransferToDropdown(false); setTransferToFocusedIndex(-1); }, 200)}>
+              <input
+                type="text"
+                className="text-input"
+                placeholder="To Account..."
+                value={transferToAccount ? accounts.find(a => a.id === transferToAccount)?.name ?? transferToSearch : transferToSearch}
+                onChange={(e) => { setTransferToSearch(e.target.value); setTransferToAccount(null); setShowTransferToDropdown(true); setTransferToFocusedIndex(-1); }}
+                onFocus={() => setShowTransferToDropdown(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowDown') { e.preventDefault(); if (!showTransferToDropdown) setShowTransferToDropdown(true); setTransferToFocusedIndex(i => Math.min(i + 1, filteredTransferToAccounts.length - 1)); }
+                  else if (e.key === 'ArrowUp') { e.preventDefault(); setTransferToFocusedIndex(i => Math.max(i - 1, 0)); }
+                  else if (e.key === 'Enter' && transferToFocusedIndex >= 0) { e.preventDefault(); const a = filteredTransferToAccounts[transferToFocusedIndex]; if (a) { setTransferToAccount(a.id); setTransferToSearch(''); setShowTransferToDropdown(false); setTransferToFocusedIndex(-1); } }
+                  else if (e.key === 'Escape') { setShowTransferToDropdown(false); setTransferToFocusedIndex(-1); }
+                }}
+              />
+              {showTransferToDropdown && (
+                <div className="dropdown-menu" ref={transferToMenuRef}>
+                  {filteredTransferToAccounts.map((a, idx) => (
+                    <div key={a.id} className={`dropdown-item${transferToFocusedIndex === idx ? ' dropdown-item-focused' : ''}`} onClick={() => { setTransferToAccount(a.id); setTransferToSearch(''); setShowTransferToDropdown(false); setTransferToFocusedIndex(-1); }}>
+                      <span style={{ marginRight: '0.4rem', opacity: 0.6 }}>🏦</span> {a.name}
+                    </div>
+                  ))}
+                  {filteredTransferToAccounts.length === 0 && <div className="dropdown-item disabled">No matching account</div>}
+                </div>
+              )}
+            </div>
+          </div>
+          </>)}
+
+          {txType !== 'transfer' && (<>
           <div className="category-selection-area" style={{ position: 'relative', borderBottom: '1px solid var(--border)', paddingBottom: '1.25rem', marginBottom: '1.25rem' }}>
             <p className="selection-label">Account</p>
             <div
@@ -1556,13 +1696,14 @@ function App() {
               )}
             </div>
           </div>
+          </>)}
 
           <button
             className={`submit-tx-btn bg-${txType}`}
             onClick={handleTransaction}
-            disabled={!amount || !selectedCategory}
+            disabled={txType === 'transfer' ? (!amount || !transferFromAccount || !transferToAccount) : (!amount || !selectedCategory)}
           >
-            {txToEdit ? 'Update Transaction' : 'Save Transaction'}
+            {txToEdit ? `Update ${txType === 'transfer' ? 'Transfer' : 'Transaction'}` : `Save ${txType === 'transfer' ? 'Transfer' : 'Transaction'}`}
           </button>
 
           {txToEdit && (
@@ -1654,39 +1795,57 @@ function App() {
               .map(([date, txs]) => (
                 <div key={date}>
                   <p className="date-group-header">{formatGroupDate(date)}</p>
-                  {txs.map(t => {
-                    const cat = t.categories || { icon: '•', name: 'Uncategorized' };
-                    const pName = t.parties?.name;
-                    const aName = t.accounts?.name;
-                    let tag = cat.name;
-                    if (pName && aName) tag = `${cat.name} · ${pName} · 🏦 ${aName}`;
-                    else if (pName) tag = `${cat.name} · ${pName}`;
-                    else if (aName) tag = `${cat.name} · 🏦 ${aName}`;
-                    return (
-                      <div
-                        key={t.id}
-                        className={`transaction-item ${t.type}`}
-                        onClick={() => openEditTransaction(t)}
-                      >
-                        <div className="t-icon">{cat.icon}</div>
-                        <div className="t-details">
-                          <div className="t-type">{tag}</div>
-                          {t.note && <div className="t-note">{t.note}</div>}
-                          {(t.transaction_tags?.length > 0) && (
-                            <div className="t-tags">
-                              {t.transaction_tags.map(tt => tt.tags?.name).filter(Boolean).map(name => (
-                                <span key={name} className="t-tag-pill">{name}</span>
-                              ))}
+                  {(() => {
+                    const seenTransfers = new Set();
+                    return txs.map(t => {
+                      if (t.transfer_id) {
+                        if (seenTransfers.has(t.transfer_id)) return null;
+                        seenTransfers.add(t.transfer_id);
+                        const pair = txs.find(x => x.transfer_id === t.transfer_id && x.id !== t.id)
+                          || transactions.find(x => x.transfer_id === t.transfer_id && x.id !== t.id);
+                        const expLeg = t.type === 'expense' ? t : pair;
+                        const incLeg = t.type === 'income' ? t : pair;
+                        const fromName = accounts.find(a => a.id === expLeg?.account_id)?.name || '?';
+                        const toName   = accounts.find(a => a.id === incLeg?.account_id)?.name || '?';
+                        return (
+                          <div key={t.transfer_id} className="transaction-item transfer" onClick={() => openEditTransaction(t)}>
+                            <div className="t-icon">🔄</div>
+                            <div className="t-details">
+                              <div className="t-type">Transfer: {fromName} → {toName}</div>
+                              {t.note && <div className="t-note">{t.note}</div>}
+                              <div className="t-time">{t.transaction_date}</div>
                             </div>
-                          )}
-                          <div className="t-time">{t.transaction_date}</div>
+                            <div className="t-amount t-amount-transfer">{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div>
+                          </div>
+                        );
+                      }
+                      const cat = t.categories || { icon: '•', name: 'Uncategorized' };
+                      const pName = t.parties?.name;
+                      const aName = t.accounts?.name;
+                      let tag = cat.name;
+                      if (pName && aName) tag = `${cat.name} · ${pName} · 🏦 ${aName}`;
+                      else if (pName) tag = `${cat.name} · ${pName}`;
+                      else if (aName) tag = `${cat.name} · 🏦 ${aName}`;
+                      return (
+                        <div key={t.id} className={`transaction-item ${t.type}`} onClick={() => openEditTransaction(t)}>
+                          <div className="t-icon">{cat.icon}</div>
+                          <div className="t-details">
+                            <div className="t-type">{tag}</div>
+                            {t.note && <div className="t-note">{t.note}</div>}
+                            {(t.transaction_tags?.length > 0) && (
+                              <div className="t-tags">
+                                {t.transaction_tags.map(tt => tt.tags?.name).filter(Boolean).map(name => (
+                                  <span key={name} className="t-tag-pill">{name}</span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="t-time">{t.transaction_date}</div>
+                          </div>
+                          <div className="t-amount">{t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div>
                         </div>
-                        <div className="t-amount">
-                          {t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               ));
           })()}
@@ -1747,8 +1906,29 @@ function App() {
                     <p>No transactions yet.</p>
                     <p className="hint">Click + New Transaction to record your first entry.</p>
                   </div>
-                ) : (
-                  transactions.slice(0, 8).map(t => {
+                ) : (() => {
+                  const seenTransfers = new Set();
+                  return transactions.slice(0, 8).map(t => {
+                    if (t.transfer_id) {
+                      if (seenTransfers.has(t.transfer_id)) return null;
+                      seenTransfers.add(t.transfer_id);
+                      const pair = transactions.find(x => x.transfer_id === t.transfer_id && x.id !== t.id);
+                      const expLeg = t.type === 'expense' ? t : pair;
+                      const incLeg = t.type === 'income' ? t : pair;
+                      const fromName = accounts.find(a => a.id === expLeg?.account_id)?.name || '?';
+                      const toName   = accounts.find(a => a.id === incLeg?.account_id)?.name || '?';
+                      return (
+                        <div key={t.transfer_id} className="transaction-item transfer" onClick={() => openEditTransaction(t)}>
+                          <div className="t-icon">🔄</div>
+                          <div className="t-details">
+                            <div className="t-type">Transfer: {fromName} → {toName}</div>
+                            {t.note && <div className="t-note">{t.note}</div>}
+                            <div className="t-time">{t.transaction_date || new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
+                          </div>
+                          <div className="t-amount t-amount-transfer">{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div>
+                        </div>
+                      );
+                    }
                     const cat = t.categories || { icon: '•', name: 'Uncategorized' };
                     const pName = t.parties?.name;
                     const aName = t.accounts?.name;
@@ -1782,8 +1962,8 @@ function App() {
                         </div>
                       </div>
                     );
-                  })
-                )}
+                  });
+                })()}
               </div>
             </div>
           </div>
