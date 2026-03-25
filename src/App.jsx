@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, ComposedChart, Line } from 'recharts';
 import { supabase } from './supabaseClient';
@@ -37,6 +37,102 @@ const formatGroupDate = (dateStr) => {
     day: 'numeric',
   });
 };
+
+// Pull-to-refresh hook (uses native listeners to allow preventDefault on touchmove)
+const usePullToRefresh = (onRefresh) => {
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const containerRef = useRef(null);
+  const state = useRef({ startY: null, pullY: 0, active: false });
+  const THRESHOLD = 72;
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onTouchStart = (e) => {
+      if (el.scrollTop === 0) {
+        state.current.startY = e.touches[0].clientY;
+        state.current.active = true;
+      }
+    };
+    const onTouchMove = (e) => {
+      if (!state.current.active) return;
+      const dy = e.touches[0].clientY - state.current.startY;
+      if (dy > 0 && el.scrollTop === 0) {
+        e.preventDefault();
+        const clamped = Math.min(dy * 0.5, THRESHOLD + 20);
+        state.current.pullY = clamped;
+        setPullY(clamped);
+      } else if (dy <= 0) {
+        state.current.active = false;
+        state.current.pullY = 0;
+        setPullY(0);
+      }
+    };
+    const onTouchEnd = async () => {
+      if (!state.current.active) return;
+      state.current.active = false;
+      const pulled = state.current.pullY;
+      state.current.pullY = 0;
+      setPullY(0);
+      if (pulled >= THRESHOLD) {
+        setRefreshing(true);
+        try { await onRefresh(); } finally { setRefreshing(false); }
+      }
+    };
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [onRefresh]);
+
+  return { containerRef, pullY, refreshing };
+};
+
+// Bottom navigation bar — mobile only
+const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNewTx }) => {
+  const settingsViews = ['settings', 'account_management', 'category_management', 'party_management', 'tag_management'];
+  return (
+    <nav className="bottom-nav">
+      <button className={`bnav-item${view === 'dashboard' ? ' active' : ''}`} onClick={onDashboard}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span>Home</span>
+      </button>
+      <button className={`bnav-item${view === 'ledger' ? ' active' : ''}`} onClick={onLedger}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+        </svg>
+        <span>Txns</span>
+      </button>
+      <button className="bnav-fab" onClick={onNewTx}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      <button className={`bnav-item${view === 'analytics' ? ' active' : ''}`} onClick={onAnalytics}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/>
+        </svg>
+        <span>Analytics</span>
+      </button>
+      <button className={`bnav-item${settingsViews.includes(view) ? ' active' : ''}`} onClick={onSettings}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+  );
+};
+
+// Sub-views that support swipe-back gesture
+const SUB_VIEWS = new Set(['new_transaction', 'account_management', 'category_management', 'party_management', 'tag_management']);
 
 // Sidebar — desktop left-rail navigation
 const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout }) => {
@@ -105,12 +201,6 @@ const TopHeader = ({ session }) => (
       <input type="text" placeholder="Search accounts, tags, or dates..." className="search-input-top" />
     </div>
     <div className="top-actions">
-      <svg className="icon-action" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-      </svg>
-      <svg className="icon-action" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
       <div className="user-profile-sm">
         <div style={{ background: 'var(--primary)', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold' }}>
           {session?.user?.email?.charAt(0).toUpperCase()}
@@ -120,14 +210,44 @@ const TopHeader = ({ session }) => (
   </header>
 );
 
-const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session }) => {
+const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session, onRefresh }) => {
+  const navigate = useNavigate();
+  const { containerRef, pullY, refreshing } = usePullToRefresh(onRefresh || (() => Promise.resolve()));
+
+  // Swipe-back: right-edge swipe on sub-views
+  const canGoBack = SUB_VIEWS.has(view);
+  const swipe = useRef({ startX: 0, startY: 0 });
+  const handleSwipeTouchStart = useCallback((e) => {
+    swipe.current.startX = e.touches[0].clientX;
+    swipe.current.startY = e.touches[0].clientY;
+  }, []);
+  const handleSwipeTouchEnd = useCallback((e) => {
+    if (!canGoBack) return;
+    const dx = e.changedTouches[0].clientX - swipe.current.startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - swipe.current.startY);
+    if (dx > 80 && dy < 80 && swipe.current.startX < 60) navigate(-1);
+  }, [canGoBack, navigate]);
+
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      onTouchStart={handleSwipeTouchStart}
+      onTouchEnd={handleSwipeTouchEnd}
+    >
       <Sidebar view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onBudgets={onBudgets} onNewTx={onNewTx} onSettings={onSettings} onLogout={onLogout} />
-      <div className="page-content">
+      <div className="page-content" ref={containerRef}>
+        {(pullY > 0 || refreshing) && (
+          <div className="ptr-indicator" style={{ height: refreshing ? 48 : pullY }}>
+            <div
+              className={`ptr-spinner${refreshing ? '' : ' ptr-spinner-static'}`}
+              style={!refreshing ? { transform: `rotate(${(pullY / 72) * 360}deg)` } : {}}
+            />
+          </div>
+        )}
         <TopHeader session={session} />
         {children}
       </div>
+      <BottomNav view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onSettings={onSettings} onNewTx={onNewTx} />
     </div>
   );
 };
@@ -534,34 +654,43 @@ export default function App() {
     });
   }, [transactions, dashDateRange]);
 
+  // Transactions for the active (non-excluded) accounts only — used for all financial metrics.
+  // An account is active if: it's type 'asset' AND not explicitly excluded.
+  // Temp and liability accounts are excluded from net worth by design.
+  const activeAccountIds = useMemo(() =>
+    new Set(accounts.filter(a =>
+      !a.exclude_from_total && (a.type || 'asset') === 'asset'
+    ).map(a => a.id)),
+  [accounts]);
+
+  const dashActiveTransactions = useMemo(() => (
+    dashTransactions.filter(t => !t.transfer_id && t.account_id && activeAccountIds.has(t.account_id))
+  ), [dashTransactions, activeAccountIds]);
+
   const { balance, totalIncome, totalExpense } = useMemo(() => {
-    const activeAccountIds = new Set(accounts.filter(a => !a.exclude_from_total).map(a => a.id));
     let inc = 0, exp = 0;
-    dashTransactions.forEach(t => {
-      if (t.transfer_id) return;
-      if (t.account_id && !activeAccountIds.has(t.account_id)) return;
+    dashActiveTransactions.forEach(t => {
       if (t.type === 'income') inc += parseFloat(t.amount);
       if (t.type === 'expense') exp += parseFloat(t.amount);
     });
-    let accInitial = accounts.filter(a => !a.exclude_from_total).reduce((s, a) => s + parseFloat(a.initial_balance || 0), 0);
+    const accInitial = accounts.filter(a => !a.exclude_from_total && (a.type || 'asset') === 'asset').reduce((s, a) => s + parseFloat(a.initial_balance || 0), 0);
     let allInc = 0, allExp = 0;
     transactions.forEach(t => {
-      if (t.transfer_id) return;
-      if (t.account_id && !activeAccountIds.has(t.account_id)) return;
+      if (!t.account_id || !activeAccountIds.has(t.account_id)) return;
       if (t.type === 'income') allInc += parseFloat(t.amount);
       if (t.type === 'expense') allExp += parseFloat(t.amount);
     });
     return { balance: accInitial + allInc - allExp, totalIncome: inc, totalExpense: exp };
-  }, [dashTransactions, transactions, accounts]);
+  }, [dashActiveTransactions, transactions, accounts, activeAccountIds]);
 
   const topCategories = useMemo(() => {
     const totals = {};
-    dashTransactions.filter(t => t.type === 'expense' && !t.transfer_id && t.categories).forEach(t => {
+    dashActiveTransactions.filter(t => t.type === 'expense' && t.categories).forEach(t => {
       const key = t.categories.name;
       totals[key] = (totals[key] || 0) + parseFloat(t.amount);
     });
     return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  }, [dashTransactions]);
+  }, [dashActiveTransactions]);
 
   const topExpenseCat = topCategories[0] || null;
   const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100) : null;
@@ -570,9 +699,9 @@ export default function App() {
     const { start, end } = dashDateRange;
     const ms = start && end ? new Date(end) - new Date(start) + 86400000 : 30 * 86400000;
     const days = Math.max(1, Math.round(ms / 86400000));
-    const total = dashTransactions.filter(t => t.type === 'expense' && !t.transfer_id).reduce((s, t) => s + parseFloat(t.amount), 0);
+    const total = dashActiveTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
     return total / days;
-  }, [dashTransactions, dashDateRange]);
+  }, [dashActiveTransactions, dashDateRange]);
 
   const portfolioChange = useMemo(() => {
     const { start, end } = dashDateRange;
@@ -583,29 +712,27 @@ export default function App() {
     const pad = n => String(n).padStart(2, '0');
     const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     const ps = fmt(prevStart), pe = fmt(prevEnd);
-    const activeAccountIds = new Set(accounts.filter(a => !a.exclude_from_total).map(a => a.id));
     let curr = 0, prev = 0;
     transactions.forEach(t => {
       if (t.transfer_id) return;
-      if (t.account_id && !activeAccountIds.has(t.account_id)) return;
+      if (!t.account_id || !activeAccountIds.has(t.account_id)) return;
       const amt = parseFloat(t.amount) * (t.type === 'income' ? 1 : -1);
       if (t.transaction_date >= start && t.transaction_date <= end) curr += amt;
       if (t.transaction_date >= ps && t.transaction_date <= pe) prev += amt;
     });
     if (prev === 0) return curr > 0 ? 100 : (curr < 0 ? -100 : null);
     return Math.round(((curr - prev) / Math.abs(prev)) * 100);
-  }, [transactions, dashDateRange, accounts]);
+  }, [transactions, dashDateRange, activeAccountIds]);
 
   const sparklineData = useMemo(() => {
     const pad = n => String(n).padStart(2, '0');
     const today = new Date();
-    const activeAccountIds = new Set(accounts.filter(a => !a.exclude_from_total).map(a => a.id));
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (6 - i));
       const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-      return transactions.filter(t => t.transaction_date === key && t.type === 'expense' && !t.transfer_id && (!t.account_id || activeAccountIds.has(t.account_id))).reduce((s, t) => s + parseFloat(t.amount), 0);
+      return transactions.filter(t => t.transaction_date === key && t.type === 'expense' && !t.transfer_id && t.account_id && activeAccountIds.has(t.account_id)).reduce((s, t) => s + parseFloat(t.amount), 0);
     });
-  }, [transactions, accounts]);
+  }, [transactions, activeAccountIds]);
 
   const smartInsights = useMemo(() => {
     const insights = [];
@@ -656,6 +783,7 @@ export default function App() {
   const navToBudgets = useCallback(() => setView('budgets'), [setView]);
   const navToSettings = useCallback(() => setView('settings'), [setView]);
   const navToNewTx = useCallback(() => { resetForm(); setView('new_transaction'); }, [resetForm, setView]);
+  const refreshData = useCallback(() => Promise.all([fetchTransactions(), fetchAccounts()]), [fetchTransactions, fetchAccounts]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -821,7 +949,10 @@ export default function App() {
     setEditAcctName(acct.name);
     setEditAcctMode('opening');
     setEditAcctValue(String(parseFloat(acct.initial_balance) || 0));
+    setEditAcctExclude(!!acct.exclude_from_total);
   }, []);
+
+  const [editAcctExclude, setEditAcctExclude] = useState(false);
 
   const handleUpdateAccount = useCallback(async (e) => {
     e.preventDefault();
@@ -834,12 +965,12 @@ export default function App() {
       const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
       newInitialBalance = (parseFloat(editAcctValue) || 0) - txSum;
     }
-    const { error } = await supabase.from('accounts').update({ name: editAcctName.trim(), initial_balance: newInitialBalance }).eq('id', editingAccount.id);
+    const { error } = await supabase.from('accounts').update({ name: editAcctName.trim(), initial_balance: newInitialBalance, exclude_from_total: editAcctExclude }).eq('id', editingAccount.id);
     if (!error) {
       setEditingAccount(null);
       fetchAccounts();
     }
-  }, [session, editingAccount, editAcctName, editAcctMode, editAcctValue, accountBalances, fetchAccounts]);
+  }, [session, editingAccount, editAcctName, editAcctMode, editAcctValue, editAcctExclude, accountBalances, fetchAccounts]);
 
   const handleBulkAssignCategory = useCallback(async () => {
     if (!session || selectedTxIds.size === 0 || !bulkCategory) return;
@@ -1116,7 +1247,7 @@ export default function App() {
     setView('new_transaction');
   }, [transactions, accounts, setView]);
 
-  const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, onLogout: handleLogout, session };
+  const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, onLogout: handleLogout, session, onRefresh: refreshData };
 
   if (view === 'landing') return (
     <div className="landing-container fade-in">
@@ -1205,6 +1336,10 @@ export default function App() {
                       </>
                     )}
                   </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.25rem 0', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={editAcctExclude} onChange={e => setEditAcctExclude(e.target.checked)} />
+                    <span className="body-md">Exclude from Net Worth</span>
+                  </label>
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <button type="submit" className="add-cat-btn" style={{ flex: 1 }}>Save Changes</button>
                     <button type="button" className="icon-btn-text" onClick={() => setEditingAccount(null)}>Cancel</button>
@@ -1794,13 +1929,37 @@ export default function App() {
             </div>
             <div className="analytics-card-sm">
               <p className="analytics-title-sm">Account Balances</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {accounts.map(a => {
+              {(() => {
+                const maxBal = Math.max(...accounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
+                const renderRow = (a, excluded) => {
                   const bal = accountBalances[a.id] || 0;
-                  return (<div key={a.id} className="acct-balance-row"><span className="acct-balance-name">{a.name}</span><span className={`acct-balance-val${bal < 0 ? ' neg' : ''}`}>{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>);
-                })}
-                {accounts.length === 0 && <p className="body-md" style={{ opacity: 0.6 }}>No accounts yet.</p>}
-              </div>
+                  const meta = ACCT_META[a.type || 'asset'];
+                  const pct = Math.min(Math.abs(bal) / maxBal * 100, 100);
+                  return (
+                    <div key={a.id} className={`acct-bal-item${excluded ? ' acct-bal-excluded' : ''}`}>
+                      <div className="acct-bal-icon" style={{ background: `${meta.color}18`, color: meta.color }}>{meta.icon}</div>
+                      <div className="acct-bal-info">
+                        <div className="acct-bal-name">{a.name}</div>
+                        <div className="acct-bal-meta">
+                          <span className="acct-bal-type" style={{ color: meta.color }}>{meta.label}</span>
+                          {excluded && <span className="acct-bal-excl">excl.</span>}
+                        </div>
+                        <div className="acct-bal-bar-track">
+                          <div className="acct-bal-bar-fill" style={{ width: `${pct}%`, background: bal < 0 ? 'var(--tertiary-fixed-variant)' : meta.color }} />
+                        </div>
+                      </div>
+                      <span className={`acct-bal-val${bal < 0 ? ' neg' : ''}`}>{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  );
+                };
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {accounts.filter(a => !a.exclude_from_total).map(a => renderRow(a, false))}
+                    {accounts.filter(a => a.exclude_from_total).map(a => renderRow(a, true))}
+                    {accounts.length === 0 && <p className="body-md" style={{ opacity: 0.6 }}>No accounts yet.</p>}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
