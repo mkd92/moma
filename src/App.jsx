@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, ComposedChart, Line } from 'recharts';
 import { supabase } from './supabaseClient';
@@ -450,6 +451,9 @@ export default function App() {
   const { pathname } = useLocation();
   const view = PATH_VIEWS[pathname] || 'landing';
   const setView = useCallback((v) => navigate(VIEW_PATHS[v] || '/'), [navigate]);
+
+  // Auto-reload when a new service worker version is available
+  useRegisterSW({ onNeedRefresh() { window.location.reload(); }, onOfflineReady() {} });
 
   const [session, setSession] = useState(null);
 
