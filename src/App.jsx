@@ -303,6 +303,7 @@ function App() {
   const [newAccountName, setNewAccountName] = useState('');
   const [newAccountBalance, setNewAccountBalance] = useState('');
   const [newPartyName, setNewPartyName] = useState('');
+  const [newTagName, setNewTagName] = useState('');
 
   // Dashboard period filter
   const [dashPeriod, setDashPeriod] = useState('this_month');
@@ -896,6 +897,34 @@ function App() {
     fetchAccounts();
   }, [session]);
 
+  const handleCreateParty = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newPartyName.trim()) return;
+    await supabase.from('parties').insert([{ user_id: session.user.id, name: newPartyName.trim() }]);
+    setNewPartyName('');
+    fetchParties();
+  }, [session, newPartyName]);
+
+  const handleDeleteParty = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('parties').delete().eq('id', id);
+    fetchParties();
+  }, [session]);
+
+  const handleCreateTag = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newTagName.trim()) return;
+    await supabase.from('tags').insert([{ user_id: session.user.id, name: newTagName.trim().toLowerCase().replace(/\s+/g, '_') }]);
+    setNewTagName('');
+    fetchTags();
+  }, [session, newTagName]);
+
+  const handleDeleteTag = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('tags').delete().eq('id', id);
+    fetchTags();
+  }, [session]);
+
   const handleSaveBudget = useCallback(async (e) => {
     e.preventDefault();
     if (!session || !budgetForm.amount_limit) return;
@@ -944,12 +973,12 @@ function App() {
     </div>
   );
 
-  if (view === 'settings' || view === 'account_management' || view === 'category_management') {
+  if (view === 'settings' || view === 'account_management' || view === 'category_management' || view === 'party_management' || view === 'tag_management') {
     let settingsContent;
     if (view === 'settings') settingsContent = (
       <div className="page-inner fade-in">
         <div className="section-header-row"><h2 className="section-title-editorial">Settings</h2></div>
-        <div className="settings-panel"><div className="settings-section"><p className="label-sm">Preferences</p><div className="settings-group"><div className="settings-card"><span className="sc-text">Currency</span><div style={{ width: '180px' }}><CustomDropdown options={Object.entries(CURRENCY_SYMBOLS).map(([code, sym]) => ({ value: code, label: `${code} (${sym})` }))} value={currencyCode} onChange={setCurrencyCode} showSearch={false} /></div></div></div></div><div className="settings-section"><p className="label-sm">Manage</p><div className="settings-group"><button className="settings-nav-btn" onClick={() => setView('account_management')}>Accounts <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('category_management')}>Categories <span className="arrow">›</span></button></div></div></div>
+        <div className="settings-panel"><div className="settings-section"><p className="label-sm">Preferences</p><div className="settings-group"><div className="settings-card"><span className="sc-text">Currency</span><div style={{ width: '180px' }}><CustomDropdown options={Object.entries(CURRENCY_SYMBOLS).map(([code, sym]) => ({ value: code, label: `${code} (${sym})` }))} value={currencyCode} onChange={setCurrencyCode} showSearch={false} /></div></div></div></div><div className="settings-section"><p className="label-sm">Manage</p><div className="settings-group"><button className="settings-nav-btn" onClick={() => setView('account_management')}>Accounts <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('category_management')}>Categories <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('party_management')}>Parties <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('tag_management')}>Tags <span className="arrow">›</span></button></div></div></div>
       </div>
     );
     else if (view === 'account_management') settingsContent = (
@@ -976,6 +1005,26 @@ function App() {
           </form>
         </div>
       );
+    } else if (view === 'party_management') {
+      settingsContent = (
+        <div className="page-inner slide-up">
+          <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Parties</h2></div>
+          <div className="settings-controls fade-in">
+            <div className="category-manager">{parties.map(p => (<div key={p.id} className="editorial-item"><div className="editorial-icon">🏪</div><div className="editorial-info"><div className="editorial-title">{p.name}</div></div><button className="delete-btn" onClick={() => handleDeleteParty(p.id)}>✕</button></div>))}</div>
+            <form onSubmit={handleCreateParty} className="add-category-form"><p className="label-sm">Add Party</p><input type="text" placeholder="Party Name (e.g. Starbucks)" value={newPartyName} onChange={(e) => setNewPartyName(e.target.value)} required /><button type="submit" className="add-cat-btn">Add Party</button></form>
+          </div>
+        </div>
+      );
+    } else if (view === 'tag_management') {
+      settingsContent = (
+        <div className="page-inner slide-up">
+          <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Tags</h2></div>
+          <div className="settings-controls fade-in">
+            <div className="category-manager">{tags.map(t => (<div key={t.id} className="editorial-item"><div className="editorial-icon" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700 }}>#</div><div className="editorial-info"><div className="editorial-title">#{t.name}</div></div><button className="delete-btn" onClick={() => handleDeleteTag(t.id)}>✕</button></div>))}</div>
+            <form onSubmit={handleCreateTag} className="add-category-form"><p className="label-sm">Add Tag</p><input type="text" placeholder="tag name (e.g. work)" value={newTagName} onChange={(e) => setNewTagName(e.target.value)} required /><button type="submit" className="add-cat-btn">Add Tag</button></form>
+          </div>
+        </div>
+      );
     }
     return <PageShell>{settingsContent}</PageShell>;
   }
@@ -992,10 +1041,27 @@ function App() {
             <div className="amount-input-wrapper"><span className="currency-prefix">{currencySymbol}</span><input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="amount-input" autoFocus /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}><div className="category-selection-area"><p className="label-sm">Date</p><input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} className="text-input" /></div><div className="category-selection-area"><p className="label-sm">Note</p><input type="text" placeholder="Description" value={note} onChange={(e) => setNote(e.target.value)} className="text-input" /></div></div>
             {txType !== 'transfer' ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <CustomDropdown label="Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '🏦' }))} value={selectedAccount} onChange={setSelectedAccount} placeholder="Select Account" />
-                <CustomDropdown label="Category" options={[...currentParents, ...applicableSubs].map(c => ({ value: c.id, label: c.name, icon: c.icon }))} value={selectedCategory} onChange={setSelectedCategory} placeholder="Select Category" />
-              </div>
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  <CustomDropdown label="Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '🏦' }))} value={selectedAccount} onChange={setSelectedAccount} placeholder="Select Account" />
+                  <CustomDropdown label="Category" options={[...currentParents, ...applicableSubs].map(c => ({ value: c.id, label: c.name, icon: c.icon }))} value={selectedCategory} onChange={setSelectedCategory} placeholder="Select Category" />
+                </div>
+                <CustomDropdown label="Party (Optional)" options={[{ value: '', label: '— None —' }, ...parties.map(p => ({ value: p.id, label: p.name, icon: '🏪' }))]} value={selectedParty || ''} onChange={v => setSelectedParty(v || null)} placeholder="Select Party" showSearch={true} />
+                {tags.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <p className="label-sm">Tags</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {tags.map(t => (
+                        <button key={t.id} type="button"
+                          onClick={() => setSelectedTags(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])}
+                          className="filter-chip"
+                          style={{ background: selectedTags.includes(t.id) ? 'var(--primary-light)' : 'var(--surface-container-low)', color: selectedTags.includes(t.id) ? 'var(--primary)' : 'var(--on-surface-variant)', fontWeight: selectedTags.includes(t.id) ? 700 : 400 }}
+                        >#{t.name}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                 <CustomDropdown label="From Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '📤' }))} value={transferFromAccount} onChange={setTransferFromAccount} placeholder="From..." />
