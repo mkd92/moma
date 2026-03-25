@@ -107,6 +107,16 @@ const TopHeader = ({ session, onLogout }) => (
   </header>
 );
 
+const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, session, onLogout }) => (
+  <div className="app-shell">
+    <Sidebar view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onBudgets={onBudgets} onNewTx={onNewTx} onSettings={onSettings} session={session} onLogout={onLogout} />
+    <div className="page-content">
+      <TopHeader session={session} onLogout={onLogout} />
+      {children}
+    </div>
+  </div>
+);
+
 // Advanced Filter Panel Component
 const FilterPanel = ({
   categories,
@@ -977,16 +987,6 @@ function App() {
     fetchBudgets();
   }, [session, budgetForm]);
 
-  const PageShell = ({ children }) => (
-    <div className="app-shell">
-      <Sidebar view={view} onDashboard={navToDashboard} onLedger={navToLedger} onAnalytics={navToAnalytics} onBudgets={navToBudgets} onNewTx={navToNewTx} onSettings={navToSettings} session={session} onLogout={handleLogout} />
-      <div className="page-content">
-        <TopHeader session={session} onLogout={handleLogout} />
-        {children}
-      </div>
-    </div>
-  );
-
   const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, session, onLogout: handleLogout };
 
   if (view === 'landing') return (
@@ -1065,14 +1065,14 @@ function App() {
         </div>
       );
     }
-    return <PageShell>{settingsContent}</PageShell>;
+    return <PageShell {...shellProps}>{settingsContent}</PageShell>;
   }
 
   if (view === 'new_transaction') {
     const currentParents = categories.filter(c => c.type === txType && !c.parent_id);
     const applicableSubs = categories.filter(sub => currentParents.some(p => p.id === sub.parent_id));
     return (
-      <PageShell>
+      <PageShell {...shellProps}>
         <div className="page-inner slide-up" style={{ maxWidth: '640px' }}>
           <div className="section-header-row"><h2 className="section-title-editorial">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2><button className="section-action-link" onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}>Cancel</button></div>
           <div className="fluid-input-area fade-in">
@@ -1117,7 +1117,7 @@ function App() {
   if (view === 'ledger') {
     const activeFiltersCount = (filterOptions.type !== 'all' ? 1 : 0) + (filterOptions.dateRange.start ? 1 : 0) + (filterOptions.dateRange.end ? 1 : 0) + filterOptions.categoryIds.length + filterOptions.tagIds.length;
     return (
-      <PageShell>
+      <PageShell {...shellProps}>
         <div className="page-inner fade-in">
           <div className="section-header-row"><h2 className="section-title-editorial">Transactions</h2><div style={{ display: 'flex', gap: '1rem' }}><button className={`filter-toggle-btn ${showAdvancedFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showAdvancedFilters)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>{showAdvancedFilters ? 'Hide Filters' : 'Deep Filter'}{activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}</button><button className="section-action-link" onClick={navToDashboard}>Dashboard</button></div></div>
           <div className="ledger-search-row" style={{ marginTop: '1.5rem' }}><div className="ledger-search-wrap" style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-full)', padding: '0.25rem' }}><input type="text" placeholder="Search transactions..." className="ledger-search-input" style={{ background: 'transparent', border: 'none', padding: '0.75rem 1rem 0.75rem 3rem' }} value={filterOptions.searchTerm} onChange={(e) => updateFilter('searchTerm', e.target.value)} /><svg className="search-icon" style={{ left: '1.25rem' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
@@ -1156,7 +1156,7 @@ function App() {
       );
     };
     return (
-      <PageShell>
+      <PageShell {...shellProps}>
         <div className="page-inner fade-in">
           <div className="section-header-row">
             <h2 className="section-title-editorial">Analytics</h2>
@@ -1256,7 +1256,7 @@ function App() {
 
   // --- DASHBOARD VIEW ---
   return (
-    <PageShell>
+    <PageShell {...shellProps}>
       <div className="page-inner fade-in">
         <div className="dashboard-layout">
           <div className="dashboard-main-stack">
