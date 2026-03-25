@@ -1573,9 +1573,9 @@ export default function App() {
                 {date !== '__flat__' && <div className="ledger-date-header"><span className="ledger-date-text">{formatGroupDate(date)}</span></div>}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
                   {txs.map(t => {
-                    const cat = t.categories || { icon: '•', name: 'Uncategorized' };
-                    const isSelected = selectedTxIds.has(t.id);
                     const isTransfer = !!t.transfer_id;
+                    const cat = isTransfer ? { icon: '⇄', name: 'Transfer' } : (t.categories || { icon: '•', name: 'Uncategorized' });
+                    const isSelected = selectedTxIds.has(t.id);
                     const fmtAmt = parseFloat(t.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     return (
                       <div
