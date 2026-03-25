@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { supabase } from './supabaseClient';
 import CustomDropdown from './components/CustomDropdown';
 import './App.css';
@@ -323,6 +323,7 @@ function App() {
     };
   });
   const [showAnalyticsFilters, setShowAnalyticsFilters] = useState(false);
+  const [drillCategory, setDrillCategory] = useState(null);
 
   const updateFilter = useCallback((key, value) => {
     setFilterOptions(prev => ({ ...prev, [key]: value, preset: key === 'preset' ? value : 'custom' }));
@@ -749,6 +750,15 @@ function App() {
     });
   }, [transactions, analyticsFilters, categories]);
 
+  const drillTransactions = useMemo(() => {
+    if (!drillCategory) return analyticsTransactions;
+    return analyticsTransactions.filter(t => {
+      const cat = categories.find(c => c.id === t.category_id);
+      const parent = cat?.parent_id ? categories.find(c => c.id === cat.parent_id) : cat;
+      return (parent?.name || cat?.name) === drillCategory;
+    });
+  }, [analyticsTransactions, drillCategory, categories]);
+
   const chartTimeSeries = useMemo(() => {
     const { start, end } = analyticsFilters.dateRange;
     if (!start) return [];
@@ -757,18 +767,24 @@ function App() {
     const endD = end ? new Date(end + 'T00:00:00') : new Date();
     const dayCount = Math.ceil((endD - startD) / 86400000) + 1;
 
+    const withMA = (arr) => arr.map((d, i) => {
+      const slice = arr.slice(Math.max(0, i - 6), i + 1);
+      const avg = slice.reduce((s, x) => s + x.expense, 0) / slice.length;
+      return { ...d, expenseMA: Math.round(avg * 100) / 100 };
+    });
+
     if (dayCount > 180) {
       const data = {};
-      analyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+      drillTransactions.filter(t => !t.transfer_id).forEach(t => {
         const key = t.transaction_date.slice(0, 7);
         if (!data[key]) data[key] = { date: key, income: 0, expense: 0, label: new Date(key + '-01T12:00:00').toLocaleDateString(undefined, { month: 'short', year: '2-digit' }) };
         if (t.type === 'income') data[key].income += parseFloat(t.amount);
         if (t.type === 'expense') data[key].expense += parseFloat(t.amount);
       });
-      return Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
+      return withMA(Object.values(data).sort((a, b) => a.date.localeCompare(b.date)));
     } else if (dayCount > 60) {
       const data = {};
-      analyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+      drillTransactions.filter(t => !t.transfer_id).forEach(t => {
         const d = new Date(t.transaction_date + 'T12:00:00');
         const day = d.getDay() || 7;
         const mon = new Date(d); mon.setDate(d.getDate() - day + 1);
@@ -777,7 +793,7 @@ function App() {
         if (t.type === 'income') data[key].income += parseFloat(t.amount);
         if (t.type === 'expense') data[key].expense += parseFloat(t.amount);
       });
-      return Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
+      return withMA(Object.values(data).sort((a, b) => a.date.localeCompare(b.date)));
     } else {
       const data = {};
       for (let i = 0; i < dayCount; i++) {
@@ -785,15 +801,15 @@ function App() {
         const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
         data[key] = { date: key, income: 0, expense: 0, label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) };
       }
-      analyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+      drillTransactions.filter(t => !t.transfer_id).forEach(t => {
         if (data[t.transaction_date]) {
           if (t.type === 'income') data[t.transaction_date].income += parseFloat(t.amount);
           if (t.type === 'expense') data[t.transaction_date].expense += parseFloat(t.amount);
         }
       });
-      return Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
+      return withMA(Object.values(data).sort((a, b) => a.date.localeCompare(b.date)));
     }
-  }, [analyticsTransactions, analyticsFilters.dateRange]);
+  }, [drillTransactions, analyticsFilters.dateRange]);
 
   const chartCategorical = useMemo(() => {
     const totals = {};
@@ -809,13 +825,13 @@ function App() {
 
   const chartTags = useMemo(() => {
     const totals = {};
-    analyticsTransactions.filter(t => !t.transfer_id && t.transaction_tags?.length > 0).forEach(t => {
+    drillTransactions.filter(t => !t.transfer_id && t.transaction_tags?.length > 0).forEach(t => {
       t.transaction_tags.forEach(tt => {
         if (tt.tags?.name) totals[tt.tags.name] = (totals[tt.tags.name] || 0) + parseFloat(t.amount);
       });
     });
     return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
-  }, [analyticsTransactions]);
+  }, [drillTransactions]);
 
   const analyticsKPIs = useMemo(() => {
     const { start, end } = analyticsFilters.dateRange;
@@ -826,8 +842,31 @@ function App() {
       if (t.type === 'expense') totalExpense += parseFloat(t.amount);
       if (t.type === 'income') totalIncome += parseFloat(t.amount);
     });
-    return { totalExpense, totalIncome, dailyBurn: totalExpense / days, net: totalIncome - totalExpense, txCount: analyticsTransactions.filter(t => !t.transfer_id).length };
-  }, [analyticsTransactions, analyticsFilters.dateRange]);
+    const today = new Date();
+    const dayOfMonth = today.getDate();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const predictedMonthEnd = analyticsFilters.preset === 'this_month' && dayOfMonth < daysInMonth && totalExpense > 0
+      ? Math.round((totalExpense / dayOfMonth) * daysInMonth) : null;
+    return { totalExpense, totalIncome, dailyBurn: totalExpense / days, net: totalIncome - totalExpense, txCount: analyticsTransactions.filter(t => !t.transfer_id).length, predictedMonthEnd };
+  }, [analyticsTransactions, analyticsFilters.dateRange, analyticsFilters.preset]);
+
+  const prevPeriodKPIs = useMemo(() => {
+    const { start, end } = analyticsFilters.dateRange;
+    if (!start || !end) return { income: 0, expense: 0, net: 0 };
+    const startD = new Date(start + 'T00:00:00');
+    const endD = new Date(end + 'T00:00:00');
+    const ms = endD - startD + 86400000;
+    const prevEnd = new Date(startD.getTime() - 86400000);
+    const prevStart = new Date(startD.getTime() - ms);
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const ps = fmt(prevStart), pe = fmt(prevEnd);
+    let income = 0, expense = 0;
+    transactions.filter(t => !t.transfer_id && t.transaction_date >= ps && t.transaction_date <= pe).forEach(t => {
+      if (t.type === 'income') income += parseFloat(t.amount);
+      if (t.type === 'expense') expense += parseFloat(t.amount);
+    });
+    return { income, expense, net: income - expense };
+  }, [transactions, analyticsFilters.dateRange]);
 
   const filteredLedger = useMemo(() => {
     return transactions.filter(t => {
@@ -1093,18 +1132,122 @@ function App() {
 
   // --- ANALYTICS VIEW ---
   if (view === 'analytics') {
-    const totalSpentFiltered = analyticsTransactions.filter(t => t.type === 'expense' && !t.transfer_id).reduce((s, t) => s + parseFloat(t.amount), 0);
-    const totalIncomeFiltered = analyticsTransactions.filter(t => t.type === 'income' && !t.transfer_id).reduce((s, t) => s + parseFloat(t.amount), 0);
+    const PIE_COLORS = ['var(--primary)', 'var(--secondary)', 'var(--primary-container)', 'var(--tertiary-fixed-variant)', 'var(--on-surface-variant)', '#a8c5da', '#f4b183', '#b4a7d6'];
+    const pct = (curr, prev) => {
+      if (!prev || prev === 0) return null;
+      const change = ((curr - prev) / Math.abs(prev)) * 100;
+      return { label: `${Math.abs(change).toFixed(1)}%`, up: change >= 0 };
+    };
+    const incomePct = pct(analyticsKPIs.totalIncome, prevPeriodKPIs.income);
+    const expensePct = pct(analyticsKPIs.totalExpense, prevPeriodKPIs.expense);
+    const netPct = pct(analyticsKPIs.net, prevPeriodKPIs.net);
+    const EmptyChart = ({ h = 280, msg = 'No data for this period' }) => (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: h, color: 'var(--on-surface-variant)', fontSize: '0.875rem', fontStyle: 'italic' }}>{msg}</div>
+    );
+    const AnalyticsTooltip = ({ active, payload, label }) => {
+      if (!active || !payload?.length) return null;
+      return (
+        <div style={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--ghost-border)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', boxShadow: 'var(--shadow-ambient)', fontFamily: 'Inter, sans-serif' }}>
+          <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>{label}</p>
+          {payload.filter(e => e.dataKey !== 'expenseMA').map((e, i) => (
+            <p key={i} style={{ fontSize: '0.875rem', fontWeight: 600, color: e.color, margin: '0.15rem 0', fontFamily: 'Manrope, sans-serif' }}>{e.name}: {currencySymbol}{Number(e.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          ))}
+        </div>
+      );
+    };
     return (
       <PageShell>
         <div className="page-inner fade-in">
-          <div className="section-header-row"><h2 className="section-title-editorial">Analytics</h2><button className={`filter-toggle-btn ${showAnalyticsFilters ? 'active' : ''}`} onClick={() => setShowAnalyticsFilters(!showAnalyticsFilters)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filters</button></div>
-          {showAnalyticsFilters && (<div className="advanced-filters slide-up" style={{ marginTop: '1.5rem', background: 'var(--surface-container-low)', padding: '2rem', borderRadius: 'var(--radius-lg)' }}><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem' }}><div className="filter-section"><p className="label-sm">Time Period</p><div className="filter-pills" style={{ marginTop: '0.5rem' }}>{['today', 'this_week', 'this_month', 'last_3m', 'this_year'].map(p => (<button key={p} className={`filter-pill ${analyticsFilters.preset === p ? 'active-pill' : ''}`} onClick={() => applyAnalyticsPreset(p)} style={{ textTransform: 'capitalize' }}>{p.replace('_', ' ')}</button>))}</div></div><div className="filter-section"><p className="label-sm">Transaction Type</p><div className="type-toggle-bar" style={{ marginTop: '0.5rem', background: 'var(--surface-container-lowest)' }}>{['all', 'income', 'expense', 'transfer'].map(t => (<button key={t} className={`type-btn ${analyticsFilters.type === t ? (t === 'all' ? 'active-transfer' : `active-${t}`) : ''}`} onClick={() => updateAnalyticsFilter('type', t)} style={{ textTransform: 'capitalize' }}>{t}</button>))}</div></div></div><div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}><button className="section-action-link" onClick={resetAnalyticsFilters}>Reset Analytics Filters</button></div></div>)}
-          <div className="summary-cards-grid" style={{ marginTop: '2rem' }}><div className="summary-card income"><p className="summary-label">Income</p><h3 className="summary-value">{currencySymbol}{totalIncomeFiltered.toLocaleString()}</h3></div><div className="summary-card expense"><p className="summary-label">Expenses</p><h3 className="summary-value">{currencySymbol}{totalSpentFiltered.toLocaleString()}</h3></div><div className="summary-card burn"><p className="summary-label">Net Cash Flow</p><h3 className={`summary-value ${(totalIncomeFiltered - totalSpentFiltered) < 0 ? 'expense' : 'income'}`}>{currencySymbol}{(totalIncomeFiltered - totalSpentFiltered).toLocaleString()}</h3></div><div className="summary-card burn"><p className="summary-label">Daily Average</p><h3 className="summary-value">{currencySymbol}{analyticsKPIs.dailyBurn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3></div></div>
+          <div className="section-header-row">
+            <h2 className="section-title-editorial">Analytics</h2>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              {drillCategory && <button className="filter-pill active-pill" onClick={() => setDrillCategory(null)} style={{ fontSize: '0.75rem' }}>📂 {drillCategory} ✕</button>}
+              <button className={`filter-toggle-btn ${showAnalyticsFilters ? 'active' : ''}`} onClick={() => setShowAnalyticsFilters(!showAnalyticsFilters)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filters</button>
+            </div>
+          </div>
+          <div className="filter-pills" style={{ marginTop: '1rem' }}>
+            {['today', 'this_week', 'this_month', 'last_3m', 'this_year'].map(p => (
+              <button key={p} className={`filter-pill ${analyticsFilters.preset === p ? 'active-pill' : ''}`} onClick={() => applyAnalyticsPreset(p)} style={{ textTransform: 'capitalize' }}>{p.replace(/_/g, ' ')}</button>
+            ))}
+          </div>
+          {showAnalyticsFilters && (
+            <div className="advanced-filters slide-up" style={{ marginTop: '1.5rem', background: 'var(--surface-container-low)', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem' }}>
+                <div className="filter-section"><p className="label-sm">Transaction Type</p><div className="type-toggle-bar" style={{ marginTop: '0.5rem', background: 'var(--surface-container-lowest)' }}>{['all', 'income', 'expense'].map(t => (<button key={t} className={`type-btn ${analyticsFilters.type === t ? (t === 'all' ? 'active-transfer' : `active-${t}`) : ''}`} onClick={() => updateAnalyticsFilter('type', t)} style={{ textTransform: 'capitalize' }}>{t}</button>))}</div></div>
+              </div>
+              <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}><button className="section-action-link" onClick={resetAnalyticsFilters}>Reset</button></div>
+            </div>
+          )}
+          <div className="summary-cards-grid" style={{ marginTop: '2rem' }}>
+            <div className="summary-card income">
+              <p className="summary-label">Income</p>
+              <h3 className="summary-value">{currencySymbol}{analyticsKPIs.totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+              {incomePct && <p style={{ fontSize: '0.72rem', marginTop: '0.3rem', color: incomePct.up ? 'var(--secondary)' : 'var(--tertiary-fixed-variant)' }}>{incomePct.up ? '↑' : '↓'} {incomePct.label} vs prev period</p>}
+            </div>
+            <div className="summary-card expense">
+              <p className="summary-label">Expenses</p>
+              <h3 className="summary-value">{currencySymbol}{analyticsKPIs.totalExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+              {expensePct && <p style={{ fontSize: '0.72rem', marginTop: '0.3rem', color: !expensePct.up ? 'var(--secondary)' : 'var(--tertiary-fixed-variant)' }}>{expensePct.up ? '↑' : '↓'} {expensePct.label} vs prev period</p>}
+            </div>
+            <div className="summary-card burn">
+              <p className="summary-label">Net Cash Flow</p>
+              <h3 className={`summary-value ${analyticsKPIs.net < 0 ? 'expense' : 'income'}`}>{currencySymbol}{analyticsKPIs.net.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+              {netPct && <p style={{ fontSize: '0.72rem', marginTop: '0.3rem', color: netPct.up ? 'var(--secondary)' : 'var(--tertiary-fixed-variant)' }}>{netPct.up ? '↑' : '↓'} {netPct.label} vs prev period</p>}
+            </div>
+            <div className="summary-card burn">
+              <p className="summary-label">Daily Avg Spend</p>
+              <h3 className="summary-value">{currencySymbol}{analyticsKPIs.dailyBurn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+              {analyticsKPIs.predictedMonthEnd && <p style={{ fontSize: '0.72rem', marginTop: '0.3rem', color: 'var(--on-surface-variant)' }}>~{currencySymbol}{analyticsKPIs.predictedMonthEnd.toLocaleString()} projected</p>}
+            </div>
+          </div>
           <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem', marginTop: '2rem' }}>
-            <div className="analytics-card-sm" style={{ minHeight: '400px' }}><p className="analytics-title-sm">Cash Flow Velocity</p><ResponsiveContainer width="100%" height={320}><AreaChart data={chartTimeSeries}><defs><linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--secondary)" stopOpacity={0.3}/><stop offset="95%" stopColor="var(--secondary)" stopOpacity={0}/></linearGradient><linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--tertiary-fixed-variant)" stopOpacity={0.3}/><stop offset="95%" stopColor="var(--tertiary-fixed-variant)" stopOpacity={0}/></linearGradient></defs><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--on-surface-variant)' }} minTickGap={30} /><YAxis hide /><Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-ambient)' }} /><Area type="monotone" dataKey="income" stroke="var(--secondary)" strokeWidth={3} fillOpacity={1} fill="url(#colorInc)" /><Area type="monotone" dataKey="expense" stroke="var(--tertiary-fixed-variant)" strokeWidth={3} fillOpacity={1} fill="url(#colorExp)" /></AreaChart></ResponsiveContainer></div>
-            <div className="analytics-card-sm"><p className="analytics-title-sm">Category Breakdown</p><ResponsiveContainer width="100%" height={320}><PieChart><Pie data={chartCategorical} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value"><Cell fill="var(--primary)" /><Cell fill="var(--secondary)" /><Cell fill="var(--primary-container)" /><Cell fill="var(--tertiary-fixed-variant)" /><Cell fill="var(--on-surface-variant)" /></Pie><Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-ambient)' }} /></PieChart></ResponsiveContainer></div>
-            <div className="analytics-card-sm" style={{ gridColumn: 'span 2' }}><p className="analytics-title-sm">Tag Density</p><ResponsiveContainer width="100%" height={300}><BarChart data={chartTags} layout="vertical" margin={{ left: 40, right: 40 }}><XAxis type="number" hide /><YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: 600 }} /><Tooltip cursor={{ fill: 'var(--surface-container-low)' }} contentStyle={{ borderRadius: '12px', border: 'none' }} /><Bar dataKey="value" fill="var(--primary-container)" radius={[0, 6, 6, 0]} barSize={24} /></BarChart></ResponsiveContainer></div>
+            <div className="analytics-card-sm" style={{ minHeight: '400px' }}>
+              <p className="analytics-title-sm">Cash Flow Velocity{drillCategory && <span style={{ fontSize: '0.7rem', fontWeight: 400, opacity: 0.6, marginLeft: '0.5rem' }}>· {drillCategory}</span>}</p>
+              {chartTimeSeries.length === 0 ? <EmptyChart h={320} /> : (
+                <ResponsiveContainer width="100%" height={320}>
+                  <AreaChart data={chartTimeSeries}>
+                    <defs>
+                      <linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--secondary)" stopOpacity={0.3}/><stop offset="95%" stopColor="var(--secondary)" stopOpacity={0}/></linearGradient>
+                      <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--tertiary-fixed-variant)" stopOpacity={0.3}/><stop offset="95%" stopColor="var(--tertiary-fixed-variant)" stopOpacity={0}/></linearGradient>
+                    </defs>
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} minTickGap={30} />
+                    <YAxis hide />
+                    <Tooltip content={<AnalyticsTooltip />} />
+                    <Area type="monotone" dataKey="income" name="Income" stroke="var(--secondary)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorInc)" />
+                    <Area type="monotone" dataKey="expense" name="Expense" stroke="var(--tertiary-fixed-variant)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorExp)" />
+                    <Area type="monotone" dataKey="expenseMA" name="MA" stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="5 4" fillOpacity={0} fill="none" dot={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+            <div className="analytics-card-sm">
+              <p className="analytics-title-sm">Category Breakdown <span style={{ fontSize: '0.7rem', fontWeight: 400, opacity: 0.5 }}>click to drill</span></p>
+              {chartCategorical.length === 0 ? <EmptyChart h={320} msg="No expense data" /> : (
+                <ResponsiveContainer width="100%" height={320}>
+                  <PieChart>
+                    <Pie data={chartCategorical} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value" onClick={d => setDrillCategory(drillCategory === d.name ? null : d.name)} style={{ cursor: 'pointer' }}>
+                      {chartCategorical.map((entry, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} opacity={drillCategory && drillCategory !== entry.name ? 0.3 : 1} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<AnalyticsTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+            <div className="analytics-card-sm" style={{ gridColumn: 'span 2' }}>
+              <p className="analytics-title-sm">Tag Density{drillCategory && <span style={{ fontSize: '0.7rem', fontWeight: 400, opacity: 0.6, marginLeft: '0.5rem' }}>· {drillCategory}</span>}</p>
+              {chartTags.length === 0 ? <EmptyChart h={180} msg="No tagged transactions" /> : (
+                <ResponsiveContainer width="100%" height={Math.max(180, chartTags.length * 44)}>
+                  <BarChart data={chartTags} layout="vertical" margin={{ left: 40, right: 40 }}>
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: 600, fontFamily: 'Inter' }} />
+                    <Tooltip cursor={{ fill: 'var(--surface-container-low)' }} content={<AnalyticsTooltip />} />
+                    <Bar dataKey="value" name="Amount" fill="var(--primary-container)" radius={[0, 6, 6, 0]} barSize={24} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </div>
       </PageShell>
