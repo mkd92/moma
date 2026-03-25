@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { supabase } from './supabaseClient';
 import CustomDropdown from './components/CustomDropdown';
@@ -7,8 +8,25 @@ import './App.css';
 // Constant outside component — not recreated on every render
 const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', INR: '₹', JPY: '¥' };
 
+const ACCT_META = {
+  asset: { icon: '🏦', label: 'Asset', color: 'var(--secondary)' },
+  liability: { icon: '💳', label: 'Liability', color: 'var(--tertiary-fixed-variant)' },
+  temp: { icon: '⏳', label: 'Temp', color: 'var(--on-surface-variant)' },
+};
+
+// Route ↔ view name maps
+const VIEW_PATHS = {
+  landing: '/', auth: '/auth', dashboard: '/dashboard', ledger: '/ledger',
+  new_transaction: '/transaction/new', analytics: '/analytics', budgets: '/budgets',
+  settings: '/settings', account_management: '/settings/accounts',
+  category_management: '/settings/categories', party_management: '/settings/parties',
+  tag_management: '/settings/tags',
+};
+const PATH_VIEWS = Object.fromEntries(Object.entries(VIEW_PATHS).map(([k, v]) => [v, k]));
+
 // Module-level date formatter for transaction grouping
 const formatGroupDate = (dateStr) => {
+  if (!dateStr || dateStr === 'Unknown') return 'Unknown Date';
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
   if (dateStr === today) return 'Today';
@@ -21,7 +39,7 @@ const formatGroupDate = (dateStr) => {
 };
 
 // Sidebar — desktop left-rail navigation
-const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, session, onLogout }) => {
+const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand-wrapper">
@@ -83,7 +101,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
   );
 };
 
-const TopHeader = ({ session, onLogout }) => (
+const TopHeader = ({ session }) => (
   <header className="top-header">
     <div className="search-container">
       <svg className="search-icon-top" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -107,15 +125,59 @@ const TopHeader = ({ session, onLogout }) => (
   </header>
 );
 
-const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, session, onLogout }) => (
-  <div className="app-shell">
-    <Sidebar view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onBudgets={onBudgets} onNewTx={onNewTx} onSettings={onSettings} session={session} onLogout={onLogout} />
-    <div className="page-content">
-      <TopHeader session={session} onLogout={onLogout} />
-      {children}
+const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session }) => {
+  return (
+    <div className="app-shell">
+      <Sidebar view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onBudgets={onBudgets} onNewTx={onNewTx} onSettings={onSettings} onLogout={onLogout} />
+      <div className="page-content">
+        <TopHeader session={session} />
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete }) => accts.length === 0 ? null : (
+  <div style={{ marginBottom: '1.5rem' }}>
+    <p className="label-sm" style={{ marginBottom: '0.75rem' }}>{title}</p>
+    <div className="category-manager">
+      {accts.map(acc => {
+        const meta = ACCT_META[acc.type || 'asset'];
+        const bal = accountBalances[acc.id] || 0;
+        return (
+          <div key={acc.id} className="editorial-item">
+            <div className="editorial-icon">{meta.icon}</div>
+            <div className="editorial-info">
+              <div className="editorial-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {acc.name}
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-low)', color: meta.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{meta.label}</span>
+                {acc.exclude_from_total && <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-low)', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>excl.</span>}
+              </div>
+              <div className="editorial-meta">{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            </div>
+            <button className="delete-btn" onClick={() => onDelete(acc.id)}>✕</button>
+          </div>
+        );
+      })}
     </div>
   </div>
 );
+
+const EmptyChart = ({ h = 280, msg = 'No data for this period' }) => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: h, color: 'var(--on-surface-variant)', fontSize: '0.875rem', fontStyle: 'italic' }}>{msg}</div>
+);
+
+const AnalyticsTooltip = ({ active, payload, label, currencySymbol }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--ghost-border)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', boxShadow: 'var(--shadow-ambient)', fontFamily: 'Inter, sans-serif' }}>
+      <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>{label}</p>
+      {payload.filter(e => e.dataKey !== 'expenseMA').map((e, i) => (
+        <p key={i} style={{ fontSize: '0.875rem', fontWeight: 600, color: e.color, margin: '0.15rem 0', fontFamily: 'Manrope, sans-serif' }}>{e.name}: {currencySymbol}{Number(e.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+      ))}
+    </div>
+  );
+};
 
 // Advanced Filter Panel Component
 const FilterPanel = ({
@@ -257,8 +319,12 @@ const FilterPanel = ({
   );
 };
 
-function App() {
-  const [view, setView] = useState('landing');
+export default function App() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const view = PATH_VIEWS[pathname] || 'landing';
+  const setView = useCallback((v) => navigate(VIEW_PATHS[v] || '/'), [navigate]);
+
   const [session, setSession] = useState(null);
 
   const [authMode, setAuthMode] = useState('login');
@@ -294,6 +360,25 @@ function App() {
   const [transferFromAccount, setTransferFromAccount] = useState(null);
   const [transferToAccount, setTransferToAccount] = useState(null);
 
+  // Category Manager State
+  const [settingsType, setSettingsType] = useState('expense');
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('🔖');
+  const [newCatParent, setNewCatParent] = useState('');
+  const [editingCat, setEditingCat] = useState(null);
+
+  // Account Manager State
+  const [newAccountName, setNewAccountName] = useState('');
+  const [newAccountBalance, setNewAccountBalance] = useState('0');
+  const [newAccountType, setNewAccountType] = useState('asset');
+  const [newAccountExclude, setNewAccountExclude] = useState(false);
+
+  // Party Manager State
+  const [newPartyName, setNewPartyName] = useState('');
+
+  // Tag Manager State
+  const [newTagName, setNewTagName] = useState('');
+
   // Budget Form State
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [budgetForm, setBudgetForm] = useState({ id: null, category_id: null, amount_limit: '', period: 'monthly' });
@@ -305,58 +390,111 @@ function App() {
     categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'all'
   });
 
-  // Settings / Management Form State
-  const [settingsType, setSettingsType] = useState('expense');
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatIcon, setNewCatIcon] = useState('🔖');
-  const [newCatParent, setNewCatParent] = useState('');
-  const [newAccountName, setNewAccountName] = useState('');
-  const [newAccountBalance, setNewAccountBalance] = useState('');
-  const [newPartyName, setNewPartyName] = useState('');
-  const [newTagName, setNewTagName] = useState('');
-
   // Dashboard period filter
   const [dashPeriod, setDashPeriod] = useState('this_month');
 
-  // Analytics filter state — initialised to this month
-  const [analyticsFilters, setAnalyticsFilters] = useState(() => {
-    const today = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    return {
-      type: 'all',
-      dateRange: {
-        start: fmt(new Date(today.getFullYear(), today.getMonth(), 1)),
-        end: fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)),
-      },
-      categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'this_month',
-    };
+  // Analytics filter state
+  const [analyticsFilters, setAnalyticsFilters] = useState({
+    type: 'all', dateRange: { start: '', end: '' },
+    categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'this_month'
   });
   const [showAnalyticsFilters, setShowAnalyticsFilters] = useState(false);
   const [drillCategory, setDrillCategory] = useState(null);
 
-  const updateFilter = useCallback((key, value) => {
-    setFilterOptions(prev => ({ ...prev, [key]: value, preset: key === 'preset' ? value : 'custom' }));
+  const fetchCategories = useCallback(async () => {
+    const { data } = await supabase.from('categories').select('*').order('name');
+    if (data) setCategories(data);
   }, []);
 
-  const resetFilters = useCallback(() => {
-    setFilterOptions({
-      type: 'all', dateRange: { start: '', end: '' },
-      categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'all'
+  const fetchParties = useCallback(async () => {
+    const { data } = await supabase.from('parties').select('*').order('name');
+    if (data) setParties(data);
+  }, []);
+
+  const fetchTags = useCallback(async () => {
+    const { data } = await supabase.from('tags').select('*').order('name');
+    if (data) setTags(data);
+  }, []);
+
+  const fetchAccounts = useCallback(async () => {
+    const { data } = await supabase.from('accounts').select('*').order('name');
+    if (data) setAccounts(data);
+  }, []);
+
+  const fetchBudgets = useCallback(async () => {
+    const { data } = await supabase.from('budgets').select('*').order('created_at');
+    if (data) setBudgets(data);
+  }, []);
+
+  const fetchProfile = useCallback(async (activeSession) => {
+    if (!activeSession) return;
+    const { data } = await supabase.from('profiles').select('currency_preference, default_account_id').eq('id', activeSession.user.id).maybeSingle();
+    if (data?.currency_preference) {
+      setCurrencyCode(data.currency_preference);
+      setCurrencySymbol(CURRENCY_SYMBOLS[data.currency_preference] || '$');
+    }
+    if (data?.default_account_id) setDefaultAccountId(data.default_account_id);
+  }, []);
+
+  const fetchTransactions = useCallback(async () => {
+    let { data, error } = await supabase
+      .from('transactions')
+      .select('*, categories(name, icon, type), parties(name), accounts(name), transaction_tags(tag_id, tags(id, name))')
+      .order('transaction_date', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error && error.code === 'PGRST200') {
+      ({ data, error } = await supabase
+        .from('transactions')
+        .select('*, categories(name, icon, type), parties(name), accounts(name)')
+        .order('transaction_date', { ascending: false })
+        .order('created_at', { ascending: false }));
+    }
+
+    if (error) return console.error('Error fetching transactions:', error);
+    setTransactions(data || []);
+  }, []);
+
+  const fetchInitialData = useCallback(async (activeSession) => {
+    await fetchProfile(activeSession);
+    await Promise.all([fetchCategories(), fetchParties(), fetchAccounts(), fetchTags(), fetchTransactions(), fetchBudgets()]);
+  }, [fetchProfile, fetchCategories, fetchParties, fetchAccounts, fetchTags, fetchTransactions, fetchBudgets]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        if (pathname === '/' || pathname === '/auth') navigate('/dashboard');
+        fetchInitialData(session);
+      }
     });
-  }, []);
 
-  const applyDatePreset = useCallback((preset) => {
-    const today = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    let start = '', end = '';
-    if (preset === 'today') { start = end = fmt(today); }
-    else if (preset === 'this_week') { const day = today.getDay() || 7; const mon = new Date(today); mon.setDate(today.getDate() - day + 1); start = fmt(mon); end = fmt(today); }
-    else if (preset === 'this_month') { start = fmt(new Date(today.getFullYear(), today.getMonth(), 1)); end = fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)); }
-    else if (preset === 'last_3m') { start = fmt(new Date(today.getFullYear(), today.getMonth() - 2, 1)); end = fmt(today); }
-    setFilterOptions(prev => ({ ...prev, preset, dateRange: { start, end } }));
-  }, []);
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      if (event === 'SIGNED_IN') {
+        if (pathname === '/' || pathname === '/auth') {
+          navigate('/dashboard');
+        }
+        fetchInitialData(session);
+      } else if (event === 'SIGNED_OUT') {
+        navigate('/');
+      }
+    });
+    return () => authListener.subscription.unsubscribe();
+  }, [pathname, navigate, fetchInitialData]);
+
+  // Derived State
+  const accountBalances = useMemo(() => {
+    const balances = {};
+    accounts.forEach(a => { balances[a.id] = parseFloat(a.initial_balance) || 0; });
+    transactions.forEach(t => {
+      if (t.account_id && balances[t.account_id] !== undefined) {
+        if (t.type === 'income') balances[t.account_id] += parseFloat(t.amount);
+        if (t.type === 'expense') balances[t.account_id] -= parseFloat(t.amount);
+      }
+    });
+    return balances;
+  }, [accounts, transactions]);
 
   const dashDateRange = useMemo(() => {
     const today = new Date();
@@ -379,16 +517,19 @@ function App() {
   }, [transactions, dashDateRange]);
 
   const { balance, totalIncome, totalExpense } = useMemo(() => {
+    const activeAccountIds = new Set(accounts.filter(a => !a.exclude_from_total).map(a => a.id));
     let inc = 0, exp = 0;
     dashTransactions.forEach(t => {
       if (t.transfer_id) return;
+      if (t.account_id && !activeAccountIds.has(t.account_id)) return;
       if (t.type === 'income') inc += parseFloat(t.amount);
       if (t.type === 'expense') exp += parseFloat(t.amount);
     });
-    let accInitial = accounts.reduce((s, a) => s + parseFloat(a.initial_balance || 0), 0);
+    let accInitial = accounts.filter(a => !a.exclude_from_total).reduce((s, a) => s + parseFloat(a.initial_balance || 0), 0);
     let allInc = 0, allExp = 0;
     transactions.forEach(t => {
       if (t.transfer_id) return;
+      if (t.account_id && !activeAccountIds.has(t.account_id)) return;
       if (t.type === 'income') allInc += parseFloat(t.amount);
       if (t.type === 'expense') allExp += parseFloat(t.amount);
     });
@@ -424,26 +565,29 @@ function App() {
     const pad = n => String(n).padStart(2, '0');
     const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     const ps = fmt(prevStart), pe = fmt(prevEnd);
+    const activeAccountIds = new Set(accounts.filter(a => !a.exclude_from_total).map(a => a.id));
     let curr = 0, prev = 0;
     transactions.forEach(t => {
       if (t.transfer_id) return;
+      if (t.account_id && !activeAccountIds.has(t.account_id)) return;
       const amt = parseFloat(t.amount) * (t.type === 'income' ? 1 : -1);
       if (t.transaction_date >= start && t.transaction_date <= end) curr += amt;
       if (t.transaction_date >= ps && t.transaction_date <= pe) prev += amt;
     });
     if (prev === 0) return curr > 0 ? 100 : (curr < 0 ? -100 : null);
     return Math.round(((curr - prev) / Math.abs(prev)) * 100);
-  }, [transactions, dashDateRange]);
+  }, [transactions, dashDateRange, accounts]);
 
   const sparklineData = useMemo(() => {
     const pad = n => String(n).padStart(2, '0');
     const today = new Date();
+    const activeAccountIds = new Set(accounts.filter(a => !a.exclude_from_total).map(a => a.id));
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (6 - i));
       const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-      return transactions.filter(t => t.transaction_date === key && t.type === 'expense' && !t.transfer_id).reduce((s, t) => s + parseFloat(t.amount), 0);
+      return transactions.filter(t => t.transaction_date === key && t.type === 'expense' && !t.transfer_id && (!t.account_id || activeAccountIds.has(t.account_id))).reduce((s, t) => s + parseFloat(t.amount), 0);
     });
-  }, [transactions]);
+  }, [transactions, accounts]);
 
   const smartInsights = useMemo(() => {
     const insights = [];
@@ -469,163 +613,7 @@ function App() {
     return insights;
   }, [dashTransactions, topExpenseCat, savingsRate, totalIncome, totalExpense, currencySymbol]);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-        setView('dashboard');
-        fetchInitialData(session);
-      }
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      if (event === 'SIGNED_IN') {
-        setView('dashboard');
-        fetchInitialData(session);
-      } else if (event === 'SIGNED_OUT') {
-        setView('landing');
-      }
-    });
-    return () => authListener.subscription.unsubscribe();
-  }, []);
-
-  const fetchInitialData = async (activeSession) => {
-    await fetchProfile(activeSession);
-    await Promise.all([fetchCategories(), fetchParties(), fetchAccounts(), fetchTags(), fetchTransactions(), fetchBudgets()]);
-  };
-
-  const fetchProfile = async (activeSession) => {
-    if (!activeSession) return;
-    const { data } = await supabase.from('profiles').select('currency_preference, default_account_id').eq('id', activeSession.user.id).maybeSingle();
-    if (data?.currency_preference) {
-      setCurrencyCode(data.currency_preference);
-      setCurrencySymbol(CURRENCY_SYMBOLS[data.currency_preference] || '$');
-    }
-    if (data?.default_account_id) setDefaultAccountId(data.default_account_id);
-  };
-
-  const fetchCategories = async () => {
-    const { data } = await supabase.from('categories').select('*').order('name');
-    if (data) setCategories(data);
-  };
-
-  const fetchParties = async () => {
-    const { data } = await supabase.from('parties').select('*').order('name');
-    if (data) setParties(data);
-  };
-
-  const fetchTags = async () => {
-    const { data } = await supabase.from('tags').select('*').order('name');
-    if (data) setTags(data);
-  };
-
-  const fetchAccounts = async () => {
-    const { data } = await supabase.from('accounts').select('*').order('name');
-    if (data) setAccounts(data);
-  };
-
-  const fetchBudgets = async () => {
-    const { data } = await supabase.from('budgets').select('*').order('created_at');
-    if (data) setBudgets(data);
-  };
-
-  const accountBalances = useMemo(() => {
-    const balances = {};
-    accounts.forEach(a => { balances[a.id] = parseFloat(a.initial_balance) || 0; });
-    transactions.forEach(t => {
-      if (t.account_id && balances[t.account_id] !== undefined) {
-        if (t.type === 'income') balances[t.account_id] += parseFloat(t.amount);
-        if (t.type === 'expense') balances[t.account_id] -= parseFloat(t.amount);
-      }
-    });
-    return balances;
-  }, [accounts, transactions]);
-
-  const fetchTransactions = async () => {
-    let { data, error } = await supabase
-      .from('transactions')
-      .select('*, categories(name, icon, type), parties(name), accounts(name), transaction_tags(tag_id, tags(id, name))')
-      .order('transaction_date', { ascending: false })
-      .order('created_at', { ascending: false });
-
-    if (error && error.code === 'PGRST200') {
-      ({ data, error } = await supabase
-        .from('transactions')
-        .select('*, categories(name, icon, type), parties(name), accounts(name)')
-        .order('transaction_date', { ascending: false })
-        .order('created_at', { ascending: false }));
-    }
-
-    if (error) return console.error('Error fetching:', error);
-    setTransactions(data || []);
-  };
-
-  const isWithinBudgetPeriod = (dateStr, period) => {
-    const today = new Date();
-    const d = new Date(dateStr + 'T12:00:00');
-    if (period === 'monthly') return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
-    if (period === 'weekly') {
-      const dayN = today.getDay() || 7;
-      const mon = new Date(today); mon.setDate(today.getDate() - dayN + 1); mon.setHours(0,0,0,0);
-      const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
-      return d >= mon && d <= sun;
-    }
-    if (period === 'quarterly') {
-      const q = Math.floor(today.getMonth() / 3);
-      const qStart = new Date(today.getFullYear(), q * 3, 1);
-      const qEnd = new Date(today.getFullYear(), q * 3 + 3, 0);
-      return d >= qStart && d <= qEnd;
-    }
-    return true;
-  };
-
-  const getBudgetPeriodInfo = (period) => {
-    const today = new Date();
-    if (period === 'monthly') return { elapsed: today.getDate(), total: new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() };
-    if (period === 'weekly') return { elapsed: today.getDay() || 7, total: 7 };
-    if (period === 'quarterly') {
-      const q = Math.floor(today.getMonth() / 3);
-      const qStart = new Date(today.getFullYear(), q * 3, 1);
-      const qEnd = new Date(today.getFullYear(), q * 3 + 3, 0);
-      const total = Math.ceil((qEnd - qStart) / 86400000) + 1;
-      const elapsed = Math.max(1, Math.ceil((today - qStart) / 86400000) + 1);
-      return { elapsed, total };
-    }
-    return { elapsed: 1, total: 1 };
-  };
-
-  const budgetProgress = useMemo(() => {
-    return budgets.map(b => {
-      const spent = transactions
-        .filter(t => t.type === 'expense' && !t.transfer_id && isWithinBudgetPeriod(t.transaction_date, b.period) &&
-          (!b.category_id || t.category_id === b.category_id || categories.find(c => c.id === t.category_id)?.parent_id === b.category_id))
-        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-      const { elapsed, total } = getBudgetPeriodInfo(b.period);
-      const projected = elapsed > 0 ? (spent / elapsed) * total : 0;
-      const rawPct = b.amount_limit > 0 ? (spent / b.amount_limit) * 100 : 0;
-      return { ...b, spent, projected, rawPct, pct: Math.min(rawPct, 100), remaining: Math.max(0, b.amount_limit - spent), status: rawPct >= 100 ? 'over' : rawPct >= 80 ? 'warning' : 'ok' };
-    });
-  }, [budgets, transactions, categories]);
-
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    setAuthLoading(true);
-    setAuthError('');
-    const { error } = authMode === 'login'
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password });
-    if (error) setAuthError(error.message);
-    else if (authMode === 'signup') setAuthError('Check your email to verify your account.');
-    setAuthLoading(false);
-  };
-
-  const handleLogout = useCallback(async () => supabase.auth.signOut(), []);
-
-  const handleGoogleSignIn = useCallback(async () => {
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-  }, []);
-
+  // Actions
   const resetForm = useCallback(() => {
     setTxToEdit(null);
     setAmount('');
@@ -640,28 +628,25 @@ function App() {
     setTransferToAccount(null);
   }, [defaultAccountId]);
 
-  const openEditTransaction = useCallback((t) => {
-    setTxToEdit(t);
-    setAmount(t.amount ? t.amount.toString() : '');
-    setNote(t.note || '');
-    setTxDate(t.transaction_date || (t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0]));
-    
-    if (t.transfer_id) {
-      const pair = transactions.find(tx => tx.transfer_id === t.transfer_id && tx.id !== t.id);
-      const expenseLeg = t.type === 'expense' ? t : pair;
-      const incomeLeg = t.type === 'income' ? t : pair;
-      setTxType('transfer');
-      setTransferFromAccount(expenseLeg?.account_id || null);
-      setTransferToAccount(incomeLeg?.account_id || null);
-    } else {
-      setTxType(t.type || 'expense');
-      setSelectedCategory(t.category_id || null);
-      setSelectedParty(t.party_id || null);
-      setSelectedAccount(t.account_id || (accounts.length > 0 ? accounts[0].id : null));
-      setSelectedTags((t.transaction_tags || []).map(tt => tt.tag_id));
-    }
-    setView('new_transaction');
-  }, [transactions, accounts]);
+  const handleLogout = useCallback(async () => supabase.auth.signOut(), []);
+  const navToDashboard = useCallback(() => setView('dashboard'), [setView]);
+  const navToLedger = useCallback(() => { resetForm(); setView('ledger'); }, [resetForm, setView]);
+  const navToAnalytics = useCallback(() => setView('analytics'), [setView]);
+  const navToBudgets = useCallback(() => setView('budgets'), [setView]);
+  const navToSettings = useCallback(() => setView('settings'), [setView]);
+  const navToNewTx = useCallback(() => { resetForm(); setView('new_transaction'); }, [resetForm, setView]);
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    const { error } = authMode === 'login'
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password });
+    if (error) setAuthError(error.message);
+    else if (authMode === 'signup') setAuthError('Check your email to verify your account.');
+    setAuthLoading(false);
+  };
 
   const handleTransaction = useCallback(async () => {
     const val = parseFloat(amount);
@@ -713,7 +698,108 @@ function App() {
     fetchTransactions();
     resetForm();
     setView('ledger');
-  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm, accounts]);
+  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm, accounts, fetchTransactions, setView]);
+
+  const handleCreateCategory = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newCatName.trim()) return;
+    const payload = { user_id: session.user.id, name: newCatName.trim(), type: settingsType, icon: newCatIcon, is_system: false, parent_id: newCatParent || null };
+    let error;
+    if (editingCat) {
+      ({ error } = await supabase.from('categories').update(payload).eq('id', editingCat.id));
+    } else {
+      ({ error } = await supabase.from('categories').insert([payload]));
+    }
+    if (!error) {
+      setNewCatName('');
+      setNewCatParent('');
+      setNewCatIcon('🔖');
+      setEditingCat(null);
+      fetchCategories();
+    }
+  }, [session, newCatName, settingsType, newCatIcon, newCatParent, editingCat, fetchCategories]);
+
+  const handleDeleteCategory = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('categories').delete().eq('id', id);
+    fetchCategories();
+  }, [session, fetchCategories]);
+
+  const handleCreateParty = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newPartyName.trim()) return;
+    const { error } = await supabase.from('parties').insert([{ user_id: session.user.id, name: newPartyName.trim() }]);
+    if (!error) { setNewPartyName(''); fetchParties(); }
+  }, [session, newPartyName, fetchParties]);
+
+  const handleDeleteParty = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('parties').delete().eq('id', id);
+    fetchParties();
+  }, [session, fetchParties]);
+
+  const handleCreateTag = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newTagName.trim()) return;
+    const { error } = await supabase.from('tags').insert([{ user_id: session.user.id, name: newTagName.trim().toLowerCase() }]);
+    if (!error) { setNewTagName(''); fetchTags(); }
+  }, [session, newTagName, fetchTags]);
+
+  const handleDeleteTag = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('tags').delete().eq('id', id);
+    fetchTags();
+  }, [session, fetchTags]);
+
+  const handleCreateAccount = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !newAccountName.trim()) return;
+    const { error } = await supabase.from('accounts').insert([{
+      user_id: session.user.id,
+      name: newAccountName.trim(),
+      initial_balance: parseFloat(newAccountBalance) || 0,
+      type: newAccountType,
+      exclude_from_total: newAccountExclude
+    }]);
+    if (!error) {
+      setNewAccountName('');
+      setNewAccountBalance('0');
+      setNewAccountType('asset');
+      setNewAccountExclude(false);
+      fetchAccounts();
+    }
+  }, [session, newAccountName, newAccountBalance, newAccountType, newAccountExclude, fetchAccounts]);
+
+  const handleDeleteAccount = useCallback(async (id) => {
+    if (!session) return;
+    await supabase.from('accounts').delete().eq('id', id);
+    fetchAccounts();
+  }, [session, fetchAccounts]);
+
+  const handleSaveBudget = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !budgetForm.amount_limit) return;
+    const my = new Date().toISOString().slice(0, 7);
+    const payload = { user_id: session.user.id, category_id: budgetForm.category_id || null, limit_amount: parseFloat(budgetForm.amount_limit), month_year: my };
+    if (budgetForm.id) await supabase.from('budgets').update(payload).eq('id', budgetForm.id);
+    else await supabase.from('budgets').insert([payload]);
+    setShowBudgetModal(false);
+    fetchBudgets();
+  }, [session, budgetForm, fetchBudgets]);
+
+  const updateFilter = useCallback((k, v) => setFilterOptions(p => ({ ...p, [k]: v })), []);
+  const resetFilters = useCallback(() => setFilterOptions({ type: 'all', dateRange: { start: '', end: '' }, categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'all' }), []);
+  const applyDatePreset = useCallback((preset) => {
+    const today = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    let start = '', end = '';
+    if (preset === 'today') { start = end = fmt(today); }
+    else if (preset === 'this_week') { const day = today.getDay() || 7; const mon = new Date(today); mon.setDate(today.getDate() - day + 1); start = fmt(mon); end = fmt(today); }
+    else if (preset === 'this_month') { start = fmt(new Date(today.getFullYear(), today.getMonth(), 1)); end = fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)); }
+    else if (preset === 'last_3m') { start = fmt(new Date(today.getFullYear(), today.getMonth() - 2, 1)); end = fmt(today); }
+    setFilterOptions(prev => ({ ...prev, preset, dateRange: { start, end } }));
+  }, []);
 
   const updateAnalyticsFilter = useCallback((key, value) => {
     setAnalyticsFilters(prev => ({ ...prev, [key]: value, preset: key === 'preset' ? value : 'custom' }));
@@ -739,6 +825,30 @@ function App() {
     setAnalyticsFilters(prev => ({ ...prev, preset, dateRange: { start, end } }));
   }, []);
 
+  const isWithinBudgetPeriod = (dateStr, period) => {
+    const today = new Date();
+    const d = new Date(dateStr + 'T12:00:00');
+    if (period === 'monthly') return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+    if (period === 'weekly') {
+      const dayN = today.getDay() || 7;
+      const mon = new Date(today); mon.setDate(today.getDate() - dayN + 1); mon.setHours(0,0,0,0);
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+      return d >= mon && d <= sun;
+    }
+    return false;
+  };
+
+  const budgetProgress = useMemo(() => {
+    return budgets.map(b => {
+      const spent = transactions
+        .filter(t => t.type === 'expense' && !t.transfer_id && isWithinBudgetPeriod(t.transaction_date, b.period) &&
+          (!b.category_id || t.category_id === b.category_id || categories.find(c => c.id === t.category_id)?.parent_id === b.category_id))
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const rawPct = b.limit_amount > 0 ? (spent / b.limit_amount) * 100 : 0;
+      return { ...b, spent, rawPct, pct: Math.min(rawPct, 100), remaining: Math.max(0, b.limit_amount - spent), status: rawPct >= 100 ? 'over' : rawPct >= 80 ? 'warning' : 'ok' };
+    });
+  }, [budgets, transactions, categories]);
+
   const analyticsTransactions = useMemo(() => {
     return transactions.filter(t => {
       const { type, dateRange, categoryIds, tagIds, accountIds, searchTerm } = analyticsFilters;
@@ -760,14 +870,26 @@ function App() {
     });
   }, [transactions, analyticsFilters, categories]);
 
-  const drillTransactions = useMemo(() => {
-    if (!drillCategory) return analyticsTransactions;
-    return analyticsTransactions.filter(t => {
-      const cat = categories.find(c => c.id === t.category_id);
-      const parent = cat?.parent_id ? categories.find(c => c.id === cat.parent_id) : cat;
-      return (parent?.name || cat?.name) === drillCategory;
+  const prevAnalyticsTransactions = useMemo(() => {
+    const { start, end } = analyticsFilters.dateRange;
+    if (!start || !end) return [];
+    const duration = new Date(end) - new Date(start);
+    const prevEnd = new Date(new Date(start).getTime() - 86400000);
+    const prevStart = new Date(prevEnd.getTime() - duration);
+    const pad = n => String(n).padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const ps = fmt(prevStart), pe = fmt(prevEnd);
+    return transactions.filter(t => t.transaction_date >= ps && t.transaction_date <= pe);
+  }, [transactions, analyticsFilters.dateRange]);
+
+  const prevPeriodKPIs = useMemo(() => {
+    let income = 0, expense = 0;
+    prevAnalyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+      if (t.type === 'income') income += parseFloat(t.amount);
+      else expense += parseFloat(t.amount);
     });
-  }, [analyticsTransactions, drillCategory, categories]);
+    return { income, expense, net: income - expense };
+  }, [prevAnalyticsTransactions]);
 
   const chartTimeSeries = useMemo(() => {
     const { start, end } = analyticsFilters.dateRange;
@@ -777,33 +899,15 @@ function App() {
     const endD = end ? new Date(end + 'T00:00:00') : new Date();
     const dayCount = Math.ceil((endD - startD) / 86400000) + 1;
 
-    const withMA = (arr) => arr.map((d, i) => {
-      const slice = arr.slice(Math.max(0, i - 6), i + 1);
-      const avg = slice.reduce((s, x) => s + x.expense, 0) / slice.length;
-      return { ...d, expenseMA: Math.round(avg * 100) / 100 };
-    });
-
     if (dayCount > 180) {
       const data = {};
-      drillTransactions.filter(t => !t.transfer_id).forEach(t => {
+      analyticsTransactions.filter(t => !t.transfer_id && (!drillCategory || t.categories?.name === drillCategory || categories.find(c => c.id === t.category_id)?.parent_id === categories.find(c => c.name === drillCategory)?.id)).forEach(t => {
         const key = t.transaction_date.slice(0, 7);
         if (!data[key]) data[key] = { date: key, income: 0, expense: 0, label: new Date(key + '-01T12:00:00').toLocaleDateString(undefined, { month: 'short', year: '2-digit' }) };
         if (t.type === 'income') data[key].income += parseFloat(t.amount);
         if (t.type === 'expense') data[key].expense += parseFloat(t.amount);
       });
-      return withMA(Object.values(data).sort((a, b) => a.date.localeCompare(b.date)));
-    } else if (dayCount > 60) {
-      const data = {};
-      drillTransactions.filter(t => !t.transfer_id).forEach(t => {
-        const d = new Date(t.transaction_date + 'T12:00:00');
-        const day = d.getDay() || 7;
-        const mon = new Date(d); mon.setDate(d.getDate() - day + 1);
-        const key = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
-        if (!data[key]) data[key] = { date: key, income: 0, expense: 0, label: mon.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) };
-        if (t.type === 'income') data[key].income += parseFloat(t.amount);
-        if (t.type === 'expense') data[key].expense += parseFloat(t.amount);
-      });
-      return withMA(Object.values(data).sort((a, b) => a.date.localeCompare(b.date)));
+      return Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
     } else {
       const data = {};
       for (let i = 0; i < dayCount; i++) {
@@ -811,15 +915,20 @@ function App() {
         const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
         data[key] = { date: key, income: 0, expense: 0, label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) };
       }
-      drillTransactions.filter(t => !t.transfer_id).forEach(t => {
+      analyticsTransactions.filter(t => !t.transfer_id && (!drillCategory || t.categories?.name === drillCategory || categories.find(c => c.id === t.category_id)?.parent_id === categories.find(c => c.name === drillCategory)?.id)).forEach(t => {
         if (data[t.transaction_date]) {
           if (t.type === 'income') data[t.transaction_date].income += parseFloat(t.amount);
           if (t.type === 'expense') data[t.transaction_date].expense += parseFloat(t.amount);
         }
       });
-      return withMA(Object.values(data).sort((a, b) => a.date.localeCompare(b.date)));
+      const result = Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
+      return result.map((d, i, arr) => {
+        const window = arr.slice(Math.max(0, i-6), i+1);
+        const sum = window.reduce((s, x) => s + x.expense, 0);
+        return { ...d, expenseMA: sum / window.length };
+      });
     }
-  }, [drillTransactions, analyticsFilters.dateRange]);
+  }, [analyticsTransactions, analyticsFilters.dateRange, drillCategory, categories]);
 
   const chartCategorical = useMemo(() => {
     const totals = {};
@@ -835,13 +944,13 @@ function App() {
 
   const chartTags = useMemo(() => {
     const totals = {};
-    drillTransactions.filter(t => !t.transfer_id && t.transaction_tags?.length > 0).forEach(t => {
+    analyticsTransactions.filter(t => !t.transfer_id && t.transaction_tags?.length > 0 && (!drillCategory || t.categories?.name === drillCategory || categories.find(c => c.id === t.category_id)?.parent_id === categories.find(c => c.name === drillCategory)?.id)).forEach(t => {
       t.transaction_tags.forEach(tt => {
         if (tt.tags?.name) totals[tt.tags.name] = (totals[tt.tags.name] || 0) + parseFloat(t.amount);
       });
     });
-    return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
-  }, [drillTransactions]);
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
+  }, [analyticsTransactions, drillCategory, categories]);
 
   const analyticsKPIs = useMemo(() => {
     const { start, end } = analyticsFilters.dateRange;
@@ -852,31 +961,8 @@ function App() {
       if (t.type === 'expense') totalExpense += parseFloat(t.amount);
       if (t.type === 'income') totalIncome += parseFloat(t.amount);
     });
-    const today = new Date();
-    const dayOfMonth = today.getDate();
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    const predictedMonthEnd = analyticsFilters.preset === 'this_month' && dayOfMonth < daysInMonth && totalExpense > 0
-      ? Math.round((totalExpense / dayOfMonth) * daysInMonth) : null;
-    return { totalExpense, totalIncome, dailyBurn: totalExpense / days, net: totalIncome - totalExpense, txCount: analyticsTransactions.filter(t => !t.transfer_id).length, predictedMonthEnd };
-  }, [analyticsTransactions, analyticsFilters.dateRange, analyticsFilters.preset]);
-
-  const prevPeriodKPIs = useMemo(() => {
-    const { start, end } = analyticsFilters.dateRange;
-    if (!start || !end) return { income: 0, expense: 0, net: 0 };
-    const startD = new Date(start + 'T00:00:00');
-    const endD = new Date(end + 'T00:00:00');
-    const ms = endD - startD + 86400000;
-    const prevEnd = new Date(startD.getTime() - 86400000);
-    const prevStart = new Date(startD.getTime() - ms);
-    const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    const ps = fmt(prevStart), pe = fmt(prevEnd);
-    let income = 0, expense = 0;
-    transactions.filter(t => !t.transfer_id && t.transaction_date >= ps && t.transaction_date <= pe).forEach(t => {
-      if (t.type === 'income') income += parseFloat(t.amount);
-      if (t.type === 'expense') expense += parseFloat(t.amount);
-    });
-    return { income, expense, net: income - expense };
-  }, [transactions, analyticsFilters.dateRange]);
+    return { totalExpense, totalIncome, dailyBurn: totalExpense / days, net: totalIncome - totalExpense, txCount: analyticsTransactions.filter(t => !t.transfer_id).length };
+  }, [analyticsTransactions, analyticsFilters.dateRange]);
 
   const filteredLedger = useMemo(() => {
     return transactions.filter(t => {
@@ -906,88 +992,37 @@ function App() {
   const groupedLedger = useMemo(() => {
     const groups = {};
     filteredLedger.forEach(t => {
-      const d = t.transaction_date || t.created_at.split('T')[0];
+      const d = t.transaction_date || t.created_at?.split('T')[0] || 'Unknown';
       if (!groups[d]) groups[d] = [];
       groups[d].push(t);
     });
     return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
   }, [filteredLedger]);
 
-  const navToDashboard = useCallback(() => setView('dashboard'), []);
-  const navToLedger = useCallback(() => { resetForm(); setView('ledger'); }, [resetForm]);
-  const navToAnalytics = useCallback(() => setView('analytics'), []);
-  const navToBudgets = useCallback(() => setView('budgets'), []);
-  const navToSettings = useCallback(() => setView('settings'), []);
-  const navToNewTx = useCallback(() => { resetForm(); setView('new_transaction'); }, [resetForm]);
+  const openEditTransaction = useCallback((t) => {
+    setTxToEdit(t);
+    setAmount(t.amount ? t.amount.toString() : '');
+    setNote(t.note || '');
+    setTxDate(t.transaction_date || (t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0]));
+    
+    if (t.transfer_id) {
+      const pair = transactions.find(tx => tx.transfer_id === t.transfer_id && tx.id !== t.id);
+      const expenseLeg = t.type === 'expense' ? t : pair;
+      const incomeLeg = t.type === 'income' ? t : pair;
+      setTxType('transfer');
+      setTransferFromAccount(expenseLeg?.account_id || null);
+      setTransferToAccount(incomeLeg?.account_id || null);
+    } else {
+      setTxType(t.type || 'expense');
+      setSelectedCategory(t.category_id || null);
+      setSelectedParty(t.party_id || null);
+      setSelectedAccount(t.account_id || (accounts.length > 0 ? accounts[0].id : null));
+      setSelectedTags((t.transaction_tags || []).map(tt => tt.tag_id));
+    }
+    setView('new_transaction');
+  }, [transactions, accounts, setView]);
 
-  const handleCreateCategory = useCallback(async (e) => {
-    e.preventDefault();
-    if (!session || !newCatName.trim()) return;
-    const { error } = await supabase.from('categories').insert([{ user_id: session.user.id, name: newCatName.trim(), type: settingsType, icon: newCatIcon, is_system: false, parent_id: newCatParent || null }]);
-    if (!error) { setNewCatName(''); setNewCatParent(''); setNewCatIcon('🔖'); fetchCategories(); }
-  }, [session, newCatName, settingsType, newCatIcon, newCatParent]);
-
-  const handleDeleteCategory = useCallback(async (id) => {
-    if (!session) return;
-    await supabase.from('categories').delete().eq('id', id);
-    fetchCategories();
-  }, [session]);
-
-  const handleCreateAccount = useCallback(async (e) => {
-    e.preventDefault();
-    if (!session || !newAccountName.trim()) return;
-    const { error } = await supabase.from('accounts').insert([{ user_id: session.user.id, name: newAccountName.trim(), initial_balance: parseFloat(newAccountBalance) || 0 }]);
-    if (!error) { setNewAccountName(''); setNewAccountBalance(''); fetchAccounts(); }
-  }, [session, newAccountName, newAccountBalance]);
-
-  const handleDeleteAccount = useCallback(async (id) => {
-    if (!session) return;
-    await supabase.from('accounts').delete().eq('id', id);
-    fetchAccounts();
-  }, [session]);
-
-  const handleCreateParty = useCallback(async (e) => {
-    e.preventDefault();
-    if (!session || !newPartyName.trim()) return;
-    await supabase.from('parties').insert([{ user_id: session.user.id, name: newPartyName.trim() }]);
-    setNewPartyName('');
-    fetchParties();
-  }, [session, newPartyName]);
-
-  const handleDeleteParty = useCallback(async (id) => {
-    if (!session) return;
-    await supabase.from('parties').delete().eq('id', id);
-    fetchParties();
-  }, [session]);
-
-  const handleCreateTag = useCallback(async (e) => {
-    e.preventDefault();
-    if (!session || !newTagName.trim()) return;
-    await supabase.from('tags').insert([{ user_id: session.user.id, name: newTagName.trim().toLowerCase().replace(/\s+/g, '_') }]);
-    setNewTagName('');
-    fetchTags();
-  }, [session, newTagName]);
-
-  const handleDeleteTag = useCallback(async (id) => {
-    if (!session) return;
-    await supabase.from('tags').delete().eq('id', id);
-    fetchTags();
-  }, [session]);
-
-  const handleSaveBudget = useCallback(async (e) => {
-    e.preventDefault();
-    if (!session || !budgetForm.amount_limit) return;
-    const pad = n => String(n).padStart(2, '0');
-    const today = new Date();
-    const month_year = `${today.getFullYear()}-${pad(today.getMonth() + 1)}`;
-    const payload = { user_id: session.user.id, category_id: budgetForm.category_id, limit_amount: parseFloat(budgetForm.amount_limit), month_year };
-    if (budgetForm.id) await supabase.from('budgets').update(payload).eq('id', budgetForm.id);
-    else await supabase.from('budgets').insert([payload]);
-    setShowBudgetModal(false);
-    fetchBudgets();
-  }, [session, budgetForm]);
-
-  const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, session, onLogout: handleLogout };
+  const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, onLogout: handleLogout, session };
 
   if (view === 'landing') return (
     <div className="landing-container fade-in">
@@ -1005,8 +1040,6 @@ function App() {
         <div className="auth-box">
           <div className="auth-tabs"><button className={`auth-tab ${authMode === 'login' ? 'active' : ''}`} onClick={() => { setAuthMode('login'); setAuthError(''); }}>Log In</button><button className={`auth-tab ${authMode === 'signup' ? 'active' : ''}`} onClick={() => { setAuthMode('signup'); setAuthError(''); }}>Sign Up</button></div>
           <form onSubmit={handleAuth} className="auth-form"><input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required /><input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />{authError && <p className="auth-error">{authError}</p>}<button type="submit" className="auth-submit-btn" disabled={authLoading}>{authLoading ? 'Authenticating...' : authMode === 'login' ? 'Enter Vault' : 'Create Account'}</button></form>
-          <div className="auth-divider"><span>or continue with</span></div>
-          <div className="auth-social-btns"><button type="button" className="auth-social-btn" onClick={handleGoogleSignIn}><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Google</button></div>
         </div>
       </div>
     </div>
@@ -1020,27 +1053,60 @@ function App() {
         <div className="settings-panel"><div className="settings-section"><p className="label-sm">Preferences</p><div className="settings-group"><div className="settings-card"><span className="sc-text">Currency</span><div style={{ width: '180px' }}><CustomDropdown options={Object.entries(CURRENCY_SYMBOLS).map(([code, sym]) => ({ value: code, label: `${code} (${sym})` }))} value={currencyCode} onChange={setCurrencyCode} showSearch={false} /></div></div></div></div><div className="settings-section"><p className="label-sm">Manage</p><div className="settings-group"><button className="settings-nav-btn" onClick={() => setView('account_management')}>Accounts <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('category_management')}>Categories <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('party_management')}>Parties <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('tag_management')}>Tags <span className="arrow">›</span></button></div></div></div>
       </div>
     );
-    else if (view === 'account_management') settingsContent = (
-      <div className="page-inner slide-up">
-        <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Accounts</h2></div>
-        <div className="settings-controls fade-in">
-          <div className="category-manager">{accounts.map(acc => (<div key={acc.id} className="editorial-item"><div className="editorial-icon">🏦</div><div className="editorial-info"><div className="editorial-title">{acc.name}</div><div className="editorial-meta">Balance: {currencySymbol}{(accountBalances[acc.id]||0).toFixed(2)}</div></div><button className="delete-btn" onClick={() => handleDeleteAccount(acc.id)}>✕</button></div>))}</div>
-          <form onSubmit={handleCreateAccount} className="add-category-form"><p className="label-sm">Add Account</p><input type="text" placeholder="Account Name" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required /><input type="number" step="0.01" placeholder="Initial Balance" value={newAccountBalance} onChange={(e) => setNewAccountBalance(e.target.value)} required /><button type="submit" className="add-cat-btn">Add Account</button></form>
+    else if (view === 'account_management') {
+      const assetAccts = accounts.filter(a => (a.type || 'asset') === 'asset');
+      const liabilityAccts = accounts.filter(a => a.type === 'liability');
+      const tempAccts = accounts.filter(a => a.type === 'temp');
+      settingsContent = (
+        <div className="page-inner slide-up">
+          <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Accounts</h2></div>
+          <div className="settings-controls fade-in">
+            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} />
+            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} />
+            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} />
+            <form onSubmit={handleCreateAccount} className="add-category-form">
+              <p className="label-sm">Add Account</p>
+              <input type="text" placeholder="Account Name" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required />
+              <input type="number" step="0.01" placeholder="Initial Balance (0)" value={newAccountBalance} onChange={(e) => setNewAccountBalance(e.target.value)} />
+              <CustomDropdown
+                label="Account Type"
+                options={[
+                  { value: 'asset', label: 'Asset (Bank, Cash, Wallet)', icon: '🏦' },
+                  { value: 'liability', label: 'Liability (Loan, Credit Card)', icon: '💳' },
+                  { value: 'temp', label: 'Temporary / Transit', icon: '⏳' }
+                ]}
+                value={newAccountType}
+                onChange={v => {
+                  setNewAccountType(v);
+                  if (v !== 'asset') setNewAccountExclude(true);
+                  else setNewAccountExclude(false);
+                }}
+              />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0', cursor: 'pointer' }}>
+                <input type="checkbox" checked={newAccountExclude} onChange={e => setNewAccountExclude(e.target.checked)} />
+                <span className="body-md">Exclude from total Net Worth</span>
+              </label>
+              <button type="submit" className="add-cat-btn">Add Account</button>
+            </form>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
     else if (view === 'category_management') {
       const parents = categories.filter(c => !c.parent_id && c.type === settingsType);
       settingsContent = (
         <div className="page-inner slide-up">
           <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Categories</h2></div>
           <div className="type-toggle-bar" style={{ margin: '1.5rem 0' }}><button className={`type-btn ${settingsType === 'expense' ? 'active-expense' : ''}`} onClick={() => setSettingsType('expense')}>Expense</button><button className={`type-btn ${settingsType === 'income' ? 'active-income' : ''}`} onClick={() => setSettingsType('income')}>Income</button></div>
-          <div className="category-manager" style={{ marginBottom: '2rem' }}>{categories.filter(c => c.type === settingsType).map(c => (<div key={c.id} className="editorial-item"><div className="editorial-icon">{c.icon}</div><div className="editorial-info"><div className="editorial-title">{c.name}</div><div className="editorial-meta">{c.parent_id ? 'Subcategory' : 'Root'}</div></div>{!c.is_system && <button className="delete-btn" onClick={() => handleDeleteCategory(c.id)}>✕</button>}</div>))}</div>
+          <div className="category-manager" style={{ marginBottom: '2rem' }}>{categories.filter(c => c.type === settingsType).map(c => (<div key={c.id} className="editorial-item"><div className="editorial-icon">{c.icon}</div><div className="editorial-info"><div className="editorial-title">{c.name}</div><div className="editorial-meta">{c.parent_id ? 'Subcategory' : 'Root'}</div></div>{!c.is_system && <div style={{ display: 'flex', gap: '0.5rem' }}><button className="icon-btn-text" onClick={() => { setEditingCat(c); setNewCatName(c.name); setNewCatIcon(c.icon); setNewCatParent(c.parent_id || ''); }}>✎</button><button className="delete-btn" onClick={() => handleDeleteCategory(c.id)}>✕</button></div>}</div>))}</div>
           <form onSubmit={handleCreateCategory} className="add-category-form">
-            <h3>Add Custom Category</h3>
+            <h3>{editingCat ? 'Edit' : 'Add Custom'} Category</h3>
             <div style={{ display: 'flex', gap: '1rem' }}><input type="text" maxLength="2" placeholder="🔖" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} style={{ width: '60px', textAlign: 'center' }} required /><input type="text" placeholder="Category Name" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} style={{ flex: 1 }} required /></div>
             <CustomDropdown label="Parent Category (Optional)" options={[{ value: '', label: '-- Root Category --' }, ...parents.map(p => ({ value: p.id, label: p.name, icon: p.icon }))]} value={newCatParent} onChange={setNewCatParent} />
-            <button type="submit" className="add-cat-btn" style={{ width: '100%' }}>Save Category</button>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              {editingCat && <button type="button" className="icon-btn-text" onClick={() => { setEditingCat(null); setNewCatName(''); setNewCatParent(''); setNewCatIcon('🔖'); }}>Cancel</button>}
+              <button type="submit" className="add-cat-btn" style={{ width: '100%' }}>{editingCat ? 'Update Category' : 'Save Category'}</button>
+            </div>
           </form>
         </div>
       );
@@ -1076,9 +1142,12 @@ function App() {
         <div className="page-inner slide-up" style={{ maxWidth: '640px' }}>
           <div className="section-header-row"><h2 className="section-title-editorial">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2><button className="section-action-link" onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}>Cancel</button></div>
           <div className="fluid-input-area fade-in">
-            <div className="type-toggle-bar"><button className={`type-btn ${txType === 'expense' ? 'active-expense' : ''}`} onClick={() => setTxType('expense')}>Expense</button><button className={`type-btn ${txType === 'income' ? 'active-income' : ''}`} onClick={() => setTxType('income')}>Income</button><button className={`type-btn ${txType === 'transfer' ? 'active-transfer' : ''}`} onClick={() => setTxType('transfer')}>Transfer</button></div>
+            <div className="type-toggle-bar"><button className={`type-btn ${txType === 'expense' ? 'active-expense' : ''}`} onClick={() => { setTxType('expense'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Expense</button><button className={`type-btn ${txType === 'income' ? 'active-income' : ''}`} onClick={() => { setTxType('income'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Income</button><button className={`type-btn ${txType === 'transfer' ? 'active-transfer' : ''}`} onClick={() => { setTxType('transfer'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Transfer</button></div>
             <div className="amount-input-wrapper"><span className="currency-prefix">{currencySymbol}</span><input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="amount-input" autoFocus /></div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}><div className="category-selection-area"><p className="label-sm">Date</p><input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} className="text-input" /></div><div className="category-selection-area"><p className="label-sm">Note</p><input type="text" placeholder="Description" value={note} onChange={(e) => setNote(e.target.value)} className="text-input" /></div></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div className="category-selection-area"><p className="label-sm">Date</p><input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} className="text-input" /></div>
+              <div className="category-selection-area"><p className="label-sm">Note</p><input type="text" placeholder="Description" value={note} onChange={(e) => setNote(e.target.value)} className="text-input" /></div>
+            </div>
             {txType !== 'transfer' ? (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
@@ -1130,7 +1199,6 @@ function App() {
     );
   }
 
-  // --- ANALYTICS VIEW ---
   if (view === 'analytics') {
     const PIE_COLORS = ['var(--primary)', 'var(--secondary)', 'var(--primary-container)', 'var(--tertiary-fixed-variant)', 'var(--on-surface-variant)', '#a8c5da', '#f4b183', '#b4a7d6'];
     const pct = (curr, prev) => {
@@ -1141,20 +1209,6 @@ function App() {
     const incomePct = pct(analyticsKPIs.totalIncome, prevPeriodKPIs.income);
     const expensePct = pct(analyticsKPIs.totalExpense, prevPeriodKPIs.expense);
     const netPct = pct(analyticsKPIs.net, prevPeriodKPIs.net);
-    const EmptyChart = ({ h = 280, msg = 'No data for this period' }) => (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: h, color: 'var(--on-surface-variant)', fontSize: '0.875rem', fontStyle: 'italic' }}>{msg}</div>
-    );
-    const AnalyticsTooltip = ({ active, payload, label }) => {
-      if (!active || !payload?.length) return null;
-      return (
-        <div style={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--ghost-border)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', boxShadow: 'var(--shadow-ambient)', fontFamily: 'Inter, sans-serif' }}>
-          <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>{label}</p>
-          {payload.filter(e => e.dataKey !== 'expenseMA').map((e, i) => (
-            <p key={i} style={{ fontSize: '0.875rem', fontWeight: 600, color: e.color, margin: '0.15rem 0', fontFamily: 'Manrope, sans-serif' }}>{e.name}: {currencySymbol}{Number(e.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          ))}
-        </div>
-      );
-    };
     return (
       <PageShell {...shellProps}>
         <div className="page-inner fade-in">
@@ -1191,13 +1245,12 @@ function App() {
             </div>
             <div className="summary-card burn">
               <p className="summary-label">Net Cash Flow</p>
-              <h3 className={`summary-value ${analyticsKPIs.net < 0 ? 'expense' : 'income'}`}>{currencySymbol}{analyticsKPIs.net.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+              <h3 className={`summary-value ${(analyticsKPIs.net) < 0 ? 'expense' : 'income'}`}>{currencySymbol}{analyticsKPIs.net.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
               {netPct && <p style={{ fontSize: '0.72rem', marginTop: '0.3rem', color: netPct.up ? 'var(--secondary)' : 'var(--tertiary-fixed-variant)' }}>{netPct.up ? '↑' : '↓'} {netPct.label} vs prev period</p>}
             </div>
             <div className="summary-card burn">
-              <p className="summary-label">Daily Avg Spend</p>
+              <p className="summary-label">Daily Average</p>
               <h3 className="summary-value">{currencySymbol}{analyticsKPIs.dailyBurn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-              {analyticsKPIs.predictedMonthEnd && <p style={{ fontSize: '0.72rem', marginTop: '0.3rem', color: 'var(--on-surface-variant)' }}>~{currencySymbol}{analyticsKPIs.predictedMonthEnd.toLocaleString()} projected</p>}
             </div>
           </div>
           <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem', marginTop: '2rem' }}>
@@ -1212,10 +1265,10 @@ function App() {
                     </defs>
                     <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} minTickGap={30} />
                     <YAxis hide />
-                    <Tooltip content={<AnalyticsTooltip />} />
+                    <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
                     <Area type="monotone" dataKey="income" name="Income" stroke="var(--secondary)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorInc)" />
                     <Area type="monotone" dataKey="expense" name="Expense" stroke="var(--tertiary-fixed-variant)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorExp)" />
-                    <Area type="monotone" dataKey="expenseMA" name="MA" stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="5 4" fillOpacity={0} fill="none" dot={false} />
+                    <Area type="monotone" dataKey="expenseMA" name="MA" stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="5:4" fillOpacity={0} fill="none" dot={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -1226,11 +1279,11 @@ function App() {
                 <ResponsiveContainer width="100%" height={320}>
                   <PieChart>
                     <Pie data={chartCategorical} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value" onClick={d => setDrillCategory(drillCategory === d.name ? null : d.name)} style={{ cursor: 'pointer' }}>
-                      {chartCategorical.map((entry, i) => (
-                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} opacity={drillCategory && drillCategory !== entry.name ? 0.3 : 1} />
+                      {chartCategorical.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip content={<AnalyticsTooltip />} />
+                    <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -1242,12 +1295,64 @@ function App() {
                   <BarChart data={chartTags} layout="vertical" margin={{ left: 40, right: 40 }}>
                     <XAxis type="number" hide />
                     <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: 600, fontFamily: 'Inter' }} />
-                    <Tooltip cursor={{ fill: 'var(--surface-container-low)' }} content={<AnalyticsTooltip />} />
+                    <Tooltip cursor={{ fill: 'var(--surface-container-low)' }} content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
                     <Bar dataKey="value" name="Amount" fill="var(--primary-container)" radius={[0, 6, 6, 0]} barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (view === 'budgets') {
+    return (
+      <PageShell {...shellProps}>
+        <div className="page-inner fade-in">
+          <div className="section-header-row"><h2 className="section-title-editorial">Budgets</h2><button className="add-cat-btn" onClick={() => { setBudgetForm({ id: null, category_id: '', amount_limit: '', period: 'monthly' }); setShowBudgetModal(true); }}>Add Budget</button></div>
+          {showBudgetModal && (
+            <div className="modal-overlay" onClick={() => setShowBudgetModal(false)}>
+              <div className="modal-content fluid-input-area" onClick={e => e.stopPropagation()}>
+                <h3 className="headline-md">Manage Budget</h3>
+                <form onSubmit={handleSaveBudget} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1rem' }}>
+                  <CustomDropdown label="Category (Optional)" options={[{ value: '', label: '-- Global Budget --' }, ...categories.filter(c => !c.parent_id).map(c => ({ value: c.id, label: c.name, icon: c.icon }))]} value={budgetForm.category_id} onChange={val => setBudgetForm({ ...budgetForm, category_id: val })} />
+                  <div className="category-selection-area"><p className="label-sm">Limit Amount</p><input type="number" step="0.01" className="text-input" value={budgetForm.amount_limit} onChange={e => setBudgetForm({ ...budgetForm, amount_limit: e.target.value })} required /></div>
+                  <CustomDropdown label="Period" options={[{ value: 'monthly', label: 'Monthly' }, { value: 'weekly', label: 'Weekly' }, { value: 'quarterly', label: 'Quarterly' }]} value={budgetForm.period} onChange={val => setBudgetForm({ ...budgetForm, period: val })} />
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                    <button type="submit" className="add-cat-btn" style={{ flex: 1 }}>Save Budget</button>
+                    <button type="button" className="icon-btn-text" onClick={() => setShowBudgetModal(false)}>Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+          <div className="budget-list" style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            {budgetProgress.map(b => {
+              const cat = categories.find(c => c.id === b.category_id);
+              return (
+                <div key={b.id} className="analytics-card-sm">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div className="editorial-icon" style={{ width: '32px', height: '32px', fontSize: '1rem' }}>{cat?.icon || '🌍'}</div>
+                      <div className="editorial-title">{cat?.name || 'Global Budget'}</div>
+                    </div>
+                    <button className="icon-btn-text" onClick={() => { setBudgetForm({ id: b.id, category_id: b.category_id || '', amount_limit: b.limit_amount.toString(), period: b.period }); setShowBudgetModal(true); }}>✎</button>
+                  </div>
+                  <div style={{ marginTop: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span className="body-md">Spent: <strong>{currencySymbol}{b.spent.toLocaleString()}</strong></span>
+                      <span className="body-md" style={{ opacity: 0.6 }}>Limit: {currencySymbol}{b.limit_amount.toLocaleString()}</span>
+                    </div>
+                    <div className="cat-bar-track"><div className="cat-bar-fill" style={{ width: `${b.pct}%`, background: b.status === 'over' ? 'var(--tertiary-fixed-variant)' : b.status === 'warning' ? '#f59e0b' : 'var(--secondary)' }} /></div>
+                    <p className="label-sm" style={{ marginTop: '0.75rem', color: b.status === 'over' ? 'var(--tertiary-fixed-variant)' : 'inherit' }}>
+                      {b.status === 'over' ? `Over by ${currencySymbol}${(b.spent - b.limit_amount).toLocaleString()}` : `${currencySymbol}${b.remaining.toLocaleString()} remaining`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </PageShell>
@@ -1267,12 +1372,12 @@ function App() {
                 {portfolioChange !== null && <div className={`portfolio-trend-chip${portfolioChange < 0 ? ' negative' : ''}`}>{portfolioChange >= 0 ? '+' : ''}{portfolioChange}% vs prev period</div>}
               </div>
               <div className="portfolio-chart-preview">
-                {(() => {
+                {sparklineData.map((val, i) => {
                   const max = Math.max(...sparklineData, 1);
-                  return sparklineData.map((val, i) => (
+                  return (
                     <div key={i} className={`chart-bar${i === sparklineData.length - 1 ? ' active' : ''}`} style={{ height: `${Math.max(8, Math.round((val / max) * 100))}%` }} />
-                  ));
-                })()}
+                  );
+                })}
               </div>
             </div>
 
@@ -1336,5 +1441,3 @@ function App() {
     </PageShell>
   );
 }
-
-export default App;
