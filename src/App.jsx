@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
-import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, ComposedChart, Line } from 'recharts';
 import { supabase } from './supabaseClient';
 import CustomDropdown from './components/CustomDropdown';
 import './App.css';
@@ -40,61 +40,56 @@ const formatGroupDate = (dateStr) => {
 
 // Sidebar — desktop left-rail navigation
 const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  const NAV_ITEMS = [
+    { key: 'dashboard', label: 'Portfolio', onClick: onDashboard, icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
+    { key: 'ledger', label: 'Transactions', onClick: onLedger, icon: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/> },
+    { key: 'budgets', label: 'Budgets', onClick: onBudgets, icon: <path d="M12 20v-6M6 20V10M18 20V4"/> },
+    { key: 'analytics', label: 'Analytics', onClick: onAnalytics, icon: <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/> },
+    { key: 'vault', label: 'Vault', onClick: null, icon: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></> },
+  ];
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
       <div className="sidebar-brand-wrapper">
-        <div className="sidebar-brand">MOMA</div>
-        <div className="sidebar-subtitle">THE DIGITAL LEDGER</div>
+        {!collapsed && (
+          <div>
+            <div className="sidebar-brand">MOMA</div>
+            <div className="sidebar-subtitle">THE DIGITAL LEDGER</div>
+          </div>
+        )}
+        <button className="sidebar-collapse-btn" onClick={() => setCollapsed(c => !c)} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {collapsed ? <path d="M9 18l6-6-6-6"/> : <path d="M15 18l-6-6 6-6"/>}
+          </svg>
+        </button>
       </div>
-      
+
       <nav className="sidebar-nav">
-        <button className={`sidebar-item ${view === 'dashboard' ? 'active' : ''}`} onClick={onDashboard}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-          </svg>
-          Portfolio
-        </button>
-        <button className={`sidebar-item ${view === 'ledger' ? 'active' : ''}`} onClick={onLedger}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
-          </svg>
-          Transactions
-        </button>
-        <button className={`sidebar-item ${view === 'budgets' ? 'active' : ''}`} onClick={onBudgets}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 20v-6M6 20V10M18 20V4"/>
-          </svg>
-          Budgets
-        </button>
-        <button className={`sidebar-item ${view === 'analytics' ? 'active' : ''}`} onClick={onAnalytics}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/>
-          </svg>
-          Analytics
-        </button>
-        <button className="sidebar-item">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          Vault
-        </button>
+        {NAV_ITEMS.map(item => (
+          <button key={item.key} className={`sidebar-item${view === item.key ? ' active' : ''}`} onClick={item.onClick || undefined} title={collapsed ? item.label : ''}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
+            {!collapsed && <span>{item.label}</span>}
+          </button>
+        ))}
       </nav>
 
       <div className="sidebar-footer">
-        <button className="sidebar-new-tx-btn" onClick={onNewTx}>
-          Add Transaction
+        <button className="sidebar-new-tx-btn" onClick={onNewTx} title={collapsed ? 'Add Transaction' : ''}>
+          {collapsed
+            ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            : 'Add Transaction'}
         </button>
-        <div className="sidebar-footer-item" onClick={onSettings}>
+        <div className="sidebar-footer-item" onClick={onSettings} title={collapsed ? 'Settings' : ''}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
-          Settings
+          {!collapsed && <span>Settings</span>}
         </div>
-        <div className="sidebar-footer-item" onClick={onLogout}>
+        <div className="sidebar-footer-item" onClick={onLogout} title={collapsed ? 'Logout' : ''}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
           </svg>
-          Logout
+          {!collapsed && <span>Logout</span>}
         </div>
       </div>
     </aside>
@@ -137,7 +132,7 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
   );
 };
 
-const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete }) => accts.length === 0 ? null : (
+const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit }) => accts.length === 0 ? null : (
   <div style={{ marginBottom: '1.5rem' }}>
     <p className="label-sm" style={{ marginBottom: '0.75rem' }}>{title}</p>
     <div className="category-manager">
@@ -155,7 +150,10 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete }) 
               </div>
               <div className="editorial-meta">{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
-            <button className="delete-btn" onClick={() => onDelete(acc.id)}>✕</button>
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
+              <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem' }} onClick={() => onEdit(acc)}>✎</button>
+              <button className="delete-btn" onClick={() => onDelete(acc.id)}>✕</button>
+            </div>
           </div>
         );
       })}
@@ -275,6 +273,14 @@ const FilterPanel = ({
         <div className="filter-section" style={{ gridColumn: 'span 2' }}>
           <p className="label-sm" style={{ marginBottom: '1rem' }}>Hierarchical Categories</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', maxHeight: '240px', overflowY: 'auto', paddingRight: '1rem' }}>
+            {/* Uncategorized sentinel chip */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <label className="filter-chip" style={{ cursor: 'pointer', justifyContent: 'flex-start', gap: '0.5rem', background: filterOptions.categoryIds.includes('__uncategorized__') ? 'var(--primary-light)' : 'var(--surface-container-lowest)', borderColor: filterOptions.categoryIds.includes('__uncategorized__') ? 'var(--primary)' : 'var(--ghost-border)' }}>
+                <input type="checkbox" checked={filterOptions.categoryIds.includes('__uncategorized__')} onChange={() => toggleCategory('__uncategorized__')} style={{ display: 'none' }} />
+                <span>•</span>
+                <span style={{ fontWeight: 700 }}>Uncategorized</span>
+              </label>
+            </div>
             {parentCategories.map(parent => (
               <div key={parent.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 <label className="filter-chip" style={{ cursor: 'pointer', justifyContent: 'flex-start', gap: '0.5rem', background: filterOptions.categoryIds.includes(parent.id) ? 'var(--primary-light)' : 'var(--surface-container-lowest)', borderColor: filterOptions.categoryIds.includes(parent.id) ? 'var(--primary)' : 'var(--ghost-border)' }}>
@@ -372,6 +378,10 @@ export default function App() {
   const [newAccountBalance, setNewAccountBalance] = useState('0');
   const [newAccountType, setNewAccountType] = useState('asset');
   const [newAccountExclude, setNewAccountExclude] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [editAcctName, setEditAcctName] = useState('');
+  const [editAcctMode, setEditAcctMode] = useState('opening'); // 'opening' | 'current'
+  const [editAcctValue, setEditAcctValue] = useState('');
 
   // Party Manager State
   const [newPartyName, setNewPartyName] = useState('');
@@ -389,6 +399,14 @@ export default function App() {
     type: 'all', dateRange: { start: '', end: '' },
     categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'all'
   });
+
+  // Ledger sort: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'
+  const [ledgerSort, setLedgerSort] = useState('date_desc');
+
+  // Bulk selection state (ledger)
+  const [bulkSelectMode, setBulkSelectMode] = useState(false);
+  const [selectedTxIds, setSelectedTxIds] = useState(new Set());
+  const [bulkCategory, setBulkCategory] = useState(null);
 
   // Dashboard period filter
   const [dashPeriod, setDashPeriod] = useState('this_month');
@@ -629,6 +647,9 @@ export default function App() {
   }, [defaultAccountId]);
 
   const handleLogout = useCallback(async () => supabase.auth.signOut(), []);
+  const handleGoogleSignIn = useCallback(async () => {
+    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+  }, []);
   const navToDashboard = useCallback(() => setView('dashboard'), [setView]);
   const navToLedger = useCallback(() => { resetForm(); setView('ledger'); }, [resetForm, setView]);
   const navToAnalytics = useCallback(() => setView('analytics'), [setView]);
@@ -654,11 +675,15 @@ export default function App() {
 
     if (txType === 'transfer') {
       if (!transferFromAccount || !transferToAccount || transferFromAccount === transferToAccount) return;
-      const base = { amount: val, note: note.trim() || null, transaction_date: txDate };
+      const base = { amount: val, note: note.trim() || null, transaction_date: txDate, category_id: null, party_id: null };
       if (txToEdit?.transfer_id) {
         await supabase.from('transactions').update({ ...base, account_id: transferFromAccount }).eq('transfer_id', txToEdit.transfer_id).eq('type', 'expense');
         await supabase.from('transactions').update({ ...base, account_id: transferToAccount }).eq('transfer_id', txToEdit.transfer_id).eq('type', 'income');
       } else {
+        if (txToEdit?.id && !txToEdit?.transfer_id) {
+          await supabase.from('transaction_tags').delete().eq('transaction_id', txToEdit.id);
+          await supabase.from('transactions').delete().eq('id', txToEdit.id);
+        }
         const transferId = crypto.randomUUID();
         await supabase.from('transactions').insert([
           { ...base, type: 'expense', account_id: transferFromAccount, user_id: session.user.id, transfer_id: transferId },
@@ -738,6 +763,19 @@ export default function App() {
     fetchParties();
   }, [session, fetchParties]);
 
+  const handleDeleteTransaction = useCallback(async (t, e) => {
+    e.stopPropagation();
+    if (!session) return;
+    if (!window.confirm(`Delete this ${t.transfer_id ? 'transfer' : t.type} of ${currencySymbol}${parseFloat(t.amount).toFixed(2)}?`)) return;
+    if (t.transfer_id) {
+      await supabase.from('transactions').delete().eq('transfer_id', t.transfer_id);
+    } else {
+      await supabase.from('transaction_tags').delete().eq('transaction_id', t.id);
+      await supabase.from('transactions').delete().eq('id', t.id);
+    }
+    fetchTransactions();
+  }, [session, currencySymbol]);
+
   const handleCreateTag = useCallback(async (e) => {
     e.preventDefault();
     if (!session || !newTagName.trim()) return;
@@ -754,19 +792,21 @@ export default function App() {
   const handleCreateAccount = useCallback(async (e) => {
     e.preventDefault();
     if (!session || !newAccountName.trim()) return;
-    const { error } = await supabase.from('accounts').insert([{
-      user_id: session.user.id,
-      name: newAccountName.trim(),
-      initial_balance: parseFloat(newAccountBalance) || 0,
-      type: newAccountType,
-      exclude_from_total: newAccountExclude
-    }]);
+    const base = { user_id: session.user.id, name: newAccountName.trim(), initial_balance: parseFloat(newAccountBalance) || 0 };
+    let { error } = await supabase.from('accounts').insert([{ ...base, type: newAccountType, exclude_from_total: newAccountExclude }]);
+    // Fall back if migration hasn't been applied yet (columns don't exist)
+    if (error?.code === '42703') {
+      ({ error } = await supabase.from('accounts').insert([base]));
+    }
     if (!error) {
       setNewAccountName('');
-      setNewAccountBalance('0');
+      setNewAccountBalance('');
       setNewAccountType('asset');
       setNewAccountExclude(false);
       fetchAccounts();
+    } else {
+      console.error('Account creation failed:', error.message);
+      alert(`Could not save account: ${error.message}`);
     }
   }, [session, newAccountName, newAccountBalance, newAccountType, newAccountExclude, fetchAccounts]);
 
@@ -775,6 +815,42 @@ export default function App() {
     await supabase.from('accounts').delete().eq('id', id);
     fetchAccounts();
   }, [session, fetchAccounts]);
+
+  const openEditAccount = useCallback((acct) => {
+    setEditingAccount(acct);
+    setEditAcctName(acct.name);
+    setEditAcctMode('opening');
+    setEditAcctValue(String(parseFloat(acct.initial_balance) || 0));
+  }, []);
+
+  const handleUpdateAccount = useCallback(async (e) => {
+    e.preventDefault();
+    if (!session || !editingAccount) return;
+    let newInitialBalance;
+    if (editAcctMode === 'opening') {
+      newInitialBalance = parseFloat(editAcctValue) || 0;
+    } else {
+      // Derive opening balance: opening = desired_current - transactions_sum
+      const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
+      newInitialBalance = (parseFloat(editAcctValue) || 0) - txSum;
+    }
+    const { error } = await supabase.from('accounts').update({ name: editAcctName.trim(), initial_balance: newInitialBalance }).eq('id', editingAccount.id);
+    if (!error) {
+      setEditingAccount(null);
+      fetchAccounts();
+    }
+  }, [session, editingAccount, editAcctName, editAcctMode, editAcctValue, accountBalances, fetchAccounts]);
+
+  const handleBulkAssignCategory = useCallback(async () => {
+    if (!session || selectedTxIds.size === 0 || !bulkCategory) return;
+    await Promise.all([...selectedTxIds].map(id =>
+      supabase.from('transactions').update({ category_id: bulkCategory }).eq('id', id)
+    ));
+    setBulkSelectMode(false);
+    setSelectedTxIds(new Set());
+    setBulkCategory(null);
+    fetchTransactions();
+  }, [session, selectedTxIds, bulkCategory]);
 
   const handleSaveBudget = useCallback(async (e) => {
     e.preventDefault();
@@ -976,28 +1052,46 @@ export default function App() {
       if (dateRange.end && t.transaction_date > dateRange.end) return false;
       if (categoryIds.length > 0) {
         if (t.transfer_id) return false;
-        const cat = categories.find(c => c.id === t.category_id);
-        if (!categoryIds.includes(t.category_id) && (!cat?.parent_id || !categoryIds.includes(cat.parent_id))) return false;
+        const wantUncat = categoryIds.includes('__uncategorized__');
+        if (!t.category_id) { if (!wantUncat) return false; }
+        else {
+          const cat = categories.find(c => c.id === t.category_id);
+          if (!categoryIds.includes(t.category_id) && (!cat?.parent_id || !categoryIds.includes(cat.parent_id))) return false;
+        }
       }
       if (tagIds.length > 0 && !t.transaction_tags?.some(tt => tagIds.includes(tt.tag_id))) return false;
       if (accountIds.length > 0 && !accountIds.includes(t.account_id)) return false;
       if (searchTerm) {
         const s = searchTerm.toLowerCase();
-        if (!(t.note||'').toLowerCase().includes(s) && !(t.parties?.name||'').toLowerCase().includes(s) && !(t.categories?.name||'').toLowerCase().includes(s)) return false;
+        const amountStr = parseFloat(t.amount).toFixed(2);
+        if (
+          !(t.note||'').toLowerCase().includes(s) &&
+          !(t.parties?.name||'').toLowerCase().includes(s) &&
+          !(t.categories?.name||'').toLowerCase().includes(s) &&
+          !amountStr.includes(s)
+        ) return false;
       }
       return true;
     });
   }, [transactions, filterOptions, categories]);
 
   const groupedLedger = useMemo(() => {
+    const amtOf = t => parseFloat(t.amount) || 0;
+    if (ledgerSort === 'amount_desc' || ledgerSort === 'amount_asc') {
+      const dir = ledgerSort === 'amount_desc' ? -1 : 1;
+      const sorted = [...filteredLedger].sort((a, b) => dir * (amtOf(a) - amtOf(b)));
+      // Single synthetic group — no date header needed; use null key
+      return sorted.length ? [['__flat__', sorted]] : [];
+    }
     const groups = {};
     filteredLedger.forEach(t => {
       const d = t.transaction_date || t.created_at?.split('T')[0] || 'Unknown';
       if (!groups[d]) groups[d] = [];
       groups[d].push(t);
     });
-    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
-  }, [filteredLedger]);
+    const dir = ledgerSort === 'date_asc' ? 1 : -1;
+    return Object.entries(groups).sort(([a], [b]) => dir * a.localeCompare(b));
+  }, [filteredLedger, ledgerSort]);
 
   const openEditTransaction = useCallback((t) => {
     setTxToEdit(t);
@@ -1040,6 +1134,7 @@ export default function App() {
         <div className="auth-box">
           <div className="auth-tabs"><button className={`auth-tab ${authMode === 'login' ? 'active' : ''}`} onClick={() => { setAuthMode('login'); setAuthError(''); }}>Log In</button><button className={`auth-tab ${authMode === 'signup' ? 'active' : ''}`} onClick={() => { setAuthMode('signup'); setAuthError(''); }}>Sign Up</button></div>
           <form onSubmit={handleAuth} className="auth-form"><input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required /><input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />{authError && <p className="auth-error">{authError}</p>}<button type="submit" className="auth-submit-btn" disabled={authLoading}>{authLoading ? 'Authenticating...' : authMode === 'login' ? 'Enter Vault' : 'Create Account'}</button></form>
+          <div className="auth-social-btns"><button type="button" className="auth-social-btn" onClick={handleGoogleSignIn}><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button></div>
         </div>
       </div>
     </div>
@@ -1057,13 +1152,71 @@ export default function App() {
       const assetAccts = accounts.filter(a => (a.type || 'asset') === 'asset');
       const liabilityAccts = accounts.filter(a => a.type === 'liability');
       const tempAccts = accounts.filter(a => a.type === 'temp');
+      const editAcctCurrentBalance = editingAccount
+        ? (() => {
+            const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
+            if (editAcctMode === 'opening') {
+              return txSum + (parseFloat(editAcctValue) || 0);
+            } else {
+              return parseFloat(editAcctValue) || 0;
+            }
+          })()
+        : 0;
+      const editAcctDerivedOpening = editingAccount && editAcctMode === 'current'
+        ? (() => {
+            const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
+            return (parseFloat(editAcctValue) || 0) - txSum;
+          })()
+        : null;
       settingsContent = (
         <div className="page-inner slide-up">
           <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Accounts</h2></div>
+          {editingAccount && (
+            <div className="modal-overlay" onClick={() => setEditingAccount(null)}>
+              <div className="modal-content fluid-input-area" onClick={e => e.stopPropagation()}>
+                <h3 className="headline-md">Edit Account</h3>
+                <form onSubmit={handleUpdateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
+                  <div className="category-selection-area">
+                    <p className="label-sm">Account Name</p>
+                    <input type="text" className="text-input" value={editAcctName} onChange={e => setEditAcctName(e.target.value)} required />
+                  </div>
+                  <div className="category-selection-area">
+                    <p className="label-sm">Balance Mode</p>
+                    <div className="type-toggle-bar" style={{ marginTop: '0.5rem' }}>
+                      <button type="button" className={`type-btn ${editAcctMode === 'opening' ? 'active-transfer' : ''}`} onClick={() => { setEditAcctMode('opening'); setEditAcctValue(String(parseFloat(editingAccount.initial_balance) || 0)); }}>Opening Balance</button>
+                      <button type="button" className={`type-btn ${editAcctMode === 'current' ? 'active-transfer' : ''}`} onClick={() => { setEditAcctMode('current'); setEditAcctValue(String(accountBalances[editingAccount.id] || 0)); }}>Current Balance</button>
+                    </div>
+                  </div>
+                  <div className="category-selection-area">
+                    <p className="label-sm">{editAcctMode === 'opening' ? 'Opening Balance' : 'Set Current Balance'}</p>
+                    <input type="number" step="0.01" className="text-input" value={editAcctValue} onChange={e => setEditAcctValue(e.target.value)} required />
+                  </div>
+                  <div style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', padding: '0.875rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    {editAcctMode === 'opening' ? (
+                      <p className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
+                        Resulting current balance: <strong style={{ color: 'var(--on-surface)' }}>{currencySymbol}{editAcctCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                      </p>
+                    ) : (
+                      <>
+                        <p className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
+                          Calculated opening balance: <strong style={{ color: 'var(--on-surface)' }}>{currencySymbol}{editAcctDerivedOpening.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                        </p>
+                        <p style={{ fontSize: '0.72rem', color: 'var(--on-surface-variant)', opacity: 0.7 }}>Opening = Current − transaction sum</p>
+                      </>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button type="submit" className="add-cat-btn" style={{ flex: 1 }}>Save Changes</button>
+                    <button type="button" className="icon-btn-text" onClick={() => setEditingAccount(null)}>Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
           <div className="settings-controls fade-in">
-            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} />
-            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} />
-            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} />
+            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} />
+            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} />
+            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} />
             <form onSubmit={handleCreateAccount} className="add-category-form">
               <p className="label-sm">Add Account</p>
               <input type="text" placeholder="Account Name" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required />
@@ -1098,7 +1251,41 @@ export default function App() {
         <div className="page-inner slide-up">
           <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Categories</h2></div>
           <div className="type-toggle-bar" style={{ margin: '1.5rem 0' }}><button className={`type-btn ${settingsType === 'expense' ? 'active-expense' : ''}`} onClick={() => setSettingsType('expense')}>Expense</button><button className={`type-btn ${settingsType === 'income' ? 'active-income' : ''}`} onClick={() => setSettingsType('income')}>Income</button></div>
-          <div className="category-manager" style={{ marginBottom: '2rem' }}>{categories.filter(c => c.type === settingsType).map(c => (<div key={c.id} className="editorial-item"><div className="editorial-icon">{c.icon}</div><div className="editorial-info"><div className="editorial-title">{c.name}</div><div className="editorial-meta">{c.parent_id ? 'Subcategory' : 'Root'}</div></div>{!c.is_system && <div style={{ display: 'flex', gap: '0.5rem' }}><button className="icon-btn-text" onClick={() => { setEditingCat(c); setNewCatName(c.name); setNewCatIcon(c.icon); setNewCatParent(c.parent_id || ''); }}>✎</button><button className="delete-btn" onClick={() => handleDeleteCategory(c.id)}>✕</button></div>}</div>))}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
+            {parents.map(parent => {
+              const subs = categories.filter(c => c.parent_id === parent.id);
+              return (
+                <div key={parent.id} style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                  {/* Parent row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', background: editingCat?.id === parent.id ? 'var(--primary-light)' : 'transparent' }}>
+                    <span style={{ fontSize: '1.1rem', width: '28px', textAlign: 'center' }}>{parent.icon}</span>
+                    <span style={{ flex: 1, fontWeight: 700, fontSize: '0.9375rem', color: 'var(--on-surface)' }}>{parent.name}</span>
+                    {subs.length > 0 && <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.5rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-lowest)', color: 'var(--on-surface-variant)' }}>{subs.length}</span>}
+                    {!parent.is_system && (
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} onClick={() => { setEditingCat(parent); setNewCatName(parent.name); setNewCatIcon(parent.icon); setNewCatParent(''); }}>✎</button>
+                        <button className="delete-btn" onClick={() => handleDeleteCategory(parent.id)}>✕</button>
+                      </div>
+                    )}
+                  </div>
+                  {/* Subcategory rows */}
+                  {subs.map((sub, i) => (
+                    <div key={sub.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 1rem 0.5rem 2.75rem', borderTop: '1px solid var(--ghost-border)', background: editingCat?.id === sub.id ? 'var(--primary-light)' : 'var(--surface-container-lowest)' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginRight: '-0.25rem' }}>{i === subs.length - 1 ? '└' : '├'}</span>
+                      <span style={{ fontSize: '0.95rem', width: '20px', textAlign: 'center' }}>{sub.icon}</span>
+                      <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--on-surface-variant)' }}>{sub.name}</span>
+                      {!sub.is_system && (
+                        <div style={{ display: 'flex', gap: '0.25rem' }}>
+                          <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} onClick={() => { setEditingCat(sub); setNewCatName(sub.name); setNewCatIcon(sub.icon); setNewCatParent(sub.parent_id || ''); }}>✎</button>
+                          <button className="delete-btn" onClick={() => handleDeleteCategory(sub.id)}>✕</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
           <form onSubmit={handleCreateCategory} className="add-category-form">
             <h3>{editingCat ? 'Edit' : 'Add Custom'} Category</h3>
             <div style={{ display: 'flex', gap: '1rem' }}><input type="text" maxLength="2" placeholder="🔖" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} style={{ width: '60px', textAlign: 'center' }} required /><input type="text" placeholder="Category Name" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} style={{ flex: 1 }} required /></div>
@@ -1139,7 +1326,7 @@ export default function App() {
     const applicableSubs = categories.filter(sub => currentParents.some(p => p.id === sub.parent_id));
     return (
       <PageShell {...shellProps}>
-        <div className="page-inner slide-up" style={{ maxWidth: '640px' }}>
+        <div className="page-inner slide-up" style={{ maxWidth: '640px' }} onKeyDown={(e) => { if (e.key === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleTransaction(); } }}>
           <div className="section-header-row"><h2 className="section-title-editorial">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2><button className="section-action-link" onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}>Cancel</button></div>
           <div className="fluid-input-area fade-in">
             <div className="type-toggle-bar"><button className={`type-btn ${txType === 'expense' ? 'active-expense' : ''}`} onClick={() => { setTxType('expense'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Expense</button><button className={`type-btn ${txType === 'income' ? 'active-income' : ''}`} onClick={() => { setTxType('income'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Income</button><button className={`type-btn ${txType === 'transfer' ? 'active-transfer' : ''}`} onClick={() => { setTxType('transfer'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Transfer</button></div>
@@ -1152,7 +1339,7 @@ export default function App() {
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                   <CustomDropdown label="Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '🏦' }))} value={selectedAccount} onChange={setSelectedAccount} placeholder="Select Account" />
-                  <CustomDropdown label="Category" options={[...currentParents, ...applicableSubs].map(c => ({ value: c.id, label: c.name, icon: c.icon }))} value={selectedCategory} onChange={setSelectedCategory} placeholder="Select Category" />
+                  <CustomDropdown label="Category" options={currentParents.flatMap(p => [{ value: p.id, label: p.name, icon: p.icon }, ...applicableSubs.filter(s => s.parent_id === p.id).map(s => ({ value: s.id, label: s.name, icon: s.icon, indent: true }))])} value={selectedCategory} onChange={setSelectedCategory} placeholder="Select Category" />
                 </div>
                 <CustomDropdown label="Party (Optional)" options={[{ value: '', label: '— None —' }, ...parties.map(p => ({ value: p.id, label: p.name, icon: '🏪' }))]} value={selectedParty || ''} onChange={v => setSelectedParty(v || null)} placeholder="Select Party" showSearch={true} />
                 {tags.length > 0 && (
@@ -1185,22 +1372,141 @@ export default function App() {
 
   if (view === 'ledger') {
     const activeFiltersCount = (filterOptions.type !== 'all' ? 1 : 0) + (filterOptions.dateRange.start ? 1 : 0) + (filterOptions.dateRange.end ? 1 : 0) + filterOptions.categoryIds.length + filterOptions.tagIds.length;
+    const allVisibleIds = filteredLedger.filter(t => !t.transfer_id).map(t => t.id);
+    const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedTxIds.has(id));
+    const toggleTx = (id) => setSelectedTxIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+    const toggleAll = () => setSelectedTxIds(allSelected ? new Set() : new Set(allVisibleIds));
+    const exitBulk = () => { setBulkSelectMode(false); setSelectedTxIds(new Set()); setBulkCategory(null); };
+    const allCatOptions = categories.filter(c => !c.is_system || c.type).map(c => ({ value: c.id, label: c.name, icon: c.icon }));
     return (
       <PageShell {...shellProps}>
-        <div className="page-inner fade-in">
-          <div className="section-header-row"><h2 className="section-title-editorial">Transactions</h2><div style={{ display: 'flex', gap: '1rem' }}><button className={`filter-toggle-btn ${showAdvancedFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showAdvancedFilters)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>{showAdvancedFilters ? 'Hide Filters' : 'Deep Filter'}{activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}</button><button className="section-action-link" onClick={navToDashboard}>Dashboard</button></div></div>
-          <div className="ledger-search-row" style={{ marginTop: '1.5rem' }}><div className="ledger-search-wrap" style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-full)', padding: '0.25rem' }}><input type="text" placeholder="Search transactions..." className="ledger-search-input" style={{ background: 'transparent', border: 'none', padding: '0.75rem 1rem 0.75rem 3rem' }} value={filterOptions.searchTerm} onChange={(e) => updateFilter('searchTerm', e.target.value)} /><svg className="search-icon" style={{ left: '1.25rem' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
-          <div className="filter-pills" style={{ marginTop: '1rem' }}>{['all', 'today', 'this_week', 'this_month', 'last_3m'].map(p => (<button key={p} className={`filter-pill ${filterOptions.preset === p ? 'active-pill' : ''}`} onClick={() => applyDatePreset(p)} style={{ textTransform: 'capitalize' }}>{p.replace('_', ' ')}</button>))}</div>
-          {activeFiltersCount > 0 && !showAdvancedFilters && (<div className="filter-active-summary slide-up"><span className="label-sm" style={{ marginRight: '0.5rem' }}>Active:</span>{filterOptions.type !== 'all' && <span className="active-filter-tag">{filterOptions.type} <span className="active-filter-remove" onClick={() => updateFilter('type', 'all')}>✕</span></span>}{filterOptions.categoryIds.map(id => { const c = categories.find(x => x.id === id); return c ? <span key={id} className="active-filter-tag">{c.icon} {c.name} <span className="active-filter-remove" onClick={() => updateFilter('categoryIds', filterOptions.categoryIds.filter(x => x !== id))}>✕</span></span> : null; })}{filterOptions.tagIds.map(id => { const t = tags.find(x => x.id === id); return t ? <span key={id} className="active-filter-tag">#{t.name} <span className="active-filter-remove" onClick={() => updateFilter('tagIds', filterOptions.tagIds.filter(x => x !== id))}>✕</span></span> : null; })}<button className="section-action-link" style={{ marginLeft: 'auto', fontSize: '0.7rem' }} onClick={resetFilters}>Clear All</button></div>)}
+        {/* Sticky controls — sticks to top of .page-content scroll container */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--surface)', padding: '2rem 2.5rem 1rem', borderBottom: '1px solid var(--ghost-border)' }}>
+          <div className="section-header-row" style={{ margin: 0 }}>
+            <h2 className="section-title-editorial">Transactions</h2>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <button
+                className={`filter-toggle-btn${bulkSelectMode ? ' active' : ''}`}
+                onClick={() => bulkSelectMode ? exitBulk() : setBulkSelectMode(true)}
+                title="Bulk assign category"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                {bulkSelectMode ? 'Cancel' : 'Select'}
+              </button>
+              <button className={`filter-toggle-btn ${showAdvancedFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showAdvancedFilters)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                {showAdvancedFilters ? 'Hide Filters' : 'Deep Filter'}{activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}
+              </button>
+              <button className="section-action-link" onClick={navToDashboard}>Dashboard</button>
+            </div>
+          </div>
+          <div className="ledger-search-row" style={{ marginTop: '1.25rem' }}><div className="ledger-search-wrap" style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-full)', padding: '0.25rem' }}><input type="text" placeholder="Search transactions..." className="ledger-search-input" style={{ background: 'transparent', border: 'none', padding: '0.75rem 1rem 0.75rem 3rem' }} value={filterOptions.searchTerm} onChange={(e) => updateFilter('searchTerm', e.target.value)} /><svg className="search-icon" style={{ left: '1.25rem' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.875rem', flexWrap: 'wrap' }}>
+            <div className="filter-pills" style={{ margin: 0, flex: 1 }}>{['all', 'today', 'this_week', 'this_month', 'last_3m'].map(p => (<button key={p} className={`filter-pill ${filterOptions.preset === p ? 'active-pill' : ''}`} onClick={() => applyDatePreset(p)} style={{ textTransform: 'capitalize' }}>{p.replace('_', ' ')}</button>))}</div>
+            <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', padding: '0.25rem' }}>
+              {[{ key: 'date_desc', label: 'Date ↓' }, { key: 'date_asc', label: 'Date ↑' }, { key: 'amount_desc', label: 'Amt ↓' }, { key: 'amount_asc', label: 'Amt ↑' }].map(s => (
+                <button key={s.key} onClick={() => setLedgerSort(s.key)} style={{ padding: '0.3rem 0.6rem', fontSize: '0.72rem', fontWeight: ledgerSort === s.key ? 700 : 400, borderRadius: 'var(--radius-sm)', background: ledgerSort === s.key ? 'var(--surface-container-lowest)' : 'transparent', color: ledgerSort === s.key ? 'var(--primary)' : 'var(--on-surface-variant)', border: 'none', cursor: 'pointer', transition: 'all 0.15s' }}>{s.label}</button>
+              ))}
+            </div>
+          </div>
+          {activeFiltersCount > 0 && !showAdvancedFilters && (<div className="filter-active-summary slide-up" style={{ marginTop: '0.75rem' }}><span className="label-sm" style={{ marginRight: '0.5rem' }}>Active:</span>{filterOptions.type !== 'all' && <span className="active-filter-tag">{filterOptions.type} <span className="active-filter-remove" onClick={() => updateFilter('type', 'all')}>✕</span></span>}{filterOptions.categoryIds.map(id => { if (id === '__uncategorized__') return <span key={id} className="active-filter-tag">• Uncategorized <span className="active-filter-remove" onClick={() => updateFilter('categoryIds', filterOptions.categoryIds.filter(x => x !== id))}>✕</span></span>; const c = categories.find(x => x.id === id); return c ? <span key={id} className="active-filter-tag">{c.icon} {c.name} <span className="active-filter-remove" onClick={() => updateFilter('categoryIds', filterOptions.categoryIds.filter(x => x !== id))}>✕</span></span> : null; })}{filterOptions.tagIds.map(id => { const t = tags.find(x => x.id === id); return t ? <span key={id} className="active-filter-tag">#{t.name} <span className="active-filter-remove" onClick={() => updateFilter('tagIds', filterOptions.tagIds.filter(x => x !== id))}>✕</span></span> : null; })}<button className="section-action-link" style={{ marginLeft: 'auto', fontSize: '0.7rem' }} onClick={resetFilters}>Clear All</button></div>)}
           {showAdvancedFilters && (<FilterPanel categories={categories} tags={tags} accounts={accounts} filterOptions={filterOptions} onUpdateFilter={updateFilter} onResetFilters={resetFilters} />)}
-          <div className="editorial-list" style={{ marginTop: '1rem' }}>{groupedLedger.map(([date, txs]) => (<div key={date} className="ledger-date-group"><div className="ledger-date-header"><span className="ledger-date-text">{formatGroupDate(date)}</span></div><div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>{txs.map(t => { const cat = t.categories || { icon: '•', name: 'Uncategorized' }; return (<div key={t.id} className="editorial-item" onClick={() => openEditTransaction(t)}><div className="editorial-icon">{cat.icon}</div><div className="editorial-info"><div className="editorial-title">{t.parties?.name || cat.name}</div><div className="editorial-meta">{cat.name} · {t.accounts?.name || 'Cash'}{t.transaction_tags?.length > 0 && (<span style={{ marginLeft: '0.5rem', opacity: 0.6 }}>{t.transaction_tags.map(tt => `#${tt.tags?.name}`).filter(Boolean).join(' ')}</span>)}</div></div><div className="editorial-amount-wrap"><div className={`editorial-amount ${t.type}`}>{t.transfer_id ? '⇄' : t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div><div className="editorial-status">{t.transfer_id ? 'TRANSFER' : 'CLEARED'}</div></div></div>); })}</div></div>))}</div>
+          {bulkSelectMode && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.75rem', padding: '0.625rem 1rem', background: 'var(--primary-light)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
+                <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }} />
+                <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Select all ({allVisibleIds.length})</span>
+              </label>
+              {selectedTxIds.size > 0 && <span style={{ color: 'var(--primary)', fontSize: '0.8rem' }}>{selectedTxIds.size} selected</span>}
+            </div>
+          )}
         </div>
+
+        {/* Scrollable transaction list */}
+        <div style={{ padding: '1.5rem 2.5rem', paddingBottom: bulkSelectMode && selectedTxIds.size > 0 ? '7rem' : '2.5rem' }}>
+          <div className="editorial-list">
+            {groupedLedger.map(([date, txs]) => (
+              <div key={date} className="ledger-date-group">
+                {date !== '__flat__' && <div className="ledger-date-header"><span className="ledger-date-text">{formatGroupDate(date)}</span></div>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+                  {txs.map(t => {
+                    const cat = t.categories || { icon: '•', name: 'Uncategorized' };
+                    const isSelected = selectedTxIds.has(t.id);
+                    const isTransfer = !!t.transfer_id;
+                    return (
+                      <div
+                        key={t.id}
+                        className="editorial-item"
+                        style={isSelected ? { background: 'var(--primary-light)', borderRadius: 'var(--radius-md)' } : {}}
+                        onClick={() => bulkSelectMode && !isTransfer ? toggleTx(t.id) : (!bulkSelectMode ? openEditTransaction(t) : null)}
+                      >
+                        {bulkSelectMode && !isTransfer && (
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleTx(t.id)}
+                            onClick={e => e.stopPropagation()}
+                            style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer', flexShrink: 0 }}
+                          />
+                        )}
+                        <div className="editorial-icon">{cat.icon}</div>
+                        <div className="editorial-info">
+                          <div className="editorial-title">{t.parties?.name || cat.name}</div>
+                          <div className="editorial-meta">{cat.name} · {t.accounts?.name || 'Cash'}{t.transaction_tags?.length > 0 && (<span style={{ marginLeft: '0.5rem', opacity: 0.6 }}>{t.transaction_tags.map(tt => `#${tt.tags?.name}`).filter(Boolean).join(' ')}</span>)}</div>
+                        </div>
+                        <div className="editorial-amount-wrap">
+                          <div className={`editorial-amount ${t.type}`}>{isTransfer ? '⇄' : t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div>
+                          <div className="editorial-status">{isTransfer ? 'TRANSFER' : 'CLEARED'}</div>
+                        </div>
+                        {!bulkSelectMode && (
+                          <button
+                            onClick={(e) => handleDeleteTransaction(t, e)}
+                            style={{ flexShrink: 0, background: 'none', border: 'none', padding: '0.25rem 0.4rem', cursor: 'pointer', color: 'var(--on-surface-variant)', opacity: 0.35, fontSize: '0.8rem', borderRadius: 'var(--radius-sm)', transition: 'opacity 0.15s, color 0.15s' }}
+                            onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = 'var(--error, #c0392b)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.opacity = 0.35; e.currentTarget.style.color = 'var(--on-surface-variant)'; }}
+                            title="Delete transaction"
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Sticky bulk-action bar */}
+        {bulkSelectMode && selectedTxIds.size > 0 && (
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200, background: 'var(--surface-container-lowest)', borderTop: '1px solid var(--ghost-border)', padding: '1rem 2rem', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 -4px 24px rgba(0,0,0,0.1)' }}>
+            <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--primary)', whiteSpace: 'nowrap' }}>{selectedTxIds.size} selected</span>
+            <div style={{ flex: 1, maxWidth: '320px' }}>
+              <CustomDropdown
+                options={allCatOptions}
+                value={bulkCategory}
+                onChange={setBulkCategory}
+                placeholder="Assign category..."
+                showSearch={true}
+              />
+            </div>
+            <button
+              className="add-cat-btn"
+              style={{ whiteSpace: 'nowrap', padding: '0.75rem 1.5rem', opacity: bulkCategory ? 1 : 0.4, cursor: bulkCategory ? 'pointer' : 'not-allowed' }}
+              onClick={bulkCategory ? handleBulkAssignCategory : undefined}
+            >
+              Apply
+            </button>
+            <button className="icon-btn-text" onClick={exitBulk}>Cancel</button>
+          </div>
+        )}
       </PageShell>
     );
   }
 
   if (view === 'analytics') {
-    const PIE_COLORS = ['var(--primary)', 'var(--secondary)', 'var(--primary-container)', 'var(--tertiary-fixed-variant)', 'var(--on-surface-variant)', '#a8c5da', '#f4b183', '#b4a7d6'];
+    const PIE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#14b8a6'];
     const pct = (curr, prev) => {
       if (!prev || prev === 0) return null;
       const change = ((curr - prev) / Math.abs(prev)) * 100;
@@ -1209,15 +1515,25 @@ export default function App() {
     const incomePct = pct(analyticsKPIs.totalIncome, prevPeriodKPIs.income);
     const expensePct = pct(analyticsKPIs.totalExpense, prevPeriodKPIs.expense);
     const netPct = pct(analyticsKPIs.net, prevPeriodKPIs.net);
+    const savRate = analyticsKPIs.totalIncome > 0 ? Math.round(((analyticsKPIs.totalIncome - analyticsKPIs.totalExpense) / analyticsKPIs.totalIncome) * 100) : null;
+    const composedData = chartTimeSeries.map(d => ({ ...d, net: Math.round((d.income - d.expense) * 100) / 100 }));
+    const topPayees = (() => {
+      const totals = {};
+      analyticsTransactions.filter(t => t.type === 'expense' && !t.transfer_id && t.parties?.name).forEach(t => {
+        totals[t.parties.name] = (totals[t.parties.name] || 0) + parseFloat(t.amount);
+      });
+      return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
+    })();
+    const totalCatVal = chartCategorical.reduce((s, c) => s + c.value, 0);
     return (
       <PageShell {...shellProps}>
         <div className="page-inner fade-in">
           <div className="section-header-row">
-            <h2 className="section-title-editorial">Analytics</h2>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              {drillCategory && <button className="filter-pill active-pill" onClick={() => setDrillCategory(null)} style={{ fontSize: '0.75rem' }}>📂 {drillCategory} ✕</button>}
-              <button className={`filter-toggle-btn ${showAnalyticsFilters ? 'active' : ''}`} onClick={() => setShowAnalyticsFilters(!showAnalyticsFilters)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filters</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <h2 className="section-title-editorial">Analytics</h2>
+              {drillCategory && <button className="an-drill-chip" onClick={() => setDrillCategory(null)}>{drillCategory} ✕</button>}
             </div>
+            <button className={`filter-toggle-btn ${showAnalyticsFilters ? 'active' : ''}`} onClick={() => setShowAnalyticsFilters(!showAnalyticsFilters)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filters</button>
           </div>
           <div className="filter-pills" style={{ marginTop: '1rem' }}>
             {['today', 'this_week', 'this_month', 'last_3m', 'this_year'].map(p => (
@@ -1232,76 +1548,127 @@ export default function App() {
               <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}><button className="section-action-link" onClick={resetAnalyticsFilters}>Reset</button></div>
             </div>
           )}
-          <div className="summary-cards-grid" style={{ marginTop: '2rem' }}>
-            <div className="summary-card income">
-              <p className="summary-label">Income</p>
-              <h3 className="summary-value">{currencySymbol}{analyticsKPIs.totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-              {incomePct && <p style={{ fontSize: '0.72rem', marginTop: '0.3rem', color: incomePct.up ? 'var(--secondary)' : 'var(--tertiary-fixed-variant)' }}>{incomePct.up ? '↑' : '↓'} {incomePct.label} vs prev period</p>}
+          {/* KPI Row */}
+          <div className="an-kpi-row">
+            <div className="an-kpi-card an-kpi-income">
+              <span className="an-kpi-label">Income</span>
+              <span className="an-kpi-value">{currencySymbol}{analyticsKPIs.totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              {incomePct ? <span className={`an-kpi-trend ${incomePct.up ? 'up' : 'down'}`}>{incomePct.up ? '↑' : '↓'} {incomePct.label} vs prev</span> : <span className="an-kpi-sub">&nbsp;</span>}
             </div>
-            <div className="summary-card expense">
-              <p className="summary-label">Expenses</p>
-              <h3 className="summary-value">{currencySymbol}{analyticsKPIs.totalExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-              {expensePct && <p style={{ fontSize: '0.72rem', marginTop: '0.3rem', color: !expensePct.up ? 'var(--secondary)' : 'var(--tertiary-fixed-variant)' }}>{expensePct.up ? '↑' : '↓'} {expensePct.label} vs prev period</p>}
+            <div className="an-kpi-card an-kpi-expense">
+              <span className="an-kpi-label">Expenses</span>
+              <span className="an-kpi-value">{currencySymbol}{analyticsKPIs.totalExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              {expensePct ? <span className={`an-kpi-trend ${!expensePct.up ? 'up' : 'down'}`}>{expensePct.up ? '↑' : '↓'} {expensePct.label} vs prev</span> : <span className="an-kpi-sub">&nbsp;</span>}
             </div>
-            <div className="summary-card burn">
-              <p className="summary-label">Net Cash Flow</p>
-              <h3 className={`summary-value ${(analyticsKPIs.net) < 0 ? 'expense' : 'income'}`}>{currencySymbol}{analyticsKPIs.net.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-              {netPct && <p style={{ fontSize: '0.72rem', marginTop: '0.3rem', color: netPct.up ? 'var(--secondary)' : 'var(--tertiary-fixed-variant)' }}>{netPct.up ? '↑' : '↓'} {netPct.label} vs prev period</p>}
+            <div className="an-kpi-card an-kpi-net">
+              <span className="an-kpi-label">Net Flow</span>
+              <span className={`an-kpi-value${analyticsKPIs.net < 0 ? ' an-neg' : ''}`}>{analyticsKPIs.net >= 0 ? '+' : ''}{currencySymbol}{Math.abs(analyticsKPIs.net).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              {netPct ? <span className={`an-kpi-trend ${netPct.up ? 'up' : 'down'}`}>{netPct.up ? '↑' : '↓'} {netPct.label} vs prev</span> : <span className="an-kpi-sub">&nbsp;</span>}
             </div>
-            <div className="summary-card burn">
-              <p className="summary-label">Daily Average</p>
-              <h3 className="summary-value">{currencySymbol}{analyticsKPIs.dailyBurn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+            <div className="an-kpi-card an-kpi-save">
+              <span className="an-kpi-label">Savings Rate</span>
+              <span className={`an-kpi-value${savRate !== null && savRate < 0 ? ' an-neg' : ''}`}>{savRate !== null ? `${savRate}%` : '—'}</span>
+              <span className="an-kpi-sub">&nbsp;</span>
+            </div>
+            <div className="an-kpi-card an-kpi-burn">
+              <span className="an-kpi-label">Daily Burn</span>
+              <span className="an-kpi-value">{currencySymbol}{analyticsKPIs.dailyBurn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              <span className="an-kpi-sub">{analyticsKPIs.txCount} transactions</span>
             </div>
           </div>
-          <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem', marginTop: '2rem' }}>
-            <div className="analytics-card-sm" style={{ minHeight: '400px' }}>
-              <p className="analytics-title-sm">Cash Flow Velocity{drillCategory && <span style={{ fontSize: '0.7rem', fontWeight: 400, opacity: 0.6, marginLeft: '0.5rem' }}>· {drillCategory}</span>}</p>
-              {chartTimeSeries.length === 0 ? <EmptyChart h={320} /> : (
-                <ResponsiveContainer width="100%" height={320}>
-                  <AreaChart data={chartTimeSeries}>
-                    <defs>
-                      <linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--secondary)" stopOpacity={0.3}/><stop offset="95%" stopColor="var(--secondary)" stopOpacity={0}/></linearGradient>
-                      <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--tertiary-fixed-variant)" stopOpacity={0.3}/><stop offset="95%" stopColor="var(--tertiary-fixed-variant)" stopOpacity={0}/></linearGradient>
-                    </defs>
-                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} minTickGap={30} />
-                    <YAxis hide />
-                    <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
-                    <Area type="monotone" dataKey="income" name="Income" stroke="var(--secondary)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorInc)" />
-                    <Area type="monotone" dataKey="expense" name="Expense" stroke="var(--tertiary-fixed-variant)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorExp)" />
-                    <Area type="monotone" dataKey="expenseMA" name="MA" stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="5:4" fillOpacity={0} fill="none" dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
+          {/* Cash Flow — full width */}
+          <div className="an-card" style={{ marginTop: '1.5rem' }}>
+            <div className="an-card-header">
+              <p className="an-card-title">Cash Flow{drillCategory && <span className="an-drill-tag">· {drillCategory}</span>}</p>
+              <div className="an-legend">
+                <span className="an-legend-item"><span className="an-legend-dot" style={{ background: '#10b981' }} />Income</span>
+                <span className="an-legend-item"><span className="an-legend-dot" style={{ background: '#ef4444' }} />Expense</span>
+                <span className="an-legend-item"><span className="an-legend-line" style={{ background: '#6366f1' }} />Net</span>
+              </div>
+            </div>
+            {composedData.length === 0 ? <EmptyChart h={260} /> : (
+              <ResponsiveContainer width="100%" height={260}>
+                <ComposedChart data={composedData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} minTickGap={32} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} tickFormatter={v => `${currencySymbol}${Math.abs(v) >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} width={52} />
+                  <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
+                  <ReferenceLine y={0} stroke="var(--ghost-border)" strokeDasharray="3 3" />
+                  <Bar dataKey="income" name="Income" fill="#10b981" radius={[3,3,0,0]} maxBarSize={18} opacity={0.85} />
+                  <Bar dataKey="expense" name="Expense" fill="#ef4444" radius={[3,3,0,0]} maxBarSize={18} opacity={0.85} />
+                  <Line type="monotone" dataKey="net" name="Net" stroke="#6366f1" strokeWidth={2} dot={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          {/* Category Breakdown + Top Payees */}
+          <div className="an-two-col" style={{ marginTop: '1.5rem' }}>
+            <div className="an-card">
+              <div className="an-card-header">
+                <p className="an-card-title">Category Breakdown</p>
+                <span className="an-card-hint">click to drill</span>
+              </div>
+              {chartCategorical.length === 0 ? <EmptyChart h={240} msg="No expense data" /> : (
+                <div className="an-cat-split">
+                  <div style={{ width: '160px', flexShrink: 0 }}>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie data={chartCategorical} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={3} dataKey="value" onClick={d => setDrillCategory(drillCategory === d.name ? null : d.name)} style={{ cursor: 'pointer' }}>
+                          {chartCategorical.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke={drillCategory === entry.name ? '#fff' : 'none'} strokeWidth={2} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="an-cat-legend-list">
+                    {chartCategorical.map((entry, i) => (
+                      <button key={entry.name} className={`an-cat-legend-row${drillCategory === entry.name ? ' active' : ''}`} onClick={() => setDrillCategory(drillCategory === entry.name ? null : entry.name)}>
+                        <span className="an-cat-legend-dot" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        <span className="an-cat-legend-name">{entry.name}</span>
+                        <span className="an-cat-legend-pct">{totalCatVal > 0 ? `${Math.round(entry.value / totalCatVal * 100)}%` : ''}</span>
+                        <span className="an-cat-legend-val">{currencySymbol}{entry.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-            <div className="analytics-card-sm">
-              <p className="analytics-title-sm">Category Breakdown <span style={{ fontSize: '0.7rem', fontWeight: 400, opacity: 0.5 }}>click to drill</span></p>
-              {chartCategorical.length === 0 ? <EmptyChart h={320} msg="No expense data" /> : (
-                <ResponsiveContainer width="100%" height={320}>
-                  <PieChart>
-                    <Pie data={chartCategorical} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value" onClick={d => setDrillCategory(drillCategory === d.name ? null : d.name)} style={{ cursor: 'pointer' }}>
-                      {chartCategorical.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-            <div className="analytics-card-sm" style={{ gridColumn: 'span 2' }}>
-              <p className="analytics-title-sm">Tag Density{drillCategory && <span style={{ fontSize: '0.7rem', fontWeight: 400, opacity: 0.6, marginLeft: '0.5rem' }}>· {drillCategory}</span>}</p>
-              {chartTags.length === 0 ? <EmptyChart h={180} msg="No tagged transactions" /> : (
-                <ResponsiveContainer width="100%" height={Math.max(180, chartTags.length * 44)}>
-                  <BarChart data={chartTags} layout="vertical" margin={{ left: 40, right: 40 }}>
+            <div className="an-card">
+              <div className="an-card-header">
+                <p className="an-card-title">Top Payees</p>
+                {topPayees.length > 0 && <span className="an-card-hint">by expense</span>}
+              </div>
+              {topPayees.length === 0 ? <EmptyChart h={240} msg="No party data" /> : (
+                <ResponsiveContainer width="100%" height={Math.max(240, topPayees.length * 34)}>
+                  <BarChart data={topPayees} layout="vertical" margin={{ left: 0, right: 24, top: 4, bottom: 4 }}>
                     <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: 600, fontFamily: 'Inter' }} />
-                    <Tooltip cursor={{ fill: 'var(--surface-container-low)' }} content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
-                    <Bar dataKey="value" name="Amount" fill="var(--primary-container)" radius={[0, 6, 6, 0]} barSize={24} />
+                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fontFamily: 'Inter', fill: 'var(--on-surface)' }} width={80} />
+                    <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
+                    <Bar dataKey="value" name="Amount" radius={[0, 5, 5, 0]} barSize={16}>
+                      {topPayees.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} opacity={0.85} />)}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
           </div>
+          {/* Tag Density */}
+          {chartTags.length > 0 && (
+            <div className="an-card" style={{ marginTop: '1.5rem' }}>
+              <div className="an-card-header">
+                <p className="an-card-title">Tag Density{drillCategory && <span className="an-drill-tag">· {drillCategory}</span>}</p>
+              </div>
+              <ResponsiveContainer width="100%" height={Math.max(160, chartTags.length * 36)}>
+                <BarChart data={chartTags} layout="vertical" margin={{ left: 0, right: 24, top: 4, bottom: 4 }}>
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fontFamily: 'Inter', fill: 'var(--on-surface)' }} width={80} />
+                  <Tooltip cursor={{ fill: 'var(--surface-container-low)' }} content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
+                  <Bar dataKey="value" name="Amount" fill="#8b5cf6" radius={[0, 5, 5, 0]} barSize={20} opacity={0.85} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </PageShell>
     );
