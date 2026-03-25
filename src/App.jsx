@@ -295,6 +295,15 @@ function App() {
     categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'all'
   });
 
+  // Settings / Management Form State
+  const [settingsType, setSettingsType] = useState('expense');
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('🔖');
+  const [newCatParent, setNewCatParent] = useState('');
+  const [newAccountName, setNewAccountName] = useState('');
+  const [newAccountBalance, setNewAccountBalance] = useState('');
+  const [newPartyName, setNewPartyName] = useState('');
+
   // Dashboard period filter
   const [dashPeriod, setDashPeriod] = useState('this_month');
 
