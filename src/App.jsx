@@ -1516,10 +1516,10 @@ export default function App() {
     return (
       <PageShell {...shellProps}>
         {/* Sticky controls — sticks to top of .page-content scroll container */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--surface)', padding: '2rem 2.5rem 1rem', borderBottom: '1px solid var(--ghost-border)' }}>
-          <div className="section-header-row" style={{ margin: 0 }}>
+        <div className="ledger-sticky-header">
+          <div className="ledger-header-row">
             <h2 className="section-title-editorial">Transactions</h2>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div className="ledger-header-actions">
               <button
                 className={`filter-toggle-btn${bulkSelectMode ? ' active' : ''}`}
                 onClick={() => bulkSelectMode ? exitBulk() : setBulkSelectMode(true)}
@@ -1528,19 +1528,23 @@ export default function App() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                 {bulkSelectMode ? 'Cancel' : 'Select'}
               </button>
-              <button className={`filter-toggle-btn ${showAdvancedFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showAdvancedFilters)}>
+              <button className={`filter-toggle-btn${showAdvancedFilters ? ' active' : ''}`} onClick={() => setShowFilters(!showAdvancedFilters)}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                {showAdvancedFilters ? 'Hide Filters' : 'Deep Filter'}{activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}
+                <span className="ledger-filter-label">{showAdvancedFilters ? 'Hide' : 'Filter'}</span>{activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}
               </button>
-              <button className="section-action-link" onClick={navToDashboard}>Dashboard</button>
+              <button className="section-action-link ledger-dashboard-link" onClick={navToDashboard}>Dashboard</button>
             </div>
           </div>
-          <div className="ledger-search-row" style={{ marginTop: '1.25rem' }}><div className="ledger-search-wrap" style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-full)', padding: '0.25rem' }}><input type="text" placeholder="Search transactions..." className="ledger-search-input" style={{ background: 'transparent', border: 'none', padding: '0.75rem 1rem 0.75rem 3rem' }} value={filterOptions.searchTerm} onChange={(e) => updateFilter('searchTerm', e.target.value)} /><svg className="search-icon" style={{ left: '1.25rem' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.875rem', flexWrap: 'wrap' }}>
-            <div className="filter-pills" style={{ margin: 0, flex: 1 }}>{['all', 'today', 'this_week', 'this_month', 'last_3m'].map(p => (<button key={p} className={`filter-pill ${filterOptions.preset === p ? 'active-pill' : ''}`} onClick={() => applyDatePreset(p)} style={{ textTransform: 'capitalize' }}>{p.replace('_', ' ')}</button>))}</div>
-            <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', padding: '0.25rem' }}>
+          <div className="ledger-search-row"><div className="ledger-search-wrap"><input type="text" placeholder="Search transactions..." className="ledger-search-input" value={filterOptions.searchTerm} onChange={(e) => updateFilter('searchTerm', e.target.value)} /><svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
+          <div className="ledger-controls-row">
+            <div className="ledger-period-pills">
+              {[{ p: 'all', label: 'All' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }, { p: 'last_3m', label: '3 Months' }].map(({ p, label }) => (
+                <button key={p} className={`filter-pill${filterOptions.preset === p ? ' active-pill' : ''}`} onClick={() => applyDatePreset(p)}>{label}</button>
+              ))}
+            </div>
+            <div className="ledger-sort-bar">
               {[{ key: 'date_desc', label: 'Date ↓' }, { key: 'date_asc', label: 'Date ↑' }, { key: 'amount_desc', label: 'Amt ↓' }, { key: 'amount_asc', label: 'Amt ↑' }].map(s => (
-                <button key={s.key} onClick={() => setLedgerSort(s.key)} style={{ padding: '0.3rem 0.6rem', fontSize: '0.72rem', fontWeight: ledgerSort === s.key ? 700 : 400, borderRadius: 'var(--radius-sm)', background: ledgerSort === s.key ? 'var(--surface-container-lowest)' : 'transparent', color: ledgerSort === s.key ? 'var(--primary)' : 'var(--on-surface-variant)', border: 'none', cursor: 'pointer', transition: 'all 0.15s' }}>{s.label}</button>
+                <button key={s.key} className={`ledger-sort-btn${ledgerSort === s.key ? ' active' : ''}`} onClick={() => setLedgerSort(s.key)}>{s.label}</button>
               ))}
             </div>
           </div>
@@ -1558,21 +1562,21 @@ export default function App() {
         </div>
 
         {/* Scrollable transaction list */}
-        <div style={{ padding: '1.5rem 2.5rem', paddingBottom: bulkSelectMode && selectedTxIds.size > 0 ? '7rem' : '2.5rem' }}>
+        <div className={`ledger-list-wrap${bulkSelectMode && selectedTxIds.size > 0 ? ' has-bulk-bar' : ''}`}>
           <div className="editorial-list">
             {groupedLedger.map(([date, txs]) => (
               <div key={date} className="ledger-date-group">
                 {date !== '__flat__' && <div className="ledger-date-header"><span className="ledger-date-text">{formatGroupDate(date)}</span></div>}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
                   {txs.map(t => {
                     const cat = t.categories || { icon: '•', name: 'Uncategorized' };
                     const isSelected = selectedTxIds.has(t.id);
                     const isTransfer = !!t.transfer_id;
+                    const fmtAmt = parseFloat(t.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     return (
                       <div
                         key={t.id}
-                        className="editorial-item"
-                        style={isSelected ? { background: 'var(--primary-light)', borderRadius: 'var(--radius-md)' } : {}}
+                        className={`editorial-item${isSelected ? ' tx-selected' : ''}`}
                         onClick={() => bulkSelectMode && !isTransfer ? toggleTx(t.id) : (!bulkSelectMode ? openEditTransaction(t) : null)}
                       >
                         {bulkSelectMode && !isTransfer && (
@@ -1587,18 +1591,16 @@ export default function App() {
                         <div className="editorial-icon">{cat.icon}</div>
                         <div className="editorial-info">
                           <div className="editorial-title">{t.parties?.name || cat.name}</div>
-                          <div className="editorial-meta">{cat.name} · {t.accounts?.name || 'Cash'}{t.transaction_tags?.length > 0 && (<span style={{ marginLeft: '0.5rem', opacity: 0.6 }}>{t.transaction_tags.map(tt => `#${tt.tags?.name}`).filter(Boolean).join(' ')}</span>)}</div>
+                          <div className="editorial-meta">{cat.name} · {t.accounts?.name || 'Cash'}{t.transaction_tags?.length > 0 && (<span style={{ marginLeft: '0.4rem', opacity: 0.6 }}>{t.transaction_tags.map(tt => `#${tt.tags?.name}`).filter(Boolean).join(' ')}</span>)}</div>
                         </div>
                         <div className="editorial-amount-wrap">
-                          <div className={`editorial-amount ${t.type}`}>{isTransfer ? '⇄' : t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div>
-                          <div className="editorial-status">{isTransfer ? 'TRANSFER' : 'CLEARED'}</div>
+                          <div className={`editorial-amount ${t.type}`}>{isTransfer ? '⇄' : t.type === 'income' ? '+' : '-'}{currencySymbol}{fmtAmt}</div>
+                          <div className={`editorial-status${isTransfer ? ' transfer' : ''}`}>{isTransfer ? 'TRANSFER' : 'CLEARED'}</div>
                         </div>
                         {!bulkSelectMode && (
                           <button
+                            className="tx-delete-btn"
                             onClick={(e) => handleDeleteTransaction(t, e)}
-                            style={{ flexShrink: 0, background: 'none', border: 'none', padding: '0.25rem 0.4rem', cursor: 'pointer', color: 'var(--on-surface-variant)', opacity: 0.35, fontSize: '0.8rem', borderRadius: 'var(--radius-sm)', transition: 'opacity 0.15s, color 0.15s' }}
-                            onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = 'var(--error, #c0392b)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.opacity = 0.35; e.currentTarget.style.color = 'var(--on-surface-variant)'; }}
                             title="Delete transaction"
                           >
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
