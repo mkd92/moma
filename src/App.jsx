@@ -868,6 +868,7 @@ function App() {
   const navToAnalytics = useCallback(() => setView('analytics'), []);
   const navToBudgets = useCallback(() => setView('budgets'), []);
   const navToSettings = useCallback(() => setView('settings'), []);
+  const navToNewTx = useCallback(() => { resetForm(); setView('new_transaction'); }, [resetForm]);
 
   const handleCreateCategory = useCallback(async (e) => {
     e.preventDefault();
