@@ -277,7 +277,7 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
   );
 };
 
-const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, defaultAccountId, onSetDefault }) => accts.length === 0 ? null : (
+const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, defaultAccountId }) => accts.length === 0 ? null : (
   <div style={{ marginBottom: '1.5rem' }}>
     <p className="label-sm" style={{ marginBottom: '0.75rem' }}>{title}</p>
     <div className="category-manager">
@@ -298,15 +298,6 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
               <div className="editorial-meta">{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-              <button
-                title={isDefault ? 'Default account' : 'Set as default account'}
-                style={{ background: 'none', border: 'none', cursor: isDefault ? 'default' : 'pointer', padding: '0.2rem 0.4rem', lineHeight: 1, transition: 'color 0.15s', display: 'flex', alignItems: 'center' }}
-                onClick={() => !isDefault && onSetDefault(acc.id)}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill={isDefault ? '#f59e0b' : 'none'} stroke={isDefault ? '#f59e0b' : 'var(--on-surface-variant)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              </button>
               <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem' }} onClick={() => onEdit(acc)}>✎</button>
               <button className="delete-btn" onClick={() => onDelete(acc.id)}>✕</button>
             </div>
@@ -1499,6 +1490,20 @@ export default function App() {
                     <input type="checkbox" checked={editAcctExclude} onChange={e => setEditAcctExclude(e.target.checked)} />
                     <span className="body-md">Exclude from Net Worth</span>
                   </label>
+                  {editingAccount && editingAccount.id !== defaultAccountId && (
+                    <button
+                      type="button"
+                      onClick={() => handleSetDefaultAccount(editingAccount.id)}
+                      style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1.5px solid #f59e0b', background: 'rgba(245,158,11,0.08)', color: '#f59e0b', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', textAlign: 'center' }}
+                    >
+                      Set as Default Account
+                    </button>
+                  )}
+                  {editingAccount && editingAccount.id === defaultAccountId && (
+                    <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', background: 'rgba(245,158,11,0.08)', color: '#f59e0b', fontWeight: 600, fontSize: '0.875rem', textAlign: 'center' }}>
+                      ✓ This is your default account
+                    </div>
+                  )}
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <button type="submit" className="add-cat-btn" style={{ flex: 1 }}>Save Changes</button>
                     <button type="button" className="icon-btn-text" onClick={() => setEditingAccount(null)}>Cancel</button>
@@ -1508,9 +1513,9 @@ export default function App() {
             </div>
           )}
           <div className="settings-controls fade-in">
-            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} onSetDefault={handleSetDefaultAccount} />
-            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} onSetDefault={handleSetDefaultAccount} />
-            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} onSetDefault={handleSetDefaultAccount} />
+            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
             <form onSubmit={handleCreateAccount} className="add-category-form">
               <p className="label-sm">Add Account</p>
               <input type="text" placeholder="Account Name" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required />
