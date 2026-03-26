@@ -102,30 +102,30 @@ const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNew
     <nav className="bottom-nav">
       <button className={`bnav-item${view === 'dashboard' ? ' active' : ''}`} onClick={onDashboard}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
         </svg>
         <span>Home</span>
       </button>
       <button className={`bnav-item${view === 'ledger' ? ' active' : ''}`} onClick={onLedger}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+          <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
         </svg>
         <span>Txns</span>
       </button>
       <button className="bnav-fab" onClick={onNewTx}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </button>
       <button className={`bnav-item${view === 'analytics' ? ' active' : ''}`} onClick={onAnalytics}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/>
+          <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" />
         </svg>
         <span>Analytics</span>
       </button>
       <button className={`bnav-item${settingsViews.includes(view) ? ' active' : ''}`} onClick={onSettings}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
         <span>Settings</span>
       </button>
@@ -140,11 +140,11 @@ const SUB_VIEWS = new Set(['new_transaction', 'account_management', 'category_ma
 const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout }) => {
   const [collapsed, setCollapsed] = useState(false);
   const NAV_ITEMS = [
-    { key: 'dashboard', label: 'Portfolio', onClick: onDashboard, icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></> },
-    { key: 'ledger', label: 'Transactions', onClick: onLedger, icon: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/> },
-    { key: 'budgets', label: 'Budgets', onClick: onBudgets, icon: <path d="M12 20v-6M6 20V10M18 20V4"/> },
-    { key: 'analytics', label: 'Analytics', onClick: onAnalytics, icon: <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"/> },
-    { key: 'vault', label: 'Vault', onClick: null, icon: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></> },
+    { key: 'dashboard', label: 'Portfolio', onClick: onDashboard, icon: <><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></> },
+    { key: 'ledger', label: 'Transactions', onClick: onLedger, icon: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /> },
+    { key: 'budgets', label: 'Budgets', onClick: onBudgets, icon: <path d="M12 20v-6M6 20V10M18 20V4" /> },
+    { key: 'analytics', label: 'Analytics', onClick: onAnalytics, icon: <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" /> },
+    { key: 'vault', label: 'Vault', onClick: null, icon: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></> },
   ];
   return (
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
@@ -157,7 +157,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
         )}
         <button className="sidebar-collapse-btn" onClick={() => setCollapsed(c => !c)} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            {collapsed ? <path d="M9 18l6-6-6-6"/> : <path d="M15 18l-6-6 6-6"/>}
+            {collapsed ? <path d="M9 18l6-6-6-6" /> : <path d="M15 18l-6-6 6-6" />}
           </svg>
         </button>
       </div>
@@ -174,18 +174,18 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
       <div className="sidebar-footer">
         <button className="sidebar-new-tx-btn" onClick={onNewTx} title={collapsed ? 'Add Transaction' : ''}>
           {collapsed
-            ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             : 'Add Transaction'}
         </button>
         <div className="sidebar-footer-item" onClick={onSettings} title={collapsed ? 'Settings' : ''}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
           {!collapsed && <span>Settings</span>}
         </div>
         <div className="sidebar-footer-item" onClick={onLogout} title={collapsed ? 'Logout' : ''}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
           </svg>
           {!collapsed && <span>Logout</span>}
         </div>
@@ -196,21 +196,21 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
 
 const SunIcon = ({ size = 13 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="5"/>
-    <line x1="12" y1="1" x2="12" y2="3"/>
-    <line x1="12" y1="21" x2="12" y2="23"/>
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-    <line x1="1" y1="12" x2="3" y2="12"/>
-    <line x1="21" y1="12" x2="23" y2="12"/>
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
   </svg>
 );
 
 const MoonIcon = ({ size = 13 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
   </svg>
 );
 
@@ -218,7 +218,7 @@ const TopHeader = ({ session, theme, onToggleTheme }) => (
   <header className="top-header">
     <div className="search-container">
       <svg className="search-icon-top" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
       <input type="text" placeholder="Search accounts, tags, or dates..." className="search-input-top" />
     </div>
@@ -298,7 +298,7 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
               <div className="editorial-meta">{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-              <button
+              <button className='this'
                 title={isDefault ? 'Default account' : 'Set as default account'}
                 style={{ background: 'none', border: 'none', cursor: isDefault ? 'default' : 'pointer', fontSize: '1.1rem', padding: '0.2rem 0.4rem', color: isDefault ? '#f59e0b' : 'var(--on-surface-variant)', lineHeight: 1, transition: 'color 0.15s' }}
                 onClick={() => !isDefault && onSetDefault(acc.id)}
@@ -365,7 +365,7 @@ const FilterPanel = ({
   return (
     <div className="advanced-filters slide-up" style={{ marginTop: '1.5rem', background: 'var(--surface-container-low)', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2.5rem' }}>
-        
+
         {/* Type Section */}
         <div className="filter-section">
           <p className="label-sm" style={{ marginBottom: '1rem' }}>Transaction Type</p>
@@ -484,7 +484,7 @@ export default function App() {
   const setView = useCallback((v) => navigate(VIEW_PATHS[v] || '/'), [navigate]);
 
   // Auto-reload when a new service worker version is available
-  useRegisterSW({ onNeedRefresh() { window.location.reload(); }, onOfflineReady() {} });
+  useRegisterSW({ onNeedRefresh() { window.location.reload(); }, onOfflineReady() { } });
 
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('moma-theme');
@@ -651,15 +651,15 @@ export default function App() {
     if (uid) {
       const cached = {
         categories: cacheGet(uid, 'categories'),
-        parties:    cacheGet(uid, 'parties'),
-        tags:       cacheGet(uid, 'tags'),
-        accounts:   cacheGet(uid, 'accounts'),
+        parties: cacheGet(uid, 'parties'),
+        tags: cacheGet(uid, 'tags'),
+        accounts: cacheGet(uid, 'accounts'),
         transactions: cacheGet(uid, 'transactions'),
       };
-      if (cached.categories)   setCategories(cached.categories);
-      if (cached.parties)      setParties(cached.parties);
-      if (cached.tags)         setTags(cached.tags);
-      if (cached.accounts)     setAccounts(cached.accounts);
+      if (cached.categories) setCategories(cached.categories);
+      if (cached.parties) setParties(cached.parties);
+      if (cached.tags) setTags(cached.tags);
+      if (cached.accounts) setAccounts(cached.accounts);
       if (cached.transactions) setTransactions(cached.transactions);
     }
 
@@ -707,7 +707,7 @@ export default function App() {
   const dashDateRange = useMemo(() => {
     const today = new Date();
     const pad = n => String(n).padStart(2, '0');
-    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     if (dashPeriod === 'this_month') return { start: fmt(new Date(today.getFullYear(), today.getMonth(), 1)), end: fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)) };
     if (dashPeriod === 'last_month') return { start: fmt(new Date(today.getFullYear(), today.getMonth() - 1, 1)), end: fmt(new Date(today.getFullYear(), today.getMonth(), 0)) };
     if (dashPeriod === 'last_3m') return { start: fmt(new Date(today.getFullYear(), today.getMonth() - 2, 1)), end: fmt(today) };
@@ -731,7 +731,7 @@ export default function App() {
     new Set(accounts.filter(a =>
       !a.exclude_from_total && (a.type || 'asset') === 'asset'
     ).map(a => a.id)),
-  [accounts]);
+    [accounts]);
 
   const dashActiveTransactions = useMemo(() => (
     dashTransactions.filter(t => !t.transfer_id && t.account_id && activeAccountIds.has(t.account_id))
@@ -784,7 +784,7 @@ export default function App() {
     const prevEnd = new Date(new Date(start).getTime() - 86400000);
     const prevStart = new Date(prevEnd.getTime() - duration);
     const pad = n => String(n).padStart(2, '0');
-    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const ps = fmt(prevStart), pe = fmt(prevEnd);
     let curr = 0, prev = 0;
     transactions.forEach(t => {
@@ -803,7 +803,7 @@ export default function App() {
     const today = new Date();
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (6 - i));
-      const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
       return transactions.filter(t => t.transaction_date === key && t.type === 'expense' && !t.transfer_id && t.account_id && activeAccountIds.has(t.account_id)).reduce((s, t) => s + parseFloat(t.amount), 0);
     });
   }, [transactions, activeAccountIds]);
@@ -901,20 +901,20 @@ export default function App() {
         const transferId = crypto.randomUUID();
         await supabase.from('transactions').insert([
           { ...base, type: 'expense', account_id: transferFromAccount, user_id: session.user.id, transfer_id: transferId },
-          { ...base, type: 'income',  account_id: transferToAccount,   user_id: session.user.id, transfer_id: transferId },
+          { ...base, type: 'income', account_id: transferToAccount, user_id: session.user.id, transfer_id: transferId },
         ]);
       }
     } else {
-      const payload = { 
-        amount: val, 
-        type: txType, 
-        category_id: selectedSubcategory || selectedCategory || null, 
-        party_id: selectedParty || null, 
-        account_id: selectedAccount || (accounts.length > 0 ? accounts[0].id : null), 
-        note: note.trim() || null, 
-        transaction_date: txDate 
+      const payload = {
+        amount: val,
+        type: txType,
+        category_id: selectedSubcategory || selectedCategory || null,
+        party_id: selectedParty || null,
+        account_id: selectedAccount || (accounts.length > 0 ? accounts[0].id : null),
+        note: note.trim() || null,
+        transaction_date: txDate
       };
-      
+
       let transactionId;
       if (txToEdit && txToEdit.id) {
         const { error } = await supabase.from('transactions').update(payload).eq('id', txToEdit.id);
@@ -926,7 +926,7 @@ export default function App() {
         if (error) { console.error('Insert error:', error); return; }
         transactionId = data.id;
       }
-      
+
       if (transactionId) {
         await supabase.from('transaction_tags').delete().eq('transaction_id', transactionId);
         if (selectedTags.length > 0) {
@@ -1092,7 +1092,7 @@ export default function App() {
   const applyDatePreset = useCallback((preset) => {
     const today = new Date();
     const pad = n => String(n).padStart(2, '0');
-    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     let start = '', end = '';
     if (preset === 'today') { start = end = fmt(today); }
     else if (preset === 'this_week') { const day = today.getDay() || 7; const mon = new Date(today); mon.setDate(today.getDate() - day + 1); start = fmt(mon); end = fmt(today); }
@@ -1108,14 +1108,14 @@ export default function App() {
   const resetAnalyticsFilters = useCallback(() => {
     const today = new Date();
     const pad = n => String(n).padStart(2, '0');
-    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     setAnalyticsFilters({ type: 'all', dateRange: { start: fmt(new Date(today.getFullYear(), today.getMonth(), 1)), end: fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)) }, categoryIds: [], tagIds: [], accountIds: [], searchTerm: '', preset: 'this_month' });
   }, []);
 
   const applyAnalyticsPreset = useCallback((preset) => {
     const today = new Date();
     const pad = n => String(n).padStart(2, '0');
-    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     let start = '', end = '';
     if (preset === 'today') { start = end = fmt(today); }
     else if (preset === 'this_week') { const day = today.getDay() || 7; const mon = new Date(today); mon.setDate(today.getDate() - day + 1); start = fmt(mon); end = fmt(today); }
@@ -1131,8 +1131,8 @@ export default function App() {
     if (period === 'monthly') return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
     if (period === 'weekly') {
       const dayN = today.getDay() || 7;
-      const mon = new Date(today); mon.setDate(today.getDate() - dayN + 1); mon.setHours(0,0,0,0);
-      const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+      const mon = new Date(today); mon.setDate(today.getDate() - dayN + 1); mon.setHours(0, 0, 0, 0);
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23, 59, 59, 999);
       return d >= mon && d <= sun;
     }
     return false;
@@ -1167,7 +1167,7 @@ export default function App() {
       }
       if (tagIds.length > 0 && !t.transaction_tags?.some(tt => tagIds.includes(tt.tag_id))) return false;
       if (accountIds.length > 0 && !accountIds.includes(t.account_id)) return false;
-      if (searchTerm) { const s = searchTerm.toLowerCase(); if (!(t.note||'').toLowerCase().includes(s) && !(t.parties?.name||'').toLowerCase().includes(s) && !(t.categories?.name||'').toLowerCase().includes(s)) return false; }
+      if (searchTerm) { const s = searchTerm.toLowerCase(); if (!(t.note || '').toLowerCase().includes(s) && !(t.parties?.name || '').toLowerCase().includes(s) && !(t.categories?.name || '').toLowerCase().includes(s)) return false; }
       return true;
     });
   }, [transactions, analyticsFilters, categories, activeAccountIds]);
@@ -1179,7 +1179,7 @@ export default function App() {
     const prevEnd = new Date(new Date(start).getTime() - 86400000);
     const prevStart = new Date(prevEnd.getTime() - duration);
     const pad = n => String(n).padStart(2, '0');
-    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const ps = fmt(prevStart), pe = fmt(prevEnd);
     return transactions.filter(t =>
       t.transaction_date >= ps && t.transaction_date <= pe &&
@@ -1217,7 +1217,7 @@ export default function App() {
       const data = {};
       for (let i = 0; i < dayCount; i++) {
         const d = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate() + i);
-        const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
         data[key] = { date: key, income: 0, expense: 0, label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) };
       }
       analyticsTransactions.filter(t => !t.transfer_id && (!drillCategory || t.categories?.name === drillCategory || categories.find(c => c.id === t.category_id)?.parent_id === categories.find(c => c.name === drillCategory)?.id)).forEach(t => {
@@ -1228,7 +1228,7 @@ export default function App() {
       });
       const result = Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
       return result.map((d, i, arr) => {
-        const window = arr.slice(Math.max(0, i-6), i+1);
+        const window = arr.slice(Math.max(0, i - 6), i + 1);
         const sum = window.reduce((s, x) => s + x.expense, 0);
         return { ...d, expenseMA: sum / window.length };
       });
@@ -1307,9 +1307,9 @@ export default function App() {
         const s = searchTerm.toLowerCase();
         const amountStr = parseFloat(t.amount).toFixed(2);
         if (
-          !(t.note||'').toLowerCase().includes(s) &&
-          !(t.parties?.name||'').toLowerCase().includes(s) &&
-          !(t.categories?.name||'').toLowerCase().includes(s) &&
+          !(t.note || '').toLowerCase().includes(s) &&
+          !(t.parties?.name || '').toLowerCase().includes(s) &&
+          !(t.categories?.name || '').toLowerCase().includes(s) &&
           !amountStr.includes(s)
         ) return false;
       }
@@ -1340,7 +1340,7 @@ export default function App() {
     setAmount(t.amount ? t.amount.toString() : '');
     setNote(t.note || '');
     setTxDate(t.transaction_date || (t.created_at ? t.created_at.split('T')[0] : new Date().toISOString().split('T')[0]));
-    
+
     if (t.transfer_id) {
       const pair = transactions.find(tx => tx.transfer_id === t.transfer_id && tx.id !== t.id);
       const expenseLeg = t.type === 'expense' ? t : pair;
@@ -1362,7 +1362,7 @@ export default function App() {
 
   if (view === 'landing') return (
     <div className="landing-container fade-in">
-      <svg className="landing-graphic" viewBox="0 0 200 200" fill="none"><rect x="20" y="100" width="24" height="80" rx="4" stroke="#000666" strokeWidth="1.5"/><rect x="56" y="60" width="24" height="120" rx="4" stroke="#000666" strokeWidth="1.5"/><rect x="92" y="40" width="24" height="140" rx="4" stroke="#000666" strokeWidth="1.5"/><rect x="128" y="75" width="24" height="105" rx="4" stroke="#000666" strokeWidth="1.5"/><rect x="164" y="55" width="24" height="125" rx="4" stroke="#000666" strokeWidth="1.5"/><line x1="10" y1="190" x2="195" y2="190" stroke="#000666" strokeWidth="1.5"/></svg>
+      <svg className="landing-graphic" viewBox="0 0 200 200" fill="none"><rect x="20" y="100" width="24" height="80" rx="4" stroke="#000666" strokeWidth="1.5" /><rect x="56" y="60" width="24" height="120" rx="4" stroke="#000666" strokeWidth="1.5" /><rect x="92" y="40" width="24" height="140" rx="4" stroke="#000666" strokeWidth="1.5" /><rect x="128" y="75" width="24" height="105" rx="4" stroke="#000666" strokeWidth="1.5" /><rect x="164" y="55" width="24" height="125" rx="4" stroke="#000666" strokeWidth="1.5" /><line x1="10" y1="190" x2="195" y2="190" stroke="#000666" strokeWidth="1.5" /></svg>
       <p className="landing-eyebrow">The Digital Ledger</p>
       <h1 className="hero-title">Architectural Clarity<br />for Your Wealth.</h1>
       <button className="launch-btn" onClick={() => session ? setView('dashboard') : setView('auth')}>Get Started</button>
@@ -1376,7 +1376,7 @@ export default function App() {
         <div className="auth-box">
           <div className="auth-tabs"><button className={`auth-tab ${authMode === 'login' ? 'active' : ''}`} onClick={() => { setAuthMode('login'); setAuthError(''); }}>Log In</button><button className={`auth-tab ${authMode === 'signup' ? 'active' : ''}`} onClick={() => { setAuthMode('signup'); setAuthError(''); }}>Sign Up</button></div>
           <form onSubmit={handleAuth} className="auth-form"><input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required /><input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />{authError && <p className="auth-error">{authError}</p>}<button type="submit" className="auth-submit-btn" disabled={authLoading}>{authLoading ? 'Authenticating...' : authMode === 'login' ? 'Enter Vault' : 'Create Account'}</button></form>
-          <div className="auth-social-btns"><button type="button" className="auth-social-btn" onClick={handleGoogleSignIn}><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button></div>
+          <div className="auth-social-btns"><button type="button" className="auth-social-btn" onClick={handleGoogleSignIn}><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>Continue with Google</button></div>
         </div>
       </div>
     </div>
@@ -1427,7 +1427,7 @@ export default function App() {
               </div>
             </div>
             <button className="settings-logout-btn" onClick={handleLogout}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
               Sign Out
             </button>
           </div>
@@ -1440,19 +1440,19 @@ export default function App() {
       const tempAccts = accounts.filter(a => a.type === 'temp');
       const editAcctCurrentBalance = editingAccount
         ? (() => {
-            const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
-            if (editAcctMode === 'opening') {
-              return txSum + (parseFloat(editAcctValue) || 0);
-            } else {
-              return parseFloat(editAcctValue) || 0;
-            }
-          })()
+          const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
+          if (editAcctMode === 'opening') {
+            return txSum + (parseFloat(editAcctValue) || 0);
+          } else {
+            return parseFloat(editAcctValue) || 0;
+          }
+        })()
         : 0;
       const editAcctDerivedOpening = editingAccount && editAcctMode === 'current'
         ? (() => {
-            const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
-            return (parseFloat(editAcctValue) || 0) - txSum;
-          })()
+          const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
+          return (parseFloat(editAcctValue) || 0) - txSum;
+        })()
         : null;
       settingsContent = (
         <div className="page-inner slide-up">
@@ -1680,17 +1680,17 @@ export default function App() {
                 onClick={() => bulkSelectMode ? exitBulk() : setBulkSelectMode(true)}
                 title="Bulk assign category"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
                 {bulkSelectMode ? 'Cancel' : 'Select'}
               </button>
               <button className={`filter-toggle-btn${showAdvancedFilters ? ' active' : ''}`} onClick={() => setShowFilters(!showAdvancedFilters)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
                 <span className="ledger-filter-label">{showAdvancedFilters ? 'Hide' : 'Filter'}</span>{activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}
               </button>
               <button className="section-action-link ledger-dashboard-link" onClick={navToDashboard}>Dashboard</button>
             </div>
           </div>
-          <div className="ledger-search-row"><div className="ledger-search-wrap"><input type="text" placeholder="Search transactions..." className="ledger-search-input" value={filterOptions.searchTerm} onChange={(e) => updateFilter('searchTerm', e.target.value)} /><svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
+          <div className="ledger-search-row"><div className="ledger-search-wrap"><input type="text" placeholder="Search transactions..." className="ledger-search-input" value={filterOptions.searchTerm} onChange={(e) => updateFilter('searchTerm', e.target.value)} /><svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg></div></div>
           <div className="ledger-controls-row">
             <div className="ledger-period-pills">
               {[{ p: 'all', label: 'All' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }, { p: 'last_3m', label: '3 Months' }].map(({ p, label }) => (
@@ -1758,7 +1758,7 @@ export default function App() {
                             onClick={(e) => handleDeleteTransaction(t, e)}
                             title="Delete transaction"
                           >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
                           </button>
                         )}
                       </div>
@@ -1825,7 +1825,7 @@ export default function App() {
               <h2 className="section-title-editorial">Analytics</h2>
               {drillCategory && <button className="an-drill-chip" onClick={() => setDrillCategory(null)}>{drillCategory} ✕</button>}
             </div>
-            <button className={`filter-toggle-btn ${showAnalyticsFilters ? 'active' : ''}`} onClick={() => setShowAnalyticsFilters(!showAnalyticsFilters)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>Filters</button>
+            <button className={`filter-toggle-btn ${showAnalyticsFilters ? 'active' : ''}`} onClick={() => setShowAnalyticsFilters(!showAnalyticsFilters)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>Filters</button>
           </div>
           <div className="filter-pills" style={{ marginTop: '1rem' }}>
             {['today', 'this_week', 'this_month', 'last_3m', 'this_year'].map(p => (
@@ -1882,11 +1882,11 @@ export default function App() {
               <ResponsiveContainer width="100%" height={260}>
                 <ComposedChart data={composedData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} minTickGap={32} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} tickFormatter={v => `${currencySymbol}${Math.abs(v) >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} width={52} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} tickFormatter={v => `${currencySymbol}${Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} width={52} />
                   <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
                   <ReferenceLine y={0} stroke="var(--ghost-border)" strokeDasharray="3 3" />
-                  <Bar dataKey="income" name="Income" fill="#10b981" radius={[3,3,0,0]} maxBarSize={18} opacity={0.85} />
-                  <Bar dataKey="expense" name="Expense" fill="#ef4444" radius={[3,3,0,0]} maxBarSize={18} opacity={0.85} />
+                  <Bar dataKey="income" name="Income" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={18} opacity={0.85} />
+                  <Bar dataKey="expense" name="Expense" fill="#ef4444" radius={[3, 3, 0, 0]} maxBarSize={18} opacity={0.85} />
                   <Line type="monotone" dataKey="net" name="Net" stroke="#6366f1" strokeWidth={2} dot={false} />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -1909,7 +1909,7 @@ export default function App() {
                     const parentPct = Math.round((value / maxVal) * 100);
                     const ofTotalPct = totalCatVal > 0 ? Math.round((value / totalCatVal) * 100) : 0;
                     const color = catBreakdownType === 'income'
-                      ? ['#10b981','#34d399','#059669','#6ee7b7','#047857','#a7f3d0'][i % 6]
+                      ? ['#10b981', '#34d399', '#059669', '#6ee7b7', '#047857', '#a7f3d0'][i % 6]
                       : PIE_COLORS[i % PIE_COLORS.length];
                     return (
                       <div key={id} className="cat-hier-group">
@@ -2146,7 +2146,7 @@ export default function App() {
 
           <div className="dashboard-side-stack">
             <div className="smart-insight-card">
-              <div className="insight-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>Smart Insights</div>
+              <div className="insight-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" /></svg>Smart Insights</div>
               <div className="insight-list">{smartInsights.map((ins, i) => (<div key={i} className="insight-item"><div className="insight-dot" style={{ background: ins.color }} /><p className="insight-content"><strong>{ins.title}:</strong> {ins.text}</p></div>))}</div>
             </div>
             <div className="analytics-card-sm">
