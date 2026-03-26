@@ -32,11 +32,21 @@ const CustomDropdown = ({
   const handleToggle = () => {
     if (!isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const menuW = Math.max(rect.width, 200);
+      // Flip left if it would overflow the right edge
+      const left = rect.left + menuW > vw - 8 ? Math.max(8, vw - menuW - 8) : rect.left;
+      // Flip up if it would overflow the bottom
+      const spaceBelow = window.innerHeight - rect.bottom - 8;
+      const maxH = 300; // rough max height of menu
+      const top = spaceBelow < maxH && rect.top > maxH
+        ? rect.top - maxH - 8
+        : rect.bottom + 8;
       setMenuStyle({
         position: 'fixed',
-        top: rect.bottom + 8,
-        left: rect.left,
-        width: rect.width,
+        top,
+        left,
+        width: menuW,
         zIndex: 9999,
       });
       setSearchTerm('');

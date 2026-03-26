@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, ComposedChart, Line } from 'recharts';
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, ComposedChart, Line, LabelList } from 'recharts';
 import { supabase } from './supabaseClient';
 import CustomDropdown from './components/CustomDropdown';
 import './App.css';
@@ -193,7 +193,27 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
   );
 };
 
-const TopHeader = ({ session }) => (
+const SunIcon = ({ size = 13 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+);
+
+const MoonIcon = ({ size = 13 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
+const TopHeader = ({ session, theme, onToggleTheme }) => (
   <header className="top-header">
     <div className="search-container">
       <svg className="search-icon-top" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -202,6 +222,9 @@ const TopHeader = ({ session }) => (
       <input type="text" placeholder="Search accounts, tags, or dates..." className="search-input-top" />
     </div>
     <div className="top-actions">
+      <button className="icon-action" onClick={onToggleTheme} title={theme === 'dark' ? 'Light mode' : 'Dark mode'} style={{ padding: '0.375rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {theme === 'dark' ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+      </button>
       <div className="user-profile-sm">
         <div style={{ background: 'var(--primary)', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold' }}>
           {session?.user?.email?.charAt(0).toUpperCase()}
@@ -211,7 +234,7 @@ const TopHeader = ({ session }) => (
   </header>
 );
 
-const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session, onRefresh }) => {
+const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session, onRefresh, theme, onToggleTheme }) => {
   const navigate = useNavigate();
   const { containerRef, pullY, refreshing } = usePullToRefresh(onRefresh || (() => Promise.resolve()));
 
@@ -245,7 +268,7 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
             />
           </div>
         )}
-        <TopHeader session={session} />
+        <TopHeader session={session} theme={theme} onToggleTheme={onToggleTheme} />
         {children}
       </div>
       <BottomNav view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onSettings={onSettings} onNewTx={onNewTx} />
@@ -455,6 +478,17 @@ export default function App() {
   // Auto-reload when a new service worker version is available
   useRegisterSW({ onNeedRefresh() { window.location.reload(); }, onOfflineReady() {} });
 
+  const [theme, setTheme] = useState(() => {
+    const stored = localStorage.getItem('moma-theme');
+    if (stored === 'dark' || stored === 'light') return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('moma-theme', theme);
+  }, [theme]);
+  const toggleTheme = useCallback(() => setTheme(t => t === 'dark' ? 'light' : 'dark'), []);
+
   const [session, setSession] = useState(null);
 
   const [authMode, setAuthMode] = useState('login');
@@ -542,6 +576,7 @@ export default function App() {
   });
   const [showAnalyticsFilters, setShowAnalyticsFilters] = useState(false);
   const [drillCategory, setDrillCategory] = useState(null);
+  const [catBreakdownType, setCatBreakdownType] = useState('expense');
 
   const fetchCategories = useCallback(async () => {
     const { data } = await supabase.from('categories').select('*').order('name');
@@ -690,10 +725,14 @@ export default function App() {
   const topCategories = useMemo(() => {
     const totals = {};
     dashActiveTransactions.filter(t => t.type === 'expense' && t.categories).forEach(t => {
-      const key = t.categories.name;
-      totals[key] = (totals[key] || 0) + parseFloat(t.amount);
+      const { name, icon } = t.categories;
+      if (!totals[name]) totals[name] = { amount: 0, icon: icon || '•' };
+      totals[name].amount += parseFloat(t.amount);
     });
-    return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    return Object.entries(totals)
+      .map(([name, { amount, icon }]) => ({ name, amount, icon }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 6);
   }, [dashActiveTransactions]);
 
   const topExpenseCat = topCategories[0] || null;
@@ -741,7 +780,7 @@ export default function App() {
   const smartInsights = useMemo(() => {
     const insights = [];
     if (topExpenseCat) {
-      insights.push({ color: 'var(--primary)', title: 'Top Spending', text: `${topExpenseCat[0]} is your biggest expense at ${currencySymbol}${topExpenseCat[1].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.` });
+      insights.push({ color: 'var(--primary)', title: 'Top Spending', text: `${topExpenseCat.name} is your biggest expense at ${currencySymbol}${topExpenseCat.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.` });
     }
     const partyCounts = {};
     dashTransactions.filter(t => t.type === 'expense' && !t.transfer_id && t.parties?.name).forEach(t => {
@@ -788,6 +827,14 @@ export default function App() {
   const navToSettings = useCallback(() => setView('settings'), [setView]);
   const navToNewTx = useCallback(() => { resetForm(); setView('new_transaction'); }, [resetForm, setView]);
   const refreshData = useCallback(() => Promise.all([fetchTransactions(), fetchAccounts()]), [fetchTransactions, fetchAccounts]);
+
+  // Navigate to ledger pre-filtered by a category ID + transaction type
+  const navToLedgerByCategory = useCallback((categoryId, txType = 'expense') => {
+    const childIds = categories.filter(c => c.parent_id === categoryId).map(c => c.id);
+    const ids = [categoryId, ...childIds];
+    setFilterOptions({ type: txType, dateRange: { start: '', end: '' }, categoryIds: ids, tagIds: [], accountIds: [], searchTerm: '', preset: 'all' });
+    setView('ledger');
+  }, [categories]);
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -1062,6 +1109,8 @@ export default function App() {
 
   const analyticsTransactions = useMemo(() => {
     return transactions.filter(t => {
+      // Always exclude transactions from exempted accounts
+      if (!t.transfer_id && t.account_id && !activeAccountIds.has(t.account_id)) return false;
       const { type, dateRange, categoryIds, tagIds, accountIds, searchTerm } = analyticsFilters;
       if (type !== 'all') {
         const isTx = !!t.transfer_id;
@@ -1079,7 +1128,7 @@ export default function App() {
       if (searchTerm) { const s = searchTerm.toLowerCase(); if (!(t.note||'').toLowerCase().includes(s) && !(t.parties?.name||'').toLowerCase().includes(s) && !(t.categories?.name||'').toLowerCase().includes(s)) return false; }
       return true;
     });
-  }, [transactions, analyticsFilters, categories]);
+  }, [transactions, analyticsFilters, categories, activeAccountIds]);
 
   const prevAnalyticsTransactions = useMemo(() => {
     const { start, end } = analyticsFilters.dateRange;
@@ -1090,8 +1139,11 @@ export default function App() {
     const pad = n => String(n).padStart(2, '0');
     const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     const ps = fmt(prevStart), pe = fmt(prevEnd);
-    return transactions.filter(t => t.transaction_date >= ps && t.transaction_date <= pe);
-  }, [transactions, analyticsFilters.dateRange]);
+    return transactions.filter(t =>
+      t.transaction_date >= ps && t.transaction_date <= pe &&
+      (!t.account_id || t.transfer_id || activeAccountIds.has(t.account_id))
+    );
+  }, [transactions, analyticsFilters.dateRange, activeAccountIds]);
 
   const prevPeriodKPIs = useMemo(() => {
     let income = 0, expense = 0;
@@ -1142,16 +1194,29 @@ export default function App() {
   }, [analyticsTransactions, analyticsFilters.dateRange, drillCategory, categories]);
 
   const chartCategorical = useMemo(() => {
-    const totals = {};
-    analyticsTransactions.filter(t => t.type === 'expense' && !t.transfer_id && t.categories).forEach(t => {
+    const parentMap = {};
+    analyticsTransactions.filter(t => t.type === catBreakdownType && !t.transfer_id && t.categories).forEach(t => {
       const cat = categories.find(c => c.id === t.category_id);
       const parentId = cat?.parent_id || t.category_id;
       const parent = categories.find(c => c.id === parentId);
-      const name = parent?.name || cat?.name || 'Other';
-      totals[name] = (totals[name] || 0) + parseFloat(t.amount);
+      const parentName = parent?.name || cat?.name || 'Other';
+      if (!parentMap[parentId]) parentMap[parentId] = { name: parentName, id: parentId, value: 0, subs: {} };
+      parentMap[parentId].value += parseFloat(t.amount);
+      // Track subcategory if this transaction belongs to a child category
+      if (cat?.parent_id) {
+        const sk = cat.id;
+        if (!parentMap[parentId].subs[sk]) parentMap[parentId].subs[sk] = { name: cat.name, id: cat.id, value: 0 };
+        parentMap[parentId].subs[sk].value += parseFloat(t.amount);
+      }
     });
-    return Object.entries(totals).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
-  }, [analyticsTransactions, categories]);
+    return Object.values(parentMap)
+      .sort((a, b) => b.value - a.value)
+      .map(p => ({
+        ...p,
+        value: Math.round(p.value * 100) / 100,
+        subs: Object.values(p.subs).sort((a, b) => b.value - a.value).map(s => ({ ...s, value: Math.round(s.value * 100) / 100 })),
+      }));
+  }, [analyticsTransactions, categories, catBreakdownType]);
 
   const chartTags = useMemo(() => {
     const totals = {};
@@ -1251,7 +1316,7 @@ export default function App() {
     setView('new_transaction');
   }, [transactions, accounts, setView]);
 
-  const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, onLogout: handleLogout, session, onRefresh: refreshData };
+  const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, onLogout: handleLogout, session, onRefresh: refreshData, theme, onToggleTheme: toggleTheme };
 
   if (view === 'landing') return (
     <div className="landing-container fade-in">
@@ -1277,10 +1342,54 @@ export default function App() {
 
   if (view === 'settings' || view === 'account_management' || view === 'category_management' || view === 'party_management' || view === 'tag_management') {
     let settingsContent;
+    const pillLight = 'theme-pill-option' + (theme === 'light' ? ' active' : '');
+    const pillDark = 'theme-pill-option' + (theme === 'dark' ? ' active' : '');
+    const currencyOptions = Object.entries(CURRENCY_SYMBOLS).map(([code, sym]) => ({ value: code, label: code + ' (' + sym + ')' }));
     if (view === 'settings') settingsContent = (
       <div className="page-inner fade-in">
         <div className="section-header-row"><h2 className="section-title-editorial">Settings</h2></div>
-        <div className="settings-panel"><div className="settings-section"><p className="label-sm">Preferences</p><div className="settings-group"><div className="settings-card"><span className="sc-text">Currency</span><div style={{ width: '180px' }}><CustomDropdown options={Object.entries(CURRENCY_SYMBOLS).map(([code, sym]) => ({ value: code, label: `${code} (${sym})` }))} value={currencyCode} onChange={setCurrencyCode} showSearch={false} /></div></div></div></div><div className="settings-section"><p className="label-sm">Manage</p><div className="settings-group"><button className="settings-nav-btn" onClick={() => setView('account_management')}>Accounts <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('category_management')}>Categories <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('party_management')}>Parties <span className="arrow">›</span></button><button className="settings-nav-btn" onClick={() => setView('tag_management')}>Tags <span className="arrow">›</span></button></div></div></div>
+        <div className="settings-panel">
+          <div className="settings-section">
+            <p className="label-sm">Preferences</p>
+            <div className="settings-group">
+              <div className="settings-card">
+                <span className="sc-text">Currency</span>
+                <div style={{ width: '180px' }}>
+                  <CustomDropdown options={currencyOptions} value={currencyCode} onChange={setCurrencyCode} showSearch={false} />
+                </div>
+              </div>
+              <div className="settings-card">
+                <span className="sc-text">Appearance</span>
+                <button className="theme-pill-toggle" onClick={toggleTheme}>
+                  <span className={pillLight}><SunIcon />Light</span>
+                  <span className={pillDark}><MoonIcon />Dark</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="settings-section">
+            <p className="label-sm">Manage</p>
+            <div className="settings-group">
+              <button className="settings-nav-btn" onClick={() => setView('account_management')}>Accounts <span className="arrow">&#8250;</span></button>
+              <button className="settings-nav-btn" onClick={() => setView('category_management')}>Categories <span className="arrow">&#8250;</span></button>
+              <button className="settings-nav-btn" onClick={() => setView('party_management')}>Parties <span className="arrow">&#8250;</span></button>
+              <button className="settings-nav-btn" onClick={() => setView('tag_management')}>Tags <span className="arrow">&#8250;</span></button>
+            </div>
+          </div>
+          <div className="settings-section">
+            <p className="label-sm">Account</p>
+            <div className="settings-group">
+              <div className="settings-card" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+                <span className="label-sm">Signed in as</span>
+                <span style={{ fontSize: '0.875rem', color: 'var(--on-surface)', fontWeight: 500 }}>{session?.user?.email}</span>
+              </div>
+            </div>
+            <button className="settings-logout-btn" onClick={handleLogout}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Sign Out
+            </button>
+          </div>
+        </div>
       </div>
     );
     else if (view === 'account_management') {
@@ -1465,18 +1574,18 @@ export default function App() {
     const applicableSubs = categories.filter(sub => currentParents.some(p => p.id === sub.parent_id));
     return (
       <PageShell {...shellProps}>
-        <div className="page-inner slide-up" style={{ maxWidth: '640px' }} onKeyDown={(e) => { if (e.key === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleTransaction(); } }}>
-          <div className="section-header-row"><h2 className="section-title-editorial">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2><button className="section-action-link" onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}>Cancel</button></div>
+        <div className="page-inner slide-up tx-form-page" onKeyDown={(e) => { if (e.key === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleTransaction(); } }}>
+          <div className="tx-form-header"><h2 className="section-title-editorial">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2><button className="section-action-link" onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}>Cancel</button></div>
           <div className="fluid-input-area fade-in">
             <div className="type-toggle-bar"><button className={`type-btn ${txType === 'expense' ? 'active-expense' : ''}`} onClick={() => { setTxType('expense'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Expense</button><button className={`type-btn ${txType === 'income' ? 'active-income' : ''}`} onClick={() => { setTxType('income'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Income</button><button className={`type-btn ${txType === 'transfer' ? 'active-transfer' : ''}`} onClick={() => { setTxType('transfer'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Transfer</button></div>
             <div className="amount-input-wrapper"><span className="currency-prefix">{currencySymbol}</span><input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="amount-input" autoFocus /></div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div className="tx-form-grid">
               <div className="category-selection-area"><p className="label-sm">Date</p><input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} className="text-input" /></div>
               <div className="category-selection-area"><p className="label-sm">Note</p><input type="text" placeholder="Description" value={note} onChange={(e) => setNote(e.target.value)} className="text-input" /></div>
             </div>
             {txType !== 'transfer' ? (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div className="tx-form-grid">
                   <CustomDropdown label="Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '🏦' }))} value={selectedAccount} onChange={setSelectedAccount} placeholder="Select Account" />
                   <CustomDropdown label="Category" options={currentParents.flatMap(p => [{ value: p.id, label: p.name, icon: p.icon }, ...applicableSubs.filter(s => s.parent_id === p.id).map(s => ({ value: s.id, label: s.name, icon: s.icon, indent: true }))])} value={selectedCategory} onChange={setSelectedCategory} placeholder="Select Category" />
                 </div>
@@ -1497,7 +1606,7 @@ export default function App() {
                 )}
               </>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div className="tx-form-grid">
                 <CustomDropdown label="From Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '📤' }))} value={transferFromAccount} onChange={setTransferFromAccount} placeholder="From..." />
                 <CustomDropdown label="To Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '📥' }))} value={transferToAccount} onChange={setTransferToAccount} placeholder="To..." />
               </div>
@@ -1744,34 +1853,56 @@ export default function App() {
           {/* Category Breakdown + Top Payees */}
           <div className="an-two-col" style={{ marginTop: '1.5rem' }}>
             <div className="an-card">
-              <div className="an-card-header">
+              <div className="an-card-header" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
                 <p className="an-card-title">Category Breakdown</p>
-                <span className="an-card-hint">click to drill</span>
+                <div className="cat-type-tabs">
+                  <button className={`cat-type-tab${catBreakdownType === 'expense' ? ' active expense' : ''}`} onClick={() => setCatBreakdownType('expense')}>Expense</button>
+                  <button className={`cat-type-tab${catBreakdownType === 'income' ? ' active income' : ''}`} onClick={() => setCatBreakdownType('income')}>Income</button>
+                </div>
               </div>
-              {chartCategorical.length === 0 ? <EmptyChart h={240} msg="No expense data" /> : (
-                <div className="an-cat-split">
-                  <div style={{ width: '160px', flexShrink: 0 }}>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie data={chartCategorical} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={3} dataKey="value" onClick={d => setDrillCategory(drillCategory === d.name ? null : d.name)} style={{ cursor: 'pointer' }}>
-                          {chartCategorical.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke={drillCategory === entry.name ? '#fff' : 'none'} strokeWidth={2} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="an-cat-legend-list">
-                    {chartCategorical.map((entry, i) => (
-                      <button key={entry.name} className={`an-cat-legend-row${drillCategory === entry.name ? ' active' : ''}`} onClick={() => setDrillCategory(drillCategory === entry.name ? null : entry.name)}>
-                        <span className="an-cat-legend-dot" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                        <span className="an-cat-legend-name">{entry.name}</span>
-                        <span className="an-cat-legend-pct">{totalCatVal > 0 ? `${Math.round(entry.value / totalCatVal * 100)}%` : ''}</span>
-                        <span className="an-cat-legend-val">{currencySymbol}{entry.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                      </button>
-                    ))}
-                  </div>
+              {chartCategorical.length === 0 ? <EmptyChart h={200} msg={`No ${catBreakdownType} data`} /> : (
+                <div className="cat-hier-list">
+                  {chartCategorical.map(({ name, id, value, subs }, i) => {
+                    const maxVal = chartCategorical[0].value;
+                    const parentPct = Math.round((value / maxVal) * 100);
+                    const ofTotalPct = totalCatVal > 0 ? Math.round((value / totalCatVal) * 100) : 0;
+                    const color = catBreakdownType === 'income'
+                      ? ['#10b981','#34d399','#059669','#6ee7b7','#047857','#a7f3d0'][i % 6]
+                      : PIE_COLORS[i % PIE_COLORS.length];
+                    return (
+                      <div key={id} className="cat-hier-group">
+                        <button className="cat-hier-row cat-hier-parent-row" onClick={() => navToLedgerByCategory(id, catBreakdownType)}>
+                          <div className="cat-hier-meta">
+                            <span className="cat-hier-name">{name}</span>
+                            <span className="cat-hier-val">{currencySymbol}{value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                            <span className="cat-hier-pct-badge">{ofTotalPct}%</span>
+                          </div>
+                          <div className="cat-hier-bar-track">
+                            <div className="cat-hier-bar-fill" style={{ width: `${parentPct}%`, background: color }} />
+                          </div>
+                        </button>
+                        {subs.length > 0 && (
+                          <div className="cat-hier-subs">
+                            {subs.map(sub => {
+                              const subPct = Math.round((sub.value / value) * 100);
+                              return (
+                                <button key={sub.id} className="cat-hier-row cat-hier-sub-row" onClick={() => navToLedgerByCategory(sub.id, catBreakdownType)}>
+                                  <div className="cat-hier-meta">
+                                    <span className="cat-hier-sub-name">{sub.name}</span>
+                                    <span className="cat-hier-val">{currencySymbol}{sub.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                    <span className="cat-hier-pct-badge sub">{subPct}%</span>
+                                  </div>
+                                  <div className="cat-hier-bar-track">
+                                    <div className="cat-hier-bar-fill" style={{ width: `${subPct}%`, background: color, opacity: 0.5 }} />
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1919,12 +2050,55 @@ export default function App() {
               </div>
             </div>
 
-            <div className="analytics-card-sm">
-              <p className="analytics-title-sm">Top Expense Categories</p>
+            <div className="content-section">
+              <div className="section-header-row">
+                <h2 className="section-title-editorial">Spending by Category</h2>
+                <button className="section-action-link" onClick={navToAnalytics}>Details</button>
+              </div>
               {topCategories.length > 0 ? (() => {
-                const maxVal = topCategories[0][1];
-                return (<div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>{topCategories.map(([name, amount]) => (<div key={name}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}><span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--on-surface)' }}>{name}</span><span style={{ fontSize: '0.875rem', color: 'var(--on-surface-variant)' }}>{currencySymbol}{amount.toLocaleString()}</span></div><div className="cat-bar-track"><div className="cat-bar-fill" style={{ width: `${Math.round((amount / maxVal) * 100)}%` }} /></div></div>))}</div>);
-              })() : <p className="body-md" style={{ opacity: 0.6 }}>No expense data for this period.</p>}
+                const CAT_COLORS = ['#7c83ff', '#10b981', '#f59e0b', '#f97316', '#8b5cf6', '#06b6d4'];
+                const topTotal = topCategories.reduce((s, c) => s + c.amount, 0);
+                const otherAmt = Math.max(0, totalExpense - topTotal);
+                const otherPct = totalExpense > 0 ? Math.round((otherAmt / totalExpense) * 100) : 0;
+                return (
+                  <div className="spend-cat-list">
+                    {topCategories.map(({ name, amount, icon }, i) => {
+                      const pct = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
+                      const color = CAT_COLORS[i % CAT_COLORS.length];
+                      return (
+                        <div key={name} className="spend-cat-row">
+                          <div className="spend-cat-icon" style={{ background: `${color}1a`, color }}>{icon}</div>
+                          <div className="spend-cat-body">
+                            <div className="spend-cat-top">
+                              <span className="spend-cat-name">{name}</span>
+                              <span className="spend-cat-amount">{currencySymbol}{amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                            </div>
+                            <div className="spend-cat-bar-track">
+                              <div className="spend-cat-bar-fill" style={{ width: `${pct}%`, background: color }} />
+                            </div>
+                            <span className="spend-cat-pct">{pct}% of expenses</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {otherPct > 0 && (
+                      <div className="spend-cat-row">
+                        <div className="spend-cat-icon spend-cat-icon-other">···</div>
+                        <div className="spend-cat-body">
+                          <div className="spend-cat-top">
+                            <span className="spend-cat-name">Other</span>
+                            <span className="spend-cat-amount">{currencySymbol}{otherAmt.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                          </div>
+                          <div className="spend-cat-bar-track">
+                            <div className="spend-cat-bar-fill" style={{ width: `${otherPct}%`, background: 'var(--outline-variant)' }} />
+                          </div>
+                          <span className="spend-cat-pct">{otherPct}% of expenses</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })() : <p className="body-md" style={{ opacity: 0.6, textAlign: 'center', padding: '1.5rem 0' }}>No expense data for this period.</p>}
             </div>
           </div>
 
