@@ -1057,7 +1057,7 @@ export default function App() {
   const handleSetDefaultAccount = useCallback(async (accountId) => {
     if (!session) return;
     const { error } = await supabase.from('profiles')
-      .upsert({ id: session.user.id, default_account_id: accountId }, { onConflict: 'id' });
+      .update({ default_account_id: accountId }).eq('id', session.user.id);
     if (!error) setDefaultAccountId(accountId);
   }, [session]);
 
