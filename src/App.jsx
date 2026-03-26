@@ -300,7 +300,7 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
             <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
               <button
                 title={isDefault ? 'Default account' : 'Set as default account'}
-                style={{ background: 'none', border: 'none', cursor: isDefault ? 'default' : 'pointer', fontSize: '1.1rem', padding: '0.2rem 0.4rem', color: isDefault ? '#f59e0b' : 'var(--outline-variant)', lineHeight: 1, transition: 'color 0.15s' }}
+                style={{ background: 'none', border: 'none', cursor: isDefault ? 'default' : 'pointer', fontSize: '1.1rem', padding: '0.2rem 0.4rem', color: isDefault ? '#f59e0b' : 'var(--on-surface-variant)', lineHeight: 1, transition: 'color 0.15s' }}
                 onClick={() => !isDefault && onSetDefault(acc.id)}
               >★</button>
               <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem' }} onClick={() => onEdit(acc)}>✎</button>
