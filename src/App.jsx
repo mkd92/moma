@@ -300,9 +300,8 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
             <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
               {!isDefault && (
                 <button
-                  className="icon-btn-text"
                   title="Set as default account"
-                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', opacity: 0.6 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0.2rem 0.4rem', color: 'var(--on-surface-variant)', lineHeight: 1 }}
                   onClick={() => onSetDefault(acc.id)}
                 >☆</button>
               )}
