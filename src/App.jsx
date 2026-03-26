@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, ComposedChart, Line, LabelList } from 'recharts';
 import { supabase } from './supabaseClient';
@@ -276,7 +277,7 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
   );
 };
 
-const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, defaultAccountId }) => accts.length === 0 ? null : (
+const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, onSetDefault, defaultAccountId }) => accts.length === 0 ? null : (
   <div style={{ marginBottom: '1.5rem' }}>
     <p className="label-sm" style={{ marginBottom: '0.75rem' }}>{title}</p>
     <div className="category-manager">
@@ -297,6 +298,8 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
               <div className="editorial-meta">{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+              {!isDefault && <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', color: '#f59e0b' }} title="Set as Default" onClick={() => onSetDefault(acc.id)}>☆</button>}
+              {isDefault && <span style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', color: '#f59e0b' }}>★</span>}
               <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem' }} onClick={() => onEdit(acc)}>✎</button>
               <button className="delete-btn" onClick={() => onDelete(acc.id)}>✕</button>
             </div>
@@ -1377,6 +1380,7 @@ export default function App() {
 
   if (view === 'settings' || view === 'account_management' || view === 'category_management' || view === 'party_management' || view === 'tag_management') {
     let settingsContent;
+    let acctEditModal = null;
     const pillLight = 'theme-pill-option' + (theme === 'light' ? ' active' : '');
     const pillDark = 'theme-pill-option' + (theme === 'dark' ? ' active' : '');
     const currencyOptions = Object.entries(CURRENCY_SYMBOLS).map(([code, sym]) => ({ value: code, label: code + ' (' + sym + ')' }));
@@ -1447,73 +1451,74 @@ export default function App() {
           return (parseFloat(editAcctValue) || 0) - txSum;
         })()
         : null;
+      if (editingAccount) {
+        acctEditModal = createPortal(
+          <div className="modal-overlay" onClick={() => setEditingAccount(null)}>
+            <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+              <h3 className="headline-md">Edit Account</h3>
+              <form onSubmit={handleUpdateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
+                <div className="category-selection-area">
+                  <p className="label-sm">Account Name</p>
+                  <input type="text" className="text-input" value={editAcctName} onChange={e => setEditAcctName(e.target.value)} required />
+                </div>
+                <div className="category-selection-area">
+                  <p className="label-sm">Balance Mode</p>
+                  <div className="type-toggle-bar" style={{ marginTop: '0.5rem' }}>
+                    <button type="button" className={`type-btn ${editAcctMode === 'opening' ? 'active-transfer' : ''}`} onClick={() => { setEditAcctMode('opening'); setEditAcctValue(String(parseFloat(editingAccount.initial_balance) || 0)); }}>Opening Balance</button>
+                    <button type="button" className={`type-btn ${editAcctMode === 'current' ? 'active-transfer' : ''}`} onClick={() => { setEditAcctMode('current'); setEditAcctValue(String(accountBalances[editingAccount.id] || 0)); }}>Current Balance</button>
+                  </div>
+                </div>
+                <div className="category-selection-area">
+                  <p className="label-sm">{editAcctMode === 'opening' ? 'Opening Balance' : 'Set Current Balance'}</p>
+                  <input type="number" step="0.01" className="text-input" value={editAcctValue} onChange={e => setEditAcctValue(e.target.value)} required />
+                </div>
+                <div style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', padding: '0.875rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  {editAcctMode === 'opening' ? (
+                    <p className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
+                      Resulting current balance: <strong style={{ color: 'var(--on-surface)' }}>{currencySymbol}{editAcctCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                    </p>
+                  ) : (
+                    <>
+                      <p className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
+                        Calculated opening balance: <strong style={{ color: 'var(--on-surface)' }}>{currencySymbol}{editAcctDerivedOpening.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                      </p>
+                      <p style={{ fontSize: '0.72rem', color: 'var(--on-surface-variant)', opacity: 0.7 }}>Opening = Current − transaction sum</p>
+                    </>
+                  )}
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.25rem 0', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={editAcctExclude} onChange={e => setEditAcctExclude(e.target.checked)} />
+                  <span className="body-md">Exclude from Net Worth</span>
+                </label>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button type="submit" className="add-cat-btn" style={{ flex: 1 }}>Save Changes</button>
+                  <button type="button" className="icon-btn-text" onClick={() => setEditingAccount(null)}>Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        );
+      }
       settingsContent = (
         <div className="page-inner slide-up">
           <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Accounts</h2></div>
-          {editingAccount && (
-            <div className="modal-overlay" onClick={() => setEditingAccount(null)}>
-              <div className="modal-content fluid-input-area" onClick={e => e.stopPropagation()}>
-                <h3 className="headline-md">Edit Account</h3>
-                <form onSubmit={handleUpdateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
-                  <div className="category-selection-area">
-                    <p className="label-sm">Account Name</p>
-                    <input type="text" className="text-input" value={editAcctName} onChange={e => setEditAcctName(e.target.value)} required />
-                  </div>
-                  <div className="category-selection-area">
-                    <p className="label-sm">Balance Mode</p>
-                    <div className="type-toggle-bar" style={{ marginTop: '0.5rem' }}>
-                      <button type="button" className={`type-btn ${editAcctMode === 'opening' ? 'active-transfer' : ''}`} onClick={() => { setEditAcctMode('opening'); setEditAcctValue(String(parseFloat(editingAccount.initial_balance) || 0)); }}>Opening Balance</button>
-                      <button type="button" className={`type-btn ${editAcctMode === 'current' ? 'active-transfer' : ''}`} onClick={() => { setEditAcctMode('current'); setEditAcctValue(String(accountBalances[editingAccount.id] || 0)); }}>Current Balance</button>
-                    </div>
-                  </div>
-                  <div className="category-selection-area">
-                    <p className="label-sm">{editAcctMode === 'opening' ? 'Opening Balance' : 'Set Current Balance'}</p>
-                    <input type="number" step="0.01" className="text-input" value={editAcctValue} onChange={e => setEditAcctValue(e.target.value)} required />
-                  </div>
-                  <div style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', padding: '0.875rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    {editAcctMode === 'opening' ? (
-                      <p className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
-                        Resulting current balance: <strong style={{ color: 'var(--on-surface)' }}>{currencySymbol}{editAcctCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                      </p>
-                    ) : (
-                      <>
-                        <p className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
-                          Calculated opening balance: <strong style={{ color: 'var(--on-surface)' }}>{currencySymbol}{editAcctDerivedOpening.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                        </p>
-                        <p style={{ fontSize: '0.72rem', color: 'var(--on-surface-variant)', opacity: 0.7 }}>Opening = Current − transaction sum</p>
-                      </>
-                    )}
-                  </div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.25rem 0', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={editAcctExclude} onChange={e => setEditAcctExclude(e.target.checked)} />
-                    <span className="body-md">Exclude from Net Worth</span>
-                  </label>
-                  {editingAccount && editingAccount.id !== defaultAccountId && (
-                    <button
-                      type="button"
-                      onClick={() => handleSetDefaultAccount(editingAccount.id)}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1.5px solid #f59e0b', background: 'rgba(245,158,11,0.08)', color: '#f59e0b', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', textAlign: 'center' }}
-                    >
-                      Set as Default Account
-                    </button>
-                  )}
-                  {editingAccount && editingAccount.id === defaultAccountId && (
-                    <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', background: 'rgba(245,158,11,0.08)', color: '#f59e0b', fontWeight: 600, fontSize: '0.875rem', textAlign: 'center' }}>
-                      ✓ This is your default account
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button type="submit" className="add-cat-btn" style={{ flex: 1 }}>Save Changes</button>
-                    <button type="button" className="icon-btn-text" onClick={() => setEditingAccount(null)}>Cancel</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
           <div className="settings-controls fade-in">
-            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
-            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
-            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+            <div style={{ marginBottom: '2rem', padding: '1rem', background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', border: '1px solid var(--ghost-border)' }}>
+              <CustomDropdown
+                label="Default Account"
+                options={accounts.map(a => ({ value: a.id, label: a.name, icon: ACCT_META[a.type || 'asset']?.icon || '🏦' }))}
+                value={defaultAccountId}
+                onChange={handleSetDefaultAccount}
+                placeholder="Select Default Account"
+              />
+              <p style={{ fontSize: '0.72rem', color: 'var(--on-surface-variant)', marginTop: '0.5rem', opacity: 0.8 }}>
+                This account will be pre-selected when you create a new transaction.
+              </p>
+            </div>
+            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
+            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
+            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
             <form onSubmit={handleCreateAccount} className="add-category-form">
               <p className="label-sm">Add Account</p>
               <input type="text" placeholder="Account Name" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required />
@@ -1615,7 +1620,7 @@ export default function App() {
         </div>
       );
     }
-    return <PageShell {...shellProps}>{settingsContent}</PageShell>;
+    return <><PageShell {...shellProps}>{settingsContent}</PageShell>{acctEditModal}</>;
   }
 
   if (view === 'new_transaction') {

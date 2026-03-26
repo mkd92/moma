@@ -12,6 +12,19 @@
     <meta name="theme-color" content="#000666" />
     <meta name="description" content="MOMA - A stunning premium React application with dynamic interactions and sleek design." />
     <title>MOMA | Premium Digital Experience</title>
+    <script>
+      // Simple check to see if we should force a reload
+      (function() {
+        const currentVersion = '1.0.1'; // Update this whenever you want to force a refresh
+        const savedVersion = localStorage.getItem('app_version');
+        if (savedVersion && savedVersion !== currentVersion) {
+          localStorage.setItem('app_version', currentVersion);
+          window.location.reload(true);
+        } else if (!savedVersion) {
+          localStorage.setItem('app_version', currentVersion);
+        }
+      })();
+    </script>
     
     <!-- Google Fonts: Inter for reading, Outfit for display -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
