@@ -293,18 +293,16 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
                 {acc.name}
                 <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-low)', color: meta.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{meta.label}</span>
                 {acc.exclude_from_total && <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-low)', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>excl.</span>}
-                {isDefault && <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--primary-light)', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>★ Default</span>}
+                {isDefault && <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Default</span>}
               </div>
               <div className="editorial-meta">{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-              {!isDefault && (
-                <button
-                  title="Set as default account"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0.2rem 0.4rem', color: 'var(--on-surface-variant)', lineHeight: 1 }}
-                  onClick={() => onSetDefault(acc.id)}
-                >☆</button>
-              )}
+              <button
+                title={isDefault ? 'Default account' : 'Set as default account'}
+                style={{ background: 'none', border: 'none', cursor: isDefault ? 'default' : 'pointer', fontSize: '1.1rem', padding: '0.2rem 0.4rem', color: isDefault ? '#f59e0b' : 'var(--outline-variant)', lineHeight: 1, transition: 'color 0.15s' }}
+                onClick={() => !isDefault && onSetDefault(acc.id)}
+              >★</button>
               <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem' }} onClick={() => onEdit(acc)}>✎</button>
               <button className="delete-btn" onClick={() => onDelete(acc.id)}>✕</button>
             </div>
