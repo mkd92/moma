@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, ComposedChart, Line, LabelList } from 'recharts';
 import { supabase } from './supabaseClient';
@@ -479,7 +478,6 @@ export default function App() {
   const setView = useCallback((v) => navigate(VIEW_PATHS[v] || '/'), [navigate]);
 
   // Auto-reload when a new service worker version is available
-  useRegisterSW({ onNeedRefresh() { window.location.reload(); }, onOfflineReady() { } });
 
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('moma-theme');
