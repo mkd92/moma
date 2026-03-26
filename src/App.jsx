@@ -3,6 +3,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, ComposedChart, Line, LabelList } from 'recharts';
 import { supabase } from './supabaseClient';
+import { cacheGet, cacheSet, cacheClear } from './cache';
 import CustomDropdown from './components/CustomDropdown';
 import './App.css';
 
@@ -276,25 +277,35 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
   );
 };
 
-const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit }) => accts.length === 0 ? null : (
+const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, defaultAccountId, onSetDefault }) => accts.length === 0 ? null : (
   <div style={{ marginBottom: '1.5rem' }}>
     <p className="label-sm" style={{ marginBottom: '0.75rem' }}>{title}</p>
     <div className="category-manager">
       {accts.map(acc => {
         const meta = ACCT_META[acc.type || 'asset'];
         const bal = accountBalances[acc.id] || 0;
+        const isDefault = acc.id === defaultAccountId;
         return (
           <div key={acc.id} className="editorial-item">
             <div className="editorial-icon">{meta.icon}</div>
             <div className="editorial-info">
-              <div className="editorial-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="editorial-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {acc.name}
                 <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-low)', color: meta.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{meta.label}</span>
                 {acc.exclude_from_total && <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-low)', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>excl.</span>}
+                {isDefault && <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--primary-light)', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>★ Default</span>}
               </div>
               <div className="editorial-meta">{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
-            <div style={{ display: 'flex', gap: '0.25rem' }}>
+            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+              {!isDefault && (
+                <button
+                  className="icon-btn-text"
+                  title="Set as default account"
+                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', opacity: 0.6 }}
+                  onClick={() => onSetDefault(acc.id)}
+                >☆</button>
+              )}
               <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem' }} onClick={() => onEdit(acc)}>✎</button>
               <button className="delete-btn" onClick={() => onDelete(acc.id)}>✕</button>
             </div>
@@ -490,6 +501,7 @@ export default function App() {
   const toggleTheme = useCallback(() => setTheme(t => t === 'dark' ? 'light' : 'dark'), []);
 
   const [session, setSession] = useState(null);
+  const userIdRef = useRef(null);
 
   const [authMode, setAuthMode] = useState('login');
   const [email, setEmail] = useState('');
@@ -580,22 +592,22 @@ export default function App() {
 
   const fetchCategories = useCallback(async () => {
     const { data } = await supabase.from('categories').select('*').order('name');
-    if (data) setCategories(data);
+    if (data) { setCategories(data); if (userIdRef.current) cacheSet(userIdRef.current, 'categories', data); }
   }, []);
 
   const fetchParties = useCallback(async () => {
     const { data } = await supabase.from('parties').select('*').order('name');
-    if (data) setParties(data);
+    if (data) { setParties(data); if (userIdRef.current) cacheSet(userIdRef.current, 'parties', data); }
   }, []);
 
   const fetchTags = useCallback(async () => {
     const { data } = await supabase.from('tags').select('*').order('name');
-    if (data) setTags(data);
+    if (data) { setTags(data); if (userIdRef.current) cacheSet(userIdRef.current, 'tags', data); }
   }, []);
 
   const fetchAccounts = useCallback(async () => {
     const { data } = await supabase.from('accounts').select('*').order('name');
-    if (data) setAccounts(data);
+    if (data) { setAccounts(data); if (userIdRef.current) cacheSet(userIdRef.current, 'accounts', data); }
   }, []);
 
   const fetchBudgets = useCallback(async () => {
@@ -629,10 +641,32 @@ export default function App() {
     }
 
     if (error) return console.error('Error fetching transactions:', error);
-    setTransactions(data || []);
+    const txData = data || [];
+    setTransactions(txData);
+    if (userIdRef.current) cacheSet(userIdRef.current, 'transactions', txData);
   }, []);
 
   const fetchInitialData = useCallback(async (activeSession) => {
+    const uid = activeSession?.user?.id;
+    userIdRef.current = uid;
+
+    // Hydrate from cache for instant render (stale-while-revalidate)
+    if (uid) {
+      const cached = {
+        categories: cacheGet(uid, 'categories'),
+        parties:    cacheGet(uid, 'parties'),
+        tags:       cacheGet(uid, 'tags'),
+        accounts:   cacheGet(uid, 'accounts'),
+        transactions: cacheGet(uid, 'transactions'),
+      };
+      if (cached.categories)   setCategories(cached.categories);
+      if (cached.parties)      setParties(cached.parties);
+      if (cached.tags)         setTags(cached.tags);
+      if (cached.accounts)     setAccounts(cached.accounts);
+      if (cached.transactions) setTransactions(cached.transactions);
+    }
+
+    // Fetch fresh data in background — updates state + cache when done
     await fetchProfile(activeSession);
     await Promise.all([fetchCategories(), fetchParties(), fetchAccounts(), fetchTags(), fetchTransactions(), fetchBudgets()]);
   }, [fetchProfile, fetchCategories, fetchParties, fetchAccounts, fetchTags, fetchTransactions, fetchBudgets]);
@@ -816,7 +850,11 @@ export default function App() {
     setTransferToAccount(null);
   }, [defaultAccountId]);
 
-  const handleLogout = useCallback(async () => supabase.auth.signOut(), []);
+  const handleLogout = useCallback(async () => {
+    if (userIdRef.current) cacheClear(userIdRef.current);
+    userIdRef.current = null;
+    await supabase.auth.signOut();
+  }, []);
   const handleGoogleSignIn = useCallback(async () => {
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
   }, []);
@@ -1022,6 +1060,13 @@ export default function App() {
       fetchAccounts();
     }
   }, [session, editingAccount, editAcctName, editAcctMode, editAcctValue, editAcctExclude, accountBalances, fetchAccounts]);
+
+  const handleSetDefaultAccount = useCallback(async (accountId) => {
+    if (!session) return;
+    const { error } = await supabase.from('profiles')
+      .upsert({ id: session.user.id, default_account_id: accountId }, { onConflict: 'id' });
+    if (!error) setDefaultAccountId(accountId);
+  }, [session]);
 
   const handleBulkAssignCategory = useCallback(async () => {
     if (!session || selectedTxIds.size === 0 || !bulkCategory) return;
@@ -1462,9 +1507,9 @@ export default function App() {
             </div>
           )}
           <div className="settings-controls fade-in">
-            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} />
-            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} />
-            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} />
+            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} onSetDefault={handleSetDefaultAccount} />
+            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} onSetDefault={handleSetDefaultAccount} />
+            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} onSetDefault={handleSetDefaultAccount} />
             <form onSubmit={handleCreateAccount} className="add-category-form">
               <p className="label-sm">Add Account</p>
               <input type="text" placeholder="Account Name" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required />
