@@ -298,11 +298,15 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
               <div className="editorial-meta">{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-              <button className='this'
+              <button
                 title={isDefault ? 'Default account' : 'Set as default account'}
-                style={{ background: 'none', border: 'none', cursor: isDefault ? 'default' : 'pointer', fontSize: '1.1rem', padding: '0.2rem 0.4rem', color: isDefault ? '#f59e0b' : 'var(--on-surface-variant)', lineHeight: 1, transition: 'color 0.15s' }}
+                style={{ background: 'none', border: 'none', cursor: isDefault ? 'default' : 'pointer', padding: '0.2rem 0.4rem', lineHeight: 1, transition: 'color 0.15s', display: 'flex', alignItems: 'center' }}
                 onClick={() => !isDefault && onSetDefault(acc.id)}
-              >★</button>
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={isDefault ? '#f59e0b' : 'none'} stroke={isDefault ? '#f59e0b' : 'var(--on-surface-variant)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </button>
               <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem' }} onClick={() => onEdit(acc)}>✎</button>
               <button className="delete-btn" onClick={() => onDelete(acc.id)}>✕</button>
             </div>
