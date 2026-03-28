@@ -19,8 +19,49 @@ const Dashboard = ({
   accountBalances, 
   setView, 
   navToAnalytics, 
-  topCategories 
+  topCategories,
+  dashPeriod,
+  resetFilters,
+  updateFilter
 }) => {
+  const handleNavToFilteredLedger = (type) => {
+    resetFilters();
+    updateFilter('type', type);
+    updateFilter('preset', dashPeriod);
+    
+    // Sync the exact dates to match the dashboard view
+    const today = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    let start = '', end = '';
+    
+    if (dashPeriod === 'today') {
+      start = end = fmt(today);
+    } else if (dashPeriod === 'this_week') {
+      const day = today.getDay() || 7;
+      const mon = new Date(today); mon.setDate(today.getDate() - day + 1);
+      start = fmt(mon); end = fmt(today);
+    } else if (dashPeriod === 'this_month') {
+      start = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+      end = fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+    } else if (dashPeriod === 'last_month') {
+      start = fmt(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+      end = fmt(new Date(today.getFullYear(), today.getMonth(), 0));
+    } else if (dashPeriod === 'last_3m') {
+      start = fmt(new Date(today.getFullYear(), today.getMonth() - 2, 1));
+      end = fmt(today);
+    } else if (dashPeriod === 'this_year') {
+      start = `${today.getFullYear()}-01-01`;
+      end = `${today.getFullYear()}-12-31`;
+    }
+    
+    if (start && end) {
+      updateFilter('dateRange', { start, end });
+    }
+    
+    setView('ledger');
+  };
+
   return (
     <PageShell {...shellProps}>
       <div className="page-inner space-y-10 pb-32 max-w-7xl mx-auto px-6">
@@ -63,24 +104,30 @@ const Dashboard = ({
 
             {/* Quick Stats Grid - Minimalist */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-              <div className="bg-surface-low p-6 md:p-10 rounded-[2.5rem] border border-outline-variant transition-all hover:bg-surface-high group">
-                <p className="text-[9px] md:text-[10px] font-bold tracking-[0.3em] text-on-surface-variant uppercase mb-4 md:mb-8">Inflow</p>
+              <div 
+                className="bg-surface-low p-6 md:p-10 rounded-[2.5rem] border border-outline-variant transition-all hover:bg-surface-high group cursor-pointer"
+                onClick={() => handleNavToFilteredLedger('income')}
+              >
+                <p className="text-[9px] md:text-[10px] font-bold tracking-[0.3em] text-on-surface-variant uppercase mb-4 md:mb-8 group-hover:text-on-surface transition-colors">Inflow</p>
                 <div className="flex justify-between items-end gap-4">
                   <h2 className="text-2xl md:text-4xl font-extrabold font-headline text-on-surface tracking-tight break-all">
                     {currencySymbol}{totalIncome.toLocaleString()}
                   </h2>
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/5 flex items-center justify-center border border-outline-variant group-hover:bg-primary group-hover:text-on-primary transition-all shrink-0">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/5 flex items-center justify-center border border-outline-variant group-hover:bg-primary group-hover:text-on-primary transition-all shrink-0 shadow-sm">
                     <span className="material-symbols-outlined text-sm">arrow_outward</span>
                   </div>
                 </div>
               </div>
-              <div className="bg-surface-low p-6 md:p-10 rounded-[2.5rem] border border-outline-variant transition-all hover:bg-surface-high group">
-                <p className="text-[9px] md:text-[10px] font-bold tracking-[0.3em] text-on-surface-variant uppercase mb-4 md:mb-8">Outflow</p>
+              <div 
+                className="bg-surface-low p-6 md:p-10 rounded-[2.5rem] border border-outline-variant transition-all hover:bg-surface-high group cursor-pointer"
+                onClick={() => handleNavToFilteredLedger('expense')}
+              >
+                <p className="text-[9px] md:text-[10px] font-bold tracking-[0.3em] text-on-surface-variant uppercase mb-4 md:mb-8 group-hover:text-on-surface transition-colors">Outflow</p>
                 <div className="flex justify-between items-end gap-4">
                   <h2 className="text-2xl md:text-4xl font-extrabold font-headline text-on-surface tracking-tight break-all">
                     {currencySymbol}{totalExpense.toLocaleString()}
                   </h2>
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/5 flex items-center justify-center border border-outline-variant group-hover:bg-primary group-hover:text-on-primary transition-all shrink-0">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/5 flex items-center justify-center border border-outline-variant group-hover:bg-primary group-hover:text-on-primary transition-all shrink-0 shadow-sm">
                     <span className="material-symbols-outlined text-sm">south_east</span>
                   </div>
                 </div>
