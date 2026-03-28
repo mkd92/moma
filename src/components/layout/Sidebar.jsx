@@ -10,15 +10,8 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
   ];
   return (
     <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] bg-surface-container z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
-      {/* MacOS style window controls */}
-      <div className="pt-6 px-6 flex gap-1.5">
-        <div className="w-3 h-3 rounded-full bg-[#ff5f57]"></div>
-        <div className="w-3 h-3 rounded-full bg-[#febc2e]"></div>
-        <div className="w-3 h-3 rounded-full bg-[#28c840]"></div>
-      </div>
-
       {/* Brand area */}
-      <div className="pt-8 pb-10 px-6 flex items-center gap-3">
+      <div className="pt-10 pb-10 px-6 flex items-center gap-3">
         {!collapsed && (
           <span className="text-on-surface font-headline text-2xl font-black tracking-[-0.05em] fade-in">
             MOMA
