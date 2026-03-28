@@ -1687,44 +1687,122 @@ export default function App() {
     const applicableSubs = categories.filter(sub => currentParents.some(p => p.id === sub.parent_id));
     return (
       <PageShell {...shellProps}>
-        <div className="page-inner slide-up tx-form-page" onKeyDown={(e) => { if (e.key === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleTransaction(); } }}>
-          <div className="tx-form-header"><h2 className="section-title-editorial">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2><button className="section-action-link" onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}>Cancel</button></div>
-          <div className="fluid-input-area fade-in">
-            <div className="type-toggle-bar"><button className={`type-btn ${txType === 'expense' ? 'active-expense' : ''}`} onClick={() => { setTxType('expense'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Expense</button><button className={`type-btn ${txType === 'income' ? 'active-income' : ''}`} onClick={() => { setTxType('income'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Income</button><button className={`type-btn ${txType === 'transfer' ? 'active-transfer' : ''}`} onClick={() => { setTxType('transfer'); setSelectedCategory(null); setSelectedSubcategory(null); }}>Transfer</button></div>
-            <div className="amount-input-wrapper"><span className="currency-prefix">{currencySymbol}</span><input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="amount-input" autoFocus /></div>
-            <div className="tx-form-grid">
-              <div className="category-selection-area"><p className="label-sm">Date</p><input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} className="text-input" /></div>
-              <div className="category-selection-area"><p className="label-sm">Note</p><input type="text" placeholder="Description" value={note} onChange={(e) => setNote(e.target.value)} className="text-input" /></div>
+        <div className="page-inner max-w-2xl mx-auto space-y-8 pb-32" onKeyDown={(e) => { if (e.key === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleTransaction(); } }}>
+          <div className="flex justify-between items-center">
+            <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[#3fff8b]">{txToEdit ? 'Edit Transaction' : 'New Transaction'}</h2>
+            <button className="text-zinc-500 font-bold uppercase text-xs tracking-widest" onClick={() => { resetForm(); setView(txToEdit ? 'ledger' : 'dashboard'); }}>Cancel</button>
+          </div>
+
+          <div className="bg-surface-container-low p-8 rounded-[2.5rem] border border-outline-variant/10 space-y-10 shadow-2xl">
+            {/* Type Selector */}
+            <div className="flex bg-surface-container-lowest p-1.5 rounded-2xl gap-1">
+              {['expense', 'income', 'transfer'].map(t => (
+                <button 
+                  key={t}
+                  className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${txType === t ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg scale-105' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  onClick={() => { setTxType(t); setSelectedCategory(null); setSelectedSubcategory(null); }}
+                >
+                  {t}
+                </button>
+              ))}
             </div>
+
+            {/* Large Amount Input */}
+            <div className="text-center space-y-2">
+              <p className="text-[10px] font-bold tracking-[0.3em] text-zinc-500 uppercase">Amount</p>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-4xl font-extrabold font-['Manrope'] text-[#3fff8b]">{currencySymbol}</span>
+                <input 
+                  type="number" 
+                  value={amount} 
+                  onChange={(e) => setAmount(e.target.value)} 
+                  placeholder="0.00" 
+                  className="bg-transparent border-none text-6xl font-extrabold font-['Manrope'] text-white focus:ring-0 w-full max-w-[280px] text-center placeholder:text-zinc-800"
+                  autoFocus 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">Date</p>
+                <input 
+                  type="date" 
+                  value={txDate} 
+                  onChange={(e) => setTxDate(e.target.value)} 
+                  className="w-full bg-surface-container border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/20 transition-all text-sm font-medium" 
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">Description</p>
+                <input 
+                  type="text" 
+                  placeholder="What was this for?" 
+                  value={note} 
+                  onChange={(e) => setNote(e.target.value)} 
+                  className="w-full bg-surface-container border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/20 transition-all text-sm font-medium placeholder:text-zinc-600" 
+                />
+              </div>
+            </div>
+
             {txType !== 'transfer' ? (
-              <>
-                <div className="tx-form-grid">
-                  <CustomDropdown label="Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '🏦' }))} value={selectedAccount} onChange={setSelectedAccount} placeholder="Select Account" />
-                  <CustomDropdown label="Category" options={currentParents.flatMap(p => [{ value: p.id, label: p.name, icon: p.icon }, ...applicableSubs.filter(s => s.parent_id === p.id).map(s => ({ value: s.id, label: s.name, icon: s.icon, indent: true }))])} value={selectedCategory} onChange={setSelectedCategory} placeholder="Select Category" />
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <CustomDropdown 
+                    label="Account" 
+                    options={accounts.map(a => ({ value: a.id, label: a.name, icon: 'account_balance' }))} 
+                    value={selectedAccount} 
+                    onChange={setSelectedAccount} 
+                    placeholder="Select Account" 
+                  />
+                  <CustomDropdown 
+                    label="Category" 
+                    options={currentParents.flatMap(p => [{ value: p.id, label: p.name, icon: getCategoryIcon(p.name) }, ...applicableSubs.filter(s => s.parent_id === p.id).map(s => ({ value: s.id, label: s.name, icon: getCategoryIcon(s.name), indent: true }))])} 
+                    value={selectedCategory} 
+                    onChange={setSelectedCategory} 
+                    placeholder="Select Category" 
+                  />
                 </div>
-                <CustomDropdown label="Party (Optional)" options={[{ value: '', label: '— None —' }, ...parties.map(p => ({ value: p.id, label: p.name, icon: '🏪' }))]} value={selectedParty || ''} onChange={v => setSelectedParty(v || null)} placeholder="Select Party" showSearch={true} />
+                <CustomDropdown 
+                  label="Party" 
+                  options={[{ value: '', label: '— No Party —', icon: 'person_off' }, ...parties.map(p => ({ value: p.id, label: p.name, icon: 'storefront' }))]} 
+                  value={selectedParty || ''} 
+                  onChange={v => setSelectedParty(v || null)} 
+                  placeholder="Select Payee" 
+                  showSearch={true} 
+                />
+                
                 {tags.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <p className="label-sm">Tags</p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">Tags</p>
+                    <div className="flex flex-wrap gap-2">
                       {tags.map(t => (
-                        <button key={t.id} type="button"
+                        <button 
+                          key={t.id} 
+                          type="button"
                           onClick={() => setSelectedTags(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])}
-                          className="filter-chip"
-                          style={{ background: selectedTags.includes(t.id) ? 'var(--primary-light)' : 'var(--surface-container-low)', color: selectedTags.includes(t.id) ? 'var(--primary)' : 'var(--on-surface-variant)', fontWeight: selectedTags.includes(t.id) ? 700 : 400 }}
-                        >#{t.name}</button>
+                          className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${selectedTags.includes(t.id) ? 'bg-[#3fff8b] text-[#005d2c] border-[#3fff8b]' : 'bg-surface-container text-zinc-500 border-outline-variant/10 hover:border-[#3fff8b]/30'}`}
+                        >
+                          #{t.name}
+                        </button>
                       ))}
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             ) : (
-              <div className="tx-form-grid">
-                <CustomDropdown label="From Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '📤' }))} value={transferFromAccount} onChange={setTransferFromAccount} placeholder="From..." />
-                <CustomDropdown label="To Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: '📥' }))} value={transferToAccount} onChange={setTransferToAccount} placeholder="To..." />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <CustomDropdown label="From Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: 'logout' }))} value={transferFromAccount} onChange={setTransferFromAccount} placeholder="Source..." />
+                <CustomDropdown label="To Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: 'login' }))} value={transferToAccount} onChange={setTransferToAccount} placeholder="Destination..." />
               </div>
             )}
-            <button className={`submit-tx-btn bg-${txType}`} onClick={handleTransaction}>{txToEdit ? 'Update' : 'Save'}</button>
+
+            <button 
+              className="w-full bg-gradient-to-br from-[#3fff8b] to-[#13ea79] text-[#005d2c] py-5 rounded-2xl font-black text-lg uppercase tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all hover:brightness-110 disabled:opacity-50"
+              onClick={handleTransaction}
+            >
+              {txToEdit ? 'Update Entry' : 'Post Transaction'}
+            </button>
           </div>
         </div>
       </PageShell>
@@ -2071,49 +2149,136 @@ export default function App() {
   if (view === 'budgets') {
     return (
       <PageShell {...shellProps}>
-        <div className="page-inner fade-in">
-          <div className="section-header-row"><h2 className="section-title-editorial">Budgets</h2><button className="add-cat-btn" onClick={() => { setBudgetForm({ id: null, category_id: '', amount_limit: '', period: 'monthly' }); setShowBudgetModal(true); }}>Add Budget</button></div>
+        <div className="page-inner space-y-8 pb-32">
+          <div className="flex justify-between items-center">
+            <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[#3fff8b]">Budgets</h2>
+            <button 
+              className="bg-gradient-to-br from-[#3fff8b] to-[#13ea79] text-[#005d2c] px-6 py-2 rounded-xl font-bold active:scale-95 transition-transform text-sm"
+              onClick={() => { setBudgetForm({ id: null, category_id: '', amount_limit: '', period: 'monthly' }); setShowBudgetModal(true); }}
+            >
+              Add New
+            </button>
+          </div>
+
           {showBudgetModal && (
             <div className="modal-overlay" onClick={() => setShowBudgetModal(false)}>
-              <div className="modal-content fluid-input-area" onClick={e => e.stopPropagation()}>
-                <h3 className="headline-md">Manage Budget</h3>
-                <form onSubmit={handleSaveBudget} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1rem' }}>
-                  <CustomDropdown label="Category (Optional)" options={[{ value: '', label: '-- Global Budget --' }, ...categories.filter(c => !c.parent_id).map(c => ({ value: c.id, label: c.name, icon: c.icon }))]} value={budgetForm.category_id} onChange={val => setBudgetForm({ ...budgetForm, category_id: val })} />
-                  <div className="category-selection-area"><p className="label-sm">Limit Amount</p><input type="number" step="0.01" className="text-input" value={budgetForm.amount_limit} onChange={e => setBudgetForm({ ...budgetForm, amount_limit: e.target.value })} required /></div>
-                  <CustomDropdown label="Period" options={[{ value: 'monthly', label: 'Monthly' }, { value: 'weekly', label: 'Weekly' }, { value: 'quarterly', label: 'Quarterly' }]} value={budgetForm.period} onChange={val => setBudgetForm({ ...budgetForm, period: val })} />
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                    <button type="submit" className="add-cat-btn" style={{ flex: 1 }}>Save Budget</button>
-                    <button type="button" className="icon-btn-text" onClick={() => setShowBudgetModal(false)}>Cancel</button>
+              <div className="bg-[#131313] p-8 rounded-[2rem] border border-outline-variant/10 w-full max-w-md slide-up" onClick={e => e.stopPropagation()}>
+                <h3 className="font-headline text-2xl font-bold text-white mb-6">Manage Budget</h3>
+                <form onSubmit={handleSaveBudget} className="space-y-6">
+                  <div>
+                    <CustomDropdown 
+                      label="Category" 
+                      options={[{ value: '', label: '-- Global Budget --', icon: '🌍' }, ...categories.filter(c => !c.parent_id).map(c => ({ value: c.id, label: c.name, icon: getCategoryIcon(c.name) }))]} 
+                      value={budgetForm.category_id} 
+                      onChange={val => setBudgetForm({ ...budgetForm, category_id: val })} 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">Limit Amount</p>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all" 
+                      value={budgetForm.amount_limit} 
+                      onChange={e => setBudgetForm({ ...budgetForm, amount_limit: e.target.value })} 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <CustomDropdown 
+                      label="Period" 
+                      options={[{ value: 'monthly', label: 'Monthly' }, { value: 'weekly', label: 'Weekly' }, { value: 'quarterly', label: 'Quarterly' }]} 
+                      value={budgetForm.period} 
+                      onChange={val => setBudgetForm({ ...budgetForm, period: val })} 
+                    />
+                  </div>
+                  <div className="flex gap-4 pt-4">
+                    <button type="submit" className="flex-1 bg-[#3fff8b] text-[#005d2c] py-4 rounded-xl font-bold active:scale-95 transition-transform">Save Budget</button>
+                    <button type="button" className="px-6 text-zinc-500 font-bold" onClick={() => setShowBudgetModal(false)}>Cancel</button>
                   </div>
                 </form>
               </div>
             </div>
           )}
-          <div className="budget-list" style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {budgetProgress.map(b => {
               const cat = categories.find(c => c.id === b.category_id);
+              const statusColor = b.status === 'over' ? '#ff716c' : b.status === 'warning' ? '#ffe483' : '#3fff8b';
+              const icon = cat ? getCategoryIcon(cat.name) : 'public';
+              
               return (
-                <div key={b.id} className="analytics-card-sm">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div className="editorial-icon" style={{ width: '32px', height: '32px', fontSize: '1rem' }}>{cat?.icon || '🌍'}</div>
-                      <div className="editorial-title">{cat?.name || 'Global Budget'}</div>
+                <div key={b.id} className="bg-surface-container-low p-6 rounded-[2rem] border border-outline-variant/5 flex flex-col justify-between group active:scale-[0.98] transition-all">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center border border-outline-variant/10 text-[#3fff8b]">
+                        <span className="material-symbols-outlined">{icon}</span>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white">{cat?.name || 'Global Budget'}</h4>
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{b.period}</p>
+                      </div>
                     </div>
-                    <button className="icon-btn-text" onClick={() => { setBudgetForm({ id: b.id, category_id: b.category_id || '', amount_limit: b.limit_amount.toString(), period: b.period }); setShowBudgetModal(true); }}>✎</button>
+                    <button 
+                      className="p-2 text-zinc-600 hover:text-[#3fff8b] transition-colors"
+                      onClick={() => { setBudgetForm({ id: b.id, category_id: b.category_id || '', amount_limit: b.limit_amount.toString(), period: b.period }); setShowBudgetModal(true); }}
+                    >
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                    </button>
                   </div>
-                  <div style={{ marginTop: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span className="body-md">Spent: <strong>{currencySymbol}{b.spent.toLocaleString()}</strong></span>
-                      <span className="body-md" style={{ opacity: 0.6 }}>Limit: {currencySymbol}{b.limit_amount.toLocaleString()}</span>
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter">Spent</p>
+                        <p className="text-xl font-extrabold font-['Manrope'] text-white">
+                          {currencySymbol}{b.spent.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter">Limit</p>
+                        <p className="text-sm font-bold text-zinc-400">
+                          {currencySymbol}{b.limit_amount.toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                    <div className="cat-bar-track"><div className="cat-bar-fill" style={{ width: `${b.pct}%`, background: b.status === 'over' ? 'var(--tertiary-fixed-variant)' : b.status === 'warning' ? '#f59e0b' : 'var(--secondary)' }} /></div>
-                    <p className="label-sm" style={{ marginTop: '0.75rem', color: b.status === 'over' ? 'var(--tertiary-fixed-variant)' : 'inherit' }}>
-                      {b.status === 'over' ? `Over by ${currencySymbol}${(b.spent - b.limit_amount).toLocaleString()}` : `${currencySymbol}${b.remaining.toLocaleString()} remaining`}
-                    </p>
+
+                    <div className="relative">
+                      <div className="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+                        <div 
+                          className="h-full rounded-full transition-all duration-1000" 
+                          style={{ 
+                            width: `${Math.max(0, Math.min(100, b.pct))}%`,
+                            background: statusColor 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${b.status === 'over' ? 'text-[#ff716c]' : 'text-zinc-500'}`}>
+                        {b.status === 'over' ? 'Limit Exceeded' : 'On Track'}
+                      </span>
+                      <span className="text-[10px] font-bold text-white uppercase tracking-widest">
+                        {b.status === 'over' ? `-${currencySymbol}${Math.abs(b.remaining).toLocaleString()}` : `${currencySymbol}${b.remaining.toLocaleString()} left`}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
             })}
+            {budgetProgress.length === 0 && (
+              <div className="col-span-full py-20 text-center bg-surface-container-low rounded-[2rem] border-2 border-dashed border-outline-variant/10">
+                <span className="material-symbols-outlined text-zinc-700 text-5xl mb-4">account_balance_wallet</span>
+                <p className="text-zinc-500 font-bold">No budgets set yet.</p>
+                <button 
+                  className="mt-4 text-[#3fff8b] text-sm font-bold uppercase tracking-widest"
+                  onClick={() => setShowBudgetModal(true)}
+                >
+                  Create your first budget
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </PageShell>

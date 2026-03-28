@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import './CustomDropdown.css';
 
 const CustomDropdown = ({
   options,
@@ -33,15 +32,14 @@ const CustomDropdown = ({
     if (!isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       const vw = window.innerWidth;
-      const menuW = Math.max(rect.width, 200);
-      // Flip left if it would overflow the right edge
-      const left = rect.left + menuW > vw - 8 ? Math.max(8, vw - menuW - 8) : rect.left;
-      // Flip up if it would overflow the bottom
-      const spaceBelow = window.innerHeight - rect.bottom - 8;
-      const maxH = 300; // rough max height of menu
+      const menuW = Math.max(rect.width, 240);
+      const left = rect.left + menuW > vw - 16 ? Math.max(16, vw - menuW - 16) : rect.left;
+      const spaceBelow = window.innerHeight - rect.bottom - 16;
+      const maxH = 320;
       const top = spaceBelow < maxH && rect.top > maxH
         ? rect.top - maxH - 8
         : rect.bottom + 8;
+      
       setMenuStyle({
         position: 'fixed',
         top,
@@ -96,61 +94,79 @@ const CustomDropdown = ({
   }, [isOpen]);
 
   const menu = isOpen ? (
-    <div className="dropdown-menu" style={menuStyle} ref={containerRef}>
+    <div 
+      className="bg-[#1a1a1a] rounded-2xl border border-outline-variant/20 shadow-[0_24px_48px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in zoom-in-95 duration-200" 
+      style={menuStyle} 
+      ref={containerRef}
+    >
       {showSearch && (
-        <div className="dropdown-search-wrap">
-          <input
-            ref={searchInputRef}
-            type="text"
-            className="dropdown-search-input"
-            placeholder={searchPlaceholder}
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setFocusedIndex(-1); }}
-            onClick={(e) => e.stopPropagation()}
-          />
+        <div className="p-2 border-b border-outline-variant/10">
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">search</span>
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="w-full bg-[#0e0e0e] border-none rounded-lg py-2 pl-9 pr-3 text-xs text-white focus:ring-1 focus:ring-[#3fff8b]/30 placeholder:text-zinc-700"
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setFocusedIndex(-1); }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>
       )}
-      <div className="dropdown-options" role="listbox">
+      <div className="max-h-[240px] overflow-y-auto py-1 custom-scrollbar" role="listbox">
         {filteredOptions.length > 0 ? (
           filteredOptions.map((opt, idx) => (
             <div
               key={opt.value}
-              className={`dropdown-option ${opt.value === value ? 'selected' : ''} ${idx === focusedIndex ? 'focused' : ''}`}
+              className={`px-4 py-3 text-xs flex items-center gap-3 cursor-pointer transition-colors ${opt.indent ? 'pl-10' : ''} ${opt.value === value ? 'bg-[#3fff8b]/10 text-[#3fff8b]' : 'text-zinc-400 hover:bg-[#262626] hover:text-white'} ${idx === focusedIndex ? 'bg-[#262626]' : ''}`}
               onClick={() => handleSelect(opt)}
               role="option"
               aria-selected={opt.value === value}
             >
-              {opt.icon && <span className="dropdown-option-icon">{opt.icon}</span>}
-              <span>{opt.label}</span>
+              {opt.icon && (
+                <span className={`material-symbols-outlined text-sm ${opt.value === value ? 'text-[#3fff8b]' : 'text-zinc-500'}`}>
+                  {opt.icon}
+                </span>
+              )}
+              <span className="font-bold tracking-wide">{opt.label}</span>
+              {opt.value === value && (
+                <span className="material-symbols-outlined text-xs ml-auto">check</span>
+              )}
             </div>
           ))
         ) : (
-          <div className="dropdown-no-results">No options found</div>
+          <div className="px-4 py-8 text-center text-[10px] text-zinc-600 font-bold uppercase tracking-widest">No results found</div>
         )}
       </div>
     </div>
   ) : null;
 
   return (
-    <div className="custom-dropdown-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }} onKeyDown={handleKeyDown}>
-      {label && <p className="label-sm">{label}</p>}
+    <div className="flex flex-col gap-2" onKeyDown={handleKeyDown}>
+      {label && <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">{label}</p>}
       <button
         ref={triggerRef}
         type="button"
-        className={`dropdown-trigger ${isOpen ? 'open' : ''}`}
+        className={`w-full bg-[#1a1a1a] flex items-center justify-between px-4 py-4 rounded-xl transition-all border border-transparent ${isOpen ? 'ring-2 ring-[#3fff8b]/30 bg-[#262626]' : 'hover:bg-[#262626]'}`}
         onClick={handleToggle}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {selectedOption?.icon && <span className="dropdown-option-icon">{selectedOption.icon}</span>}
-          <span style={{ opacity: selectedOption ? 1 : 0.6 }}>
+        <div className="flex items-center gap-3">
+          {selectedOption?.icon && (
+            <span className="material-symbols-outlined text-[#3fff8b] text-xl">
+              {selectedOption.icon}
+            </span>
+          )}
+          <span className={`text-sm font-bold tracking-wide ${selectedOption ? 'text-white' : 'text-zinc-600'}`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
+        </div>
+        <span className={`material-symbols-outlined text-zinc-600 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+          expand_more
         </span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', opacity: 0.5 }}>
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
       </button>
       {createPortal(menu, document.body)}
     </div>
