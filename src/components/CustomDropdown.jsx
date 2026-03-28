@@ -95,18 +95,18 @@ const CustomDropdown = ({
 
   const menu = isOpen ? (
     <div 
-      className="bg-[#1a1a1a] rounded-2xl border border-outline-variant/20 shadow-[0_24px_48px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in zoom-in-95 duration-200" 
+      className="bg-surface-low rounded-2xl border border-outline-variant shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200" 
       style={menuStyle} 
       ref={containerRef}
     >
       {showSearch && (
-        <div className="p-2 border-b border-outline-variant/10">
+        <div className="p-2 border-b border-outline-variant">
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">search</span>
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
             <input
               ref={searchInputRef}
               type="text"
-              className="w-full bg-[#0e0e0e] border-none rounded-lg py-2 pl-9 pr-3 text-xs text-white focus:ring-1 focus:ring-[#3fff8b]/30 placeholder:text-zinc-700"
+              className="w-full bg-surface-lowest border border-outline-variant rounded-lg py-2 pl-9 pr-3 text-xs text-on-surface focus:ring-1 focus:ring-primary/30 placeholder:text-on-surface-variant/40 outline-none"
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setFocusedIndex(-1); }}
@@ -120,24 +120,24 @@ const CustomDropdown = ({
           filteredOptions.map((opt, idx) => (
             <div
               key={opt.value}
-              className={`px-4 py-3 text-xs flex items-center gap-3 cursor-pointer transition-colors ${opt.indent ? 'pl-10' : ''} ${opt.value === value ? 'bg-[#3fff8b]/10 text-[#3fff8b]' : 'text-zinc-400 hover:bg-[#262626] hover:text-white'} ${idx === focusedIndex ? 'bg-[#262626]' : ''}`}
+              className={`px-4 py-3 text-xs flex items-center gap-3 cursor-pointer transition-colors ${opt.indent ? 'pl-10' : ''} ${opt.value === value ? 'bg-on-surface text-surface' : 'text-on-surface-variant hover:bg-on-surface/[0.03] hover:text-on-surface'} ${idx === focusedIndex ? 'bg-on-surface/[0.05]' : ''}`}
               onClick={() => handleSelect(opt)}
               role="option"
               aria-selected={opt.value === value}
             >
               {opt.icon && (
-                <span className={`material-symbols-outlined text-sm ${opt.value === value ? 'text-[#3fff8b]' : 'text-zinc-500'}`}>
+                <span className={`material-symbols-outlined text-sm ${opt.value === value ? 'text-surface' : 'text-on-surface-variant'}`}>
                   {opt.icon}
                 </span>
               )}
-              <span className="font-bold tracking-wide">{opt.label}</span>
+              <span className="font-bold tracking-wide uppercase text-[10px]">{opt.label}</span>
               {opt.value === value && (
                 <span className="material-symbols-outlined text-xs ml-auto">check</span>
               )}
             </div>
           ))
         ) : (
-          <div className="px-4 py-8 text-center text-[10px] text-zinc-600 font-bold uppercase tracking-widest">No results found</div>
+          <div className="px-4 py-8 text-center text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">No matching units</div>
         )}
       </div>
     </div>
@@ -145,26 +145,26 @@ const CustomDropdown = ({
 
   return (
     <div className="flex flex-col gap-2" onKeyDown={handleKeyDown}>
-      {label && <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">{label}</p>}
+      {label && <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">{label}</p>}
       <button
         ref={triggerRef}
         type="button"
-        className={`w-full bg-[#1a1a1a] flex items-center justify-between px-4 py-4 rounded-xl transition-all border border-transparent ${isOpen ? 'ring-2 ring-[#3fff8b]/30 bg-[#262626]' : 'hover:bg-[#262626]'}`}
+        className={`w-full bg-on-surface/[0.03] flex items-center justify-between px-5 py-4 rounded-2xl transition-all border border-outline-variant/10 ${isOpen ? 'ring-2 ring-on-surface/10 bg-on-surface/[0.06]' : 'hover:bg-on-surface/[0.06]'}`}
         onClick={handleToggle}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3">
           {selectedOption?.icon && (
-            <span className="material-symbols-outlined text-[#3fff8b] text-xl">
+            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">
               {selectedOption.icon}
             </span>
           )}
-          <span className={`text-sm font-bold tracking-wide ${selectedOption ? 'text-white' : 'text-zinc-600'}`}>
+          <span className={`text-[11px] font-black uppercase tracking-widest ${selectedOption ? 'text-on-surface' : 'text-on-surface-variant/40'}`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
-        <span className={`material-symbols-outlined text-zinc-600 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+        <span className={`material-symbols-outlined text-on-surface-variant transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
           expand_more
         </span>
       </button>
