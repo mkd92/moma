@@ -1,46 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
 :root {
-  /* --- Primary Colors --- */
-  --primary: #000666;
-  --primary-container: #1a237e;
-  --on-primary: #ffffff;
-  --primary-light: rgba(0, 6, 102, 0.07); /* Soft primary overlay — used for selected states */
+  /* --- Primary Colors (Stitch Dark Theme) --- */
+  --primary: #3fff8b;
+  --primary-container: #13ea79;
+  --on-primary: #005d2c;
+  --on-primary-container: #004f24;
+  --primary-light: rgba(63, 255, 139, 0.1);
 
-  /* --- Surface Hierarchy (Physical Stack Metaphor) --- */
-  --surface: #fcf9f8;                /* Base Layer - Main Background */
-  --surface-container-low: #f6f3f2;   /* Sectioning Areas */
-  --surface-container-lowest: #ffffff; /* Actionable Cards / Pop-up Layer */
-  --surface-bright: #ffffff;          /* Closest to User */
-  --surface-tint: rgba(76, 86, 175, 0.04); /* Branded cool-grey tint */
+  /* --- Surface Hierarchy --- */
+  --surface: #0e0e0e;
+  --surface-dim: #0e0e0e;
+  --surface-bright: #2c2c2c;
+  --surface-container-lowest: #000000;
+  --surface-container-low: #131313;
+  --surface-container: #1a1a1a;
+  --surface-container-high: #20201f;
+  --surface-container-highest: #262626;
+  --surface-variant: #262626;
 
   /* --- Text Colors --- */
-  --on-surface: #1c1b1b;         /* High-contrast Headlines */
-  --on-surface-variant: #454652; /* Body Text / Labels */
+  --on-surface: #ffffff;
+  --on-surface-variant: #adaaaa;
+  --background: #0e0e0e;
+  --on-background: #ffffff;
 
   /* --- Semantic Colors --- */
-  --secondary: #2e7d32;          /* Income / Growth */
-  --secondary-container: #a0f399; /* Income highlight */
-  --tertiary-fixed: #ffdad6;      /* Expense highlight */
-  --tertiary-fixed-variant: #93000e; /* Sophisticated Expense Red */
-  --error: #ba1a1a;
+  --secondary: #6e9bff;
+  --secondary-dim: #0f6df3;
+  --on-secondary: #001d4e;
+  --secondary-container: #0058ca;
+  --on-secondary-container: #f7f7ff;
 
-  /* --- Functional Elements --- */
-  --outline-variant: #c6c5d4;
-  --ghost-border: rgba(198, 197, 212, 0.15); /* For high-density fallbacks */
+  --tertiary: #ffe483;
+  --on-tertiary: #635200;
+  --tertiary-container: #fdd400;
+  --on-tertiary-container: #594a00;
 
-  /* --- Semantic surface tokens (used in cards, badges) --- */
-  --savings-bg: #e8eaf6;
-  --savings-text: #283593;
-  --burn-bg: #fff3e0;
-  --burn-text: #e65100;
-  --trend-up-bg: #d1fae5;
-  --trend-up-text: #065f46;
-  --trend-down-bg: #fee2e2;
-  --trend-down-text: #991b1b;
-  --neg-value-color: #ef4444;
-  --budget-warning-bg: #fff3e0;
-  --budget-warning-text: #e65100;
+  --error: #ff716c;
+  --on-error: #490006;
+  --error-container: #9f0519;
+  --on-error-container: #ffa8a3;
+
+  /* --- Functional --- */
+  --outline: #767575;
+  --outline-variant: #484847;
+  --ghost-border: rgba(72, 72, 71, 0.15);
 
   /* --- Spacing --- */
   --spacing-4: 1rem;
@@ -52,56 +57,17 @@
   --radius-lg: 1rem;
   --radius-full: 9999px;
 
-  /* --- Shadows (Ambient & Diffused) --- */
-  --shadow-ambient: 0 12px 32px rgba(28, 27, 27, 0.04);
+  /* --- Shadows --- */
+  --shadow-ambient: 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  /* --- Legacy Compatibility (mapping old names if needed) --- */
+  --tertiary-fixed-variant: var(--error);
+  --on-surface-variant-alt: #adaaaa;
 }
 
-/* =========================================
-   DARK THEME — "Deep Space Finance"
-   Electric indigo on near-black indigo surfaces
-   ========================================= */
+/* For simplicity, we'll map the dark theme variables back to :root for now since the design is dark-first */
 [data-theme="dark"] {
-  /* Primary — navy becomes luminous electric indigo */
-  --primary: #7c83ff;
-  --primary-container: #1e2580;
-  --on-primary: #0a0066;
-  --primary-light: rgba(124, 131, 255, 0.13);
-
-  /* Surfaces — stratified dark indigo-black */
-  --surface: #0f0f1a;
-  --surface-container-low: #16161f;
-  --surface-container-lowest: #0b0b13;
-  --surface-bright: #1d1d2c;
-  --surface-tint: rgba(124, 131, 255, 0.04);
-
-  /* Text */
-  --on-surface: #e6e4f8;
-  --on-surface-variant: #a8a5c0;
-
-  /* Semantic */
-  --secondary: #5bc55f;
-  --secondary-container: #0d2110;
-  --tertiary-fixed: #300008;
-  --tertiary-fixed-variant: #ff6b72;
-  --error: #ff6b6b;
-
-  /* Functional */
-  --outline-variant: #2c2c3e;
-  --ghost-border: rgba(255, 255, 255, 0.07);
-  --shadow-ambient: 0 12px 32px rgba(0, 0, 0, 0.55);
-
-  /* Semantic surface tokens — inverted for dark */
-  --savings-bg: #1a1f45;
-  --savings-text: #9da4f7;
-  --burn-bg: #2d1600;
-  --burn-text: #ffb74d;
-  --trend-up-bg: rgba(91, 197, 95, 0.15);
-  --trend-up-text: #5bc55f;
-  --trend-down-bg: rgba(255, 107, 114, 0.15);
-  --trend-down-text: #ff6b72;
-  --neg-value-color: #ff6b72;
-  --budget-warning-bg: rgba(255, 100, 0, 0.14);
-  --budget-warning-text: #ffb74d;
+  /* Already dark by default now */
 }
 
 *, *::before, *::after {
@@ -117,7 +83,7 @@ html, body, #root {
 
 body {
   background-color: var(--surface);
-  color: var(--on-surface-variant);
+  color: var(--on-surface);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: 400;
   line-height: 1.6;
@@ -153,4 +119,9 @@ button {
 
 input {
   font-family: 'Inter', sans-serif;
+}
+
+/* Material Symbols Integration */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }

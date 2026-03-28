@@ -99,140 +99,196 @@ const usePullToRefresh = (onRefresh) => {
 const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNewTx }) => {
   const settingsViews = ['settings', 'account_management', 'category_management', 'party_management', 'tag_management'];
   return (
-    <nav className="bottom-nav">
-      <button className={`bnav-item${view === 'dashboard' ? ' active' : ''}`} onClick={onDashboard}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
-        </svg>
-        <span>Home</span>
+    <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-[#0e0e0e]/80 backdrop-blur-xl border-none shadow-[0_-24px_48px_rgba(0,0,0,0.4)] rounded-t-3xl">
+      <button className={`flex flex-col items-center justify-center transition-all duration-300 ease-out ${view === 'dashboard' ? 'text-[#3fff8b] font-bold scale-110' : 'text-zinc-500'}`} onClick={onDashboard}>
+        <span className="material-symbols-outlined">home</span>
+        <span className="font-['Inter'] text-[10px] uppercase tracking-[0.05em] mt-1">Home</span>
       </button>
-      <button className={`bnav-item${view === 'ledger' ? ' active' : ''}`} onClick={onLedger}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-        </svg>
-        <span>Txns</span>
+      <button className={`flex flex-col items-center justify-center transition-all duration-300 ease-out ${view === 'ledger' ? 'text-[#3fff8b] font-bold scale-110' : 'text-zinc-500'}`} onClick={onLedger}>
+        <span className="material-symbols-outlined">list_alt</span>
+        <span className="font-['Inter'] text-[10px] uppercase tracking-[0.05em] mt-1">History</span>
       </button>
-      <button className="bnav-fab" onClick={onNewTx}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+      <button className="flex flex-col items-center justify-center bg-[#3fff8b] text-[#005d2c] w-12 h-12 rounded-2xl shadow-lg active:scale-95 transition-transform -translate-y-4" onClick={onNewTx}>
+        <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>add</span>
       </button>
-      <button className={`bnav-item${view === 'analytics' ? ' active' : ''}`} onClick={onAnalytics}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" />
-        </svg>
-        <span>Analytics</span>
+      <button className={`flex flex-col items-center justify-center transition-all duration-300 ease-out ${view === 'analytics' ? 'text-[#3fff8b] font-bold scale-110' : 'text-zinc-500'}`} onClick={onAnalytics}>
+        <span className="material-symbols-outlined">pie_chart</span>
+        <span className="font-['Inter'] text-[10px] uppercase tracking-[0.05em] mt-1">Charts</span>
       </button>
-      <button className={`bnav-item${settingsViews.includes(view) ? ' active' : ''}`} onClick={onSettings}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-        </svg>
-        <span>Settings</span>
+      <button className={`flex flex-col items-center justify-center transition-all duration-300 ease-out ${settingsViews.includes(view) ? 'text-[#3fff8b] font-bold scale-110' : 'text-zinc-500'}`} onClick={onSettings}>
+        <span className="material-symbols-outlined">manage_accounts</span>
+        <span className="font-['Inter'] text-[10px] uppercase tracking-[0.05em] mt-1">Settings</span>
       </button>
     </nav>
   );
 };
 
-// Sub-views that support swipe-back gesture
-const SUB_VIEWS = new Set(['new_transaction', 'account_management', 'category_management', 'party_management', 'tag_management']);
+const CATEGORY_ICONS = {
+  'Food': 'restaurant',
+  'Dining': 'restaurant',
+  'Grocery': 'shopping_cart',
+  'Shopping': 'shopping_bag',
+  'Transport': 'directions_car',
+  'Travel': 'flight',
+  'Entertainment': 'movie',
+  'Health': 'medical_services',
+  'Insurance': 'shield',
+  'Utilities': 'bolt',
+  'Rent': 'home',
+  'Salary': 'payments',
+  'Income': 'add_card',
+  'Investment': 'trending_up',
+  'Gift': 'redeem',
+  'Education': 'school',
+  'Personal': 'person',
+  'Family': 'family_restroom',
+  'Other': 'more_horiz',
+  'Transfer': 'sync_alt'
+};
+
+const getCategoryIcon = (catName) => CATEGORY_ICONS[catName] || 'label';
+
+// Transaction item component for consistency
+const TransactionItem = ({ t, onClick, onDelete, accounts, categories, currencySymbol, isSelected, bulkSelectMode, onToggleSelect }) => {
+  const cat = categories.find(c => c.id === t.category_id);
+  const amt = t.amount || 0;
+  const isNeg = t.type === 'expense';
+  const isTransfer = !!t.transfer_id;
+  const icon = isTransfer ? 'sync_alt' : getCategoryIcon(cat?.name || 'Other');
+  
+  return (
+    <div 
+      className={`active:scale-[0.98] transition-all bg-surface-container p-4 rounded-xl flex items-center gap-4 cursor-pointer border border-outline-variant/10 ${isSelected ? 'ring-2 ring-[#3fff8b] bg-[#3fff8b]/5' : ''}`}
+      onClick={() => bulkSelectMode && !isTransfer ? onToggleSelect(t.id) : onClick(t)}
+    >
+      {bulkSelectMode && !isTransfer && (
+        <div 
+          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-[#3fff8b] border-[#3fff8b]' : 'border-zinc-700'}`}
+          onClick={(e) => { e.stopPropagation(); onToggleSelect(t.id); }}
+        >
+          {isSelected && <span className="material-symbols-outlined text-[#005d2c] text-xs font-bold">check</span>}
+        </div>
+      )}
+      <div className="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center shrink-0">
+        <span className="material-symbols-outlined text-[#3fff8b]">{icon}</span>
+      </div>
+      <div className="flex-1 min-width-0">
+        <div className="flex justify-between items-baseline gap-2">
+          <h3 className="font-bold text-[#ffffff] text-sm truncate">{t.note || cat?.name || (isTransfer ? 'Transfer' : 'Transaction')}</h3>
+          <span className={`font-['Manrope'] font-extrabold whitespace-nowrap ${isNeg ? 'text-[#ff716c]' : 'text-[#3fff8b]'}`}>
+            {isTransfer ? '⇄' : (isNeg ? '-' : '+')} {currencySymbol}{Math.abs(amt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+        <div className="flex justify-between items-center mt-1">
+          <p className="text-xs text-on-surface-variant truncate">{cat?.name || (isTransfer ? 'Transfer' : 'General')}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] text-on-surface-variant/60 uppercase tracking-tighter whitespace-nowrap">
+              {t.transaction_date || t.created_at?.split('T')[0]}
+            </p>
+            {!bulkSelectMode && onDelete && (
+              <button 
+                className="text-zinc-600 hover:text-[#ff716c] transition-colors"
+                onClick={(e) => { e.stopPropagation(); onDelete(t, e); }}
+              >
+                <span className="material-symbols-outlined text-sm">delete</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Sidebar — desktop left-rail navigation
 const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout }) => {
   const [collapsed, setCollapsed] = useState(false);
   const NAV_ITEMS = [
-    { key: 'dashboard', label: 'Portfolio', onClick: onDashboard, icon: <><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></> },
-    { key: 'ledger', label: 'Transactions', onClick: onLedger, icon: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /> },
-    { key: 'budgets', label: 'Budgets', onClick: onBudgets, icon: <path d="M12 20v-6M6 20V10M18 20V4" /> },
-    { key: 'analytics', label: 'Analytics', onClick: onAnalytics, icon: <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" /> },
-    { key: 'vault', label: 'Vault', onClick: null, icon: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></> },
+    { key: 'dashboard', label: 'Dashboard', onClick: onDashboard, icon: 'dashboard' },
+    { key: 'ledger', label: 'Transactions', onClick: onLedger, icon: 'receipt_long' },
+    { key: 'analytics', label: 'Analytics', onClick: onAnalytics, icon: 'insights' },
+    { key: 'budgets', label: 'Budgets', onClick: onBudgets, icon: 'account_balance_wallet' },
   ];
   return (
-    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
-      <div className="sidebar-brand-wrapper">
-        {!collapsed && (
-          <div>
-            <div className="sidebar-brand">MOMA</div>
-            <div className="sidebar-subtitle">THE DIGITAL LEDGER</div>
-          </div>
-        )}
-        <button className="sidebar-collapse-btn" onClick={() => setCollapsed(c => !c)} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            {collapsed ? <path d="M9 18l6-6-6-6" /> : <path d="M15 18l-6-6 6-6" />}
-          </svg>
-        </button>
+    <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 border-r border-zinc-800/15 bg-[#131313] ${collapsed ? 'w-20' : 'w-64'}`}>
+      <div className="p-8">
+        {!collapsed && <span className="text-[#3fff8b] font-bold font-headline text-xl tracking-tight">Editorial Finance</span>}
+        {collapsed && <span className="text-[#3fff8b] font-bold font-headline text-xl">EF</span>}
+        {!collapsed && <p className="text-zinc-500 text-[10px] mt-1 uppercase tracking-widest font-label font-bold">Premium Tier</p>}
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="flex-1 px-4 space-y-2">
         {NAV_ITEMS.map(item => (
-          <button key={item.key} className={`sidebar-item${view === item.key ? ' active' : ''}`} onClick={item.onClick || undefined} title={collapsed ? item.label : ''}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
-            {!collapsed && <span>{item.label}</span>}
+          <button
+            key={item.key}
+            className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all w-full ${view === item.key ? 'text-[#3fff8b] font-bold bg-emerald-500/5 border-r-2 border-[#3fff8b]' : 'text-zinc-400 hover:bg-zinc-900'}`}
+            onClick={item.onClick}
+          >
+            <span className="material-symbols-outlined">{item.icon}</span>
+            {!collapsed && <span className="font-['Manrope'] text-sm tracking-wide">{item.label}</span>}
           </button>
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <button className="sidebar-new-tx-btn" onClick={onNewTx} title={collapsed ? 'Add Transaction' : ''}>
-          {collapsed
-            ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            : 'Add Transaction'}
+      <div className="p-4 space-y-2 border-t border-zinc-800/15">
+        <button
+          className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full text-zinc-400 hover:bg-zinc-900 transition-all`}
+          onClick={onSettings}
+        >
+          <span className="material-symbols-outlined">settings</span>
+          {!collapsed && <span className="font-['Manrope'] text-sm tracking-wide">Settings</span>}
         </button>
-        <div className="sidebar-footer-item" onClick={onSettings} title={collapsed ? 'Settings' : ''}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
-          {!collapsed && <span>Settings</span>}
-        </div>
-        <div className="sidebar-footer-item" onClick={onLogout} title={collapsed ? 'Logout' : ''}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-          </svg>
-          {!collapsed && <span>Logout</span>}
-        </div>
+        <button
+          className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full text-zinc-400 hover:bg-zinc-900 transition-all`}
+          onClick={onLogout}
+        >
+          <span className="material-symbols-outlined">logout</span>
+          {!collapsed && <span className="font-['Manrope'] text-sm tracking-wide">Logout</span>}
+        </button>
+        <button 
+          className="mt-4 w-full bg-[#3fff8b] text-[#005d2c] py-3 rounded-xl font-bold active:scale-95 transition-transform flex items-center justify-center gap-2"
+          onClick={onNewTx}
+        >
+          <span className="material-symbols-outlined">add</span>
+          {!collapsed && <span>New Transaction</span>}
+        </button>
       </div>
+      
+      <button 
+        className="absolute -right-3 top-1/2 bg-[#131313] border border-zinc-800/15 rounded-full p-1 text-zinc-500 hover:text-white"
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+          {collapsed ? 'chevron_right' : 'chevron_left'}
+        </span>
+      </button>
     </aside>
   );
 };
 
-const SunIcon = ({ size = 13 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="5" />
-    <line x1="12" y1="1" x2="12" y2="3" />
-    <line x1="12" y1="21" x2="12" y2="23" />
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-    <line x1="1" y1="12" x2="3" y2="12" />
-    <line x1="21" y1="12" x2="23" y2="12" />
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-  </svg>
-);
-
-const MoonIcon = ({ size = 13 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </svg>
-);
-
-const TopHeader = ({ session, theme, onToggleTheme }) => (
-  <header className="top-header">
-    <div className="search-container">
-      <svg className="search-icon-top" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-      </svg>
-      <input type="text" placeholder="Search accounts, tags, or dates..." className="search-input-top" />
-    </div>
-    <div className="top-actions">
-      <button className="icon-action" onClick={onToggleTheme} title={theme === 'dark' ? 'Light mode' : 'Dark mode'} style={{ padding: '0.375rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {theme === 'dark' ? <SunIcon size={18} /> : <MoonIcon size={18} />}
-      </button>
-      <div className="user-profile-sm">
-        <div style={{ background: 'var(--primary)', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold' }}>
-          {session?.user?.email?.charAt(0).toUpperCase()}
-        </div>
+const TopHeader = ({ session, theme, onToggleTheme, onOpenSearch }) => (
+  <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#131313] md:pl-[17rem] transition-all">
+    <div className="flex items-center gap-3">
+      <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest border border-outline-variant/15 flex items-center justify-center">
+        {session?.user?.email ? (
+          <div className="w-full h-full bg-[#3fff8b] text-[#005d2c] flex items-center justify-center font-bold text-xs">
+            {session.user.email.charAt(0).toUpperCase()}
+          </div>
+        ) : (
+          <span className="material-symbols-outlined text-zinc-500" style={{ fontSize: '20px' }}>person</span>
+        )}
       </div>
+      <span className="font-['Manrope'] font-bold text-2xl tracking-tight text-[#3fff8b]">Digital Ledger</span>
     </div>
-  </header>
+    <div className="flex items-center gap-2">
+      <button className="p-2 text-[#3fff8b] active:scale-95 transition-transform" onClick={onToggleTheme}>
+        <span className="material-symbols-outlined">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
+      </button>
+      <button className="p-2 text-[#3fff8b] active:scale-95 transition-transform">
+        <span className="material-symbols-outlined">search</span>
+      </button>
+    </div>
+  </nav>
 );
 
 const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session, onRefresh, theme, onToggleTheme }) => {
@@ -1702,16 +1758,38 @@ export default function App() {
               <button className="section-action-link ledger-dashboard-link" onClick={navToDashboard}>Dashboard</button>
             </div>
           </div>
-          <div className="ledger-search-row"><div className="ledger-search-wrap"><input type="text" placeholder="Search transactions..." className="ledger-search-input" value={filterOptions.searchTerm} onChange={(e) => updateFilter('searchTerm', e.target.value)} /><svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg></div></div>
-          <div className="ledger-controls-row">
-            <div className="ledger-period-pills">
-              {[{ p: 'all', label: 'All' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }, { p: 'last_3m', label: '3 Months' }].map(({ p, label }) => (
-                <button key={p} className={`filter-pill${filterOptions.preset === p ? ' active-pill' : ''}`} onClick={() => applyDatePreset(p)}>{label}</button>
+          <div className="relative bg-surface-container-low rounded-xl border border-outline-variant/10">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">search</span>
+            <input 
+              type="text" 
+              placeholder="Search transactions..." 
+              className="w-full bg-transparent pl-12 pr-4 py-4 text-sm font-medium focus:outline-none text-white placeholder:text-zinc-600" 
+              value={filterOptions.searchTerm} 
+              onChange={(e) => updateFilter('searchTerm', e.target.value)} 
+            />
+          </div>
+          <div className="flex items-center gap-4 overflow-x-auto pb-2 hide-scrollbar mt-4">
+            <div className="flex gap-2">
+              {[{ p: 'all', label: 'All' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }, { p: 'last_3m', label: '3M' }].map(({ p, label }) => (
+                <button 
+                  key={p} 
+                  className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${filterOptions.preset === p ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-container text-zinc-500'}`} 
+                  onClick={() => applyDatePreset(p)}
+                >
+                  {label}
+                </button>
               ))}
             </div>
-            <div className="ledger-sort-bar">
-              {[{ key: 'date_desc', label: 'Date ↓' }, { key: 'date_asc', label: 'Date ↑' }, { key: 'amount_desc', label: 'Amt ↓' }, { key: 'amount_asc', label: 'Amt ↑' }].map(s => (
-                <button key={s.key} className={`ledger-sort-btn${ledgerSort === s.key ? ' active' : ''}`} onClick={() => setLedgerSort(s.key)}>{s.label}</button>
+            <div className="h-4 w-px bg-zinc-800"></div>
+            <div className="flex gap-2">
+              {[{ key: 'date_desc', label: 'Recent' }, { key: 'amount_desc', label: 'Highest' }].map(s => (
+                <button 
+                  key={s.key} 
+                  className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${ledgerSort === s.key ? 'bg-white text-black' : 'bg-surface-container text-zinc-500'}`} 
+                  onClick={() => setLedgerSort(s.key)}
+                >
+                  {s.label}
+                </button>
               ))}
             </div>
           </div>
@@ -1729,58 +1807,34 @@ export default function App() {
         </div>
 
         {/* Scrollable transaction list */}
-        <div className={`ledger-list-wrap${bulkSelectMode && selectedTxIds.size > 0 ? ' has-bulk-bar' : ''}`}>
-          <div className="editorial-list">
+          <div className="flex flex-col gap-4">
             {groupedLedger.map(([date, txs]) => (
-              <div key={date} className="ledger-date-group">
-                {date !== '__flat__' && <div className="ledger-date-header"><span className="ledger-date-text">{formatGroupDate(date)}</span></div>}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
-                  {txs.map(t => {
-                    const isTransfer = !!t.transfer_id;
-                    const cat = isTransfer ? { icon: '⇄', name: 'Transfer' } : (t.categories || { icon: '•', name: 'Uncategorized' });
-                    const isSelected = selectedTxIds.has(t.id);
-                    const fmtAmt = parseFloat(t.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    return (
-                      <div
-                        key={t.id}
-                        className={`editorial-item${isSelected ? ' tx-selected' : ''}`}
-                        onClick={() => bulkSelectMode && !isTransfer ? toggleTx(t.id) : (!bulkSelectMode ? openEditTransaction(t) : null)}
-                      >
-                        {bulkSelectMode && !isTransfer && (
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleTx(t.id)}
-                            onClick={e => e.stopPropagation()}
-                            style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer', flexShrink: 0 }}
-                          />
-                        )}
-                        <div className="editorial-icon">{cat.icon}</div>
-                        <div className="editorial-info">
-                          <div className="editorial-title">{t.parties?.name || cat.name}</div>
-                          <div className="editorial-meta">{cat.name} · {t.accounts?.name || 'Cash'}{t.transaction_tags?.length > 0 && (<span style={{ marginLeft: '0.4rem', opacity: 0.6 }}>{t.transaction_tags.map(tt => `#${tt.tags?.name}`).filter(Boolean).join(' ')}</span>)}</div>
-                        </div>
-                        <div className="editorial-amount-wrap">
-                          <div className={`editorial-amount ${t.type}`}>{isTransfer ? '⇄' : t.type === 'income' ? '+' : '-'}{currencySymbol}{fmtAmt}</div>
-                          <div className={`editorial-status${isTransfer ? ' transfer' : ''}`}>{isTransfer ? 'TRANSFER' : 'CLEARED'}</div>
-                        </div>
-                        {!bulkSelectMode && (
-                          <button
-                            className="tx-delete-btn"
-                            onClick={(e) => handleDeleteTransaction(t, e)}
-                            title="Delete transaction"
-                          >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+              <div key={date} className="flex flex-col gap-2">
+                {date !== '__flat__' && (
+                  <div className="flex items-center gap-4 py-2 mt-4 sticky top-0 bg-[#0e0e0e] z-10">
+                    <span className="text-[10px] font-bold tracking-[0.1em] text-zinc-500 uppercase">{formatGroupDate(date)}</span>
+                    <div className="h-px flex-1 bg-zinc-800/30"></div>
+                  </div>
+                )}
+                <div className="flex flex-col gap-3">
+                  {txs.map(t => (
+                    <TransactionItem 
+                      key={t.id} 
+                      t={t} 
+                      onClick={openEditTransaction}
+                      onDelete={handleDeleteTransaction}
+                      accounts={accounts} 
+                      categories={categories} 
+                      currencySymbol={currencySymbol}
+                      isSelected={selectedTxIds.has(t.id)}
+                      bulkSelectMode={bulkSelectMode}
+                      onToggleSelect={toggleTx}
+                    />
+                  ))}
                 </div>
               </div>
             ))}
           </div>
-        </div>
 
         {/* Sticky bulk-action bar */}
         {bulkSelectMode && selectedTxIds.size > 0 && (
@@ -1810,7 +1864,7 @@ export default function App() {
   }
 
   if (view === 'analytics') {
-    const PIE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#14b8a6'];
+    const PIE_COLORS = ['#3fff8b', '#6e9bff', '#ffe483', '#ff716c', '#acc3ff', '#fdd400'];
     const pct = (curr, prev) => {
       if (!prev || prev === 0) return null;
       const change = ((curr - prev) / Math.abs(prev)) * 100;
@@ -1829,172 +1883,183 @@ export default function App() {
       return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
     })();
     const totalCatVal = chartCategorical.reduce((s, c) => s + c.value, 0);
+
     return (
       <PageShell {...shellProps}>
-        <div className="page-inner fade-in">
-          <div className="section-header-row">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <h2 className="section-title-editorial">Analytics</h2>
-              {drillCategory && <button className="an-drill-chip" onClick={() => setDrillCategory(null)}>{drillCategory} ✕</button>}
+        <div className="page-inner space-y-8 pb-32">
+          {/* Header & Filters */}
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[#3fff8b]">Insights</h2>
+              <button 
+                className={`p-2 rounded-xl transition-colors ${showAnalyticsFilters ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-container text-[#3fff8b]'}`}
+                onClick={() => setShowAnalyticsFilters(!showAnalyticsFilters)}
+              >
+                <span className="material-symbols-outlined">filter_list</span>
+              </button>
             </div>
-            <button className={`filter-toggle-btn ${showAnalyticsFilters ? 'active' : ''}`} onClick={() => setShowAnalyticsFilters(!showAnalyticsFilters)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>Filters</button>
+            <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+              {['today', 'this_week', 'this_month', 'last_3m', 'this_year'].map(p => (
+                <button 
+                  key={p} 
+                  className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all ${analyticsFilters.preset === p ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-container text-zinc-500'}`}
+                  onClick={() => applyAnalyticsPreset(p)}
+                >
+                  {p.replace(/_/g, ' ')}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="filter-pills" style={{ marginTop: '1rem' }}>
-            {['today', 'this_week', 'this_month', 'last_3m', 'this_year'].map(p => (
-              <button key={p} className={`filter-pill ${analyticsFilters.preset === p ? 'active-pill' : ''}`} onClick={() => applyAnalyticsPreset(p)} style={{ textTransform: 'capitalize' }}>{p.replace(/_/g, ' ')}</button>
-            ))}
-          </div>
+
           {showAnalyticsFilters && (
-            <div className="advanced-filters slide-up" style={{ marginTop: '1.5rem', background: 'var(--surface-container-low)', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem' }}>
-                <div className="filter-section"><p className="label-sm">Transaction Type</p><div className="type-toggle-bar" style={{ marginTop: '0.5rem', background: 'var(--surface-container-lowest)' }}>{['all', 'income', 'expense'].map(t => (<button key={t} className={`type-btn ${analyticsFilters.type === t ? (t === 'all' ? 'active-transfer' : `active-${t}`) : ''}`} onClick={() => updateAnalyticsFilter('type', t)} style={{ textTransform: 'capitalize' }}>{t}</button>))}</div></div>
+            <div className="bg-surface-container-low p-6 rounded-[2rem] border border-outline-variant/10 slide-up">
+              <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase mb-4">Transaction Type</p>
+              <div className="flex bg-surface-container-lowest p-1 rounded-xl gap-1">
+                {['all', 'income', 'expense'].map(t => (
+                  <button 
+                    key={t} 
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase transition-all ${analyticsFilters.type === t ? 'bg-[#3fff8b] text-[#005d2c]' : 'text-zinc-500'}`}
+                    onClick={() => updateAnalyticsFilter('type', t)}
+                  >
+                    {t}
+                  </button>
+                ))}
               </div>
-              <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}><button className="section-action-link" onClick={resetAnalyticsFilters}>Reset</button></div>
+              <div className="mt-6 flex justify-end">
+                <button className="text-xs font-bold text-[#ff716c] uppercase tracking-widest" onClick={resetAnalyticsFilters}>Reset Filters</button>
+              </div>
             </div>
           )}
-          {/* KPI Row */}
-          <div className="an-kpi-row">
-            <div className="an-kpi-card an-kpi-income">
-              <span className="an-kpi-label">Income</span>
-              <span className="an-kpi-value">{currencySymbol}{analyticsKPIs.totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-              {incomePct ? <span className={`an-kpi-trend ${incomePct.up ? 'up' : 'down'}`}>{incomePct.up ? '↑' : '↓'} {incomePct.label} vs prev</span> : <span className="an-kpi-sub">&nbsp;</span>}
-            </div>
-            <div className="an-kpi-card an-kpi-expense">
-              <span className="an-kpi-label">Expenses</span>
-              <span className="an-kpi-value">{currencySymbol}{analyticsKPIs.totalExpense.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-              {expensePct ? <span className={`an-kpi-trend ${!expensePct.up ? 'up' : 'down'}`}>{expensePct.up ? '↑' : '↓'} {expensePct.label} vs prev</span> : <span className="an-kpi-sub">&nbsp;</span>}
-            </div>
-            <div className="an-kpi-card an-kpi-net">
-              <span className="an-kpi-label">Net Flow</span>
-              <span className={`an-kpi-value${analyticsKPIs.net < 0 ? ' an-neg' : ''}`}>{analyticsKPIs.net >= 0 ? '+' : ''}{currencySymbol}{Math.abs(analyticsKPIs.net).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-              {netPct ? <span className={`an-kpi-trend ${netPct.up ? 'up' : 'down'}`}>{netPct.up ? '↑' : '↓'} {netPct.label} vs prev</span> : <span className="an-kpi-sub">&nbsp;</span>}
-            </div>
-            <div className="an-kpi-card an-kpi-save">
-              <span className="an-kpi-label">Savings Rate</span>
-              <span className={`an-kpi-value${savRate !== null && savRate < 0 ? ' an-neg' : ''}`}>{savRate !== null ? `${savRate}%` : '—'}</span>
-              <span className="an-kpi-sub">&nbsp;</span>
-            </div>
-            <div className="an-kpi-card an-kpi-burn">
-              <span className="an-kpi-label">Daily Burn</span>
-              <span className="an-kpi-value">{currencySymbol}{analyticsKPIs.dailyBurn.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-              <span className="an-kpi-sub">{analyticsKPIs.txCount} transactions</span>
-            </div>
-          </div>
-          {/* Cash Flow — full width */}
-          <div className="an-card" style={{ marginTop: '1.5rem' }}>
-            <div className="an-card-header">
-              <p className="an-card-title">Cash Flow{drillCategory && <span className="an-drill-tag">· {drillCategory}</span>}</p>
-              <div className="an-legend">
-                <span className="an-legend-item"><span className="an-legend-dot" style={{ background: '#10b981' }} />Income</span>
-                <span className="an-legend-item"><span className="an-legend-dot" style={{ background: '#ef4444' }} />Expense</span>
-                <span className="an-legend-item"><span className="an-legend-line" style={{ background: '#6366f1' }} />Net</span>
+
+          {/* Net Cash Flow Hero */}
+          <section className="space-y-6">
+            <div className="flex justify-between items-end">
+              <div>
+                <span className="text-[10px] tracking-[0.2em] uppercase text-zinc-500 font-bold">Net Cash Flow</span>
+                <h2 className={`font-headline text-5xl font-extrabold tracking-tighter mt-1 ${analyticsKPIs.net >= 0 ? 'text-[#3fff8b]' : 'text-[#ff716c]'}`}>
+                  {analyticsKPIs.net >= 0 ? '+' : '-'}{currencySymbol}{Math.abs(analyticsKPIs.net).toLocaleString()}
+                </h2>
               </div>
-            </div>
-            {composedData.length === 0 ? <EmptyChart h={260} /> : (
-              <ResponsiveContainer width="100%" height={260}>
-                <ComposedChart data={composedData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} minTickGap={32} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--on-surface-variant)', fontFamily: 'Inter' }} tickFormatter={v => `${currencySymbol}${Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} width={52} />
-                  <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
-                  <ReferenceLine y={0} stroke="var(--ghost-border)" strokeDasharray="3 3" />
-                  <Bar dataKey="income" name="Income" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={18} opacity={0.85} />
-                  <Bar dataKey="expense" name="Expense" fill="#ef4444" radius={[3, 3, 0, 0]} maxBarSize={18} opacity={0.85} />
-                  <Line type="monotone" dataKey="net" name="Net" stroke="#6366f1" strokeWidth={2} dot={false} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-          {/* Category Breakdown + Top Payees */}
-          <div className="an-two-col" style={{ marginTop: '1.5rem' }}>
-            <div className="an-card">
-              <div className="an-card-header" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
-                <p className="an-card-title">Category Breakdown</p>
-                <div className="cat-type-tabs">
-                  <button className={`cat-type-tab${catBreakdownType === 'expense' ? ' active expense' : ''}`} onClick={() => setCatBreakdownType('expense')}>Expense</button>
-                  <button className={`cat-type-tab${catBreakdownType === 'income' ? ' active income' : ''}`} onClick={() => setCatBreakdownType('income')}>Income</button>
-                </div>
-              </div>
-              {chartCategorical.length === 0 ? <EmptyChart h={200} msg={`No ${catBreakdownType} data`} /> : (
-                <div className="cat-hier-list">
-                  {chartCategorical.map(({ name, id, value, subs }, i) => {
-                    const maxVal = chartCategorical[0].value;
-                    const parentPct = Math.round((value / maxVal) * 100);
-                    const ofTotalPct = totalCatVal > 0 ? Math.round((value / totalCatVal) * 100) : 0;
-                    const color = catBreakdownType === 'income'
-                      ? ['#10b981', '#34d399', '#059669', '#6ee7b7', '#047857', '#a7f3d0'][i % 6]
-                      : PIE_COLORS[i % PIE_COLORS.length];
-                    return (
-                      <div key={id} className="cat-hier-group">
-                        <button className="cat-hier-row cat-hier-parent-row" onClick={() => navToLedgerByCategory(id, catBreakdownType)}>
-                          <div className="cat-hier-meta">
-                            <span className="cat-hier-name">{name}</span>
-                            <span className="cat-hier-val">{currencySymbol}{value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                            <span className="cat-hier-pct-badge">{ofTotalPct}%</span>
-                          </div>
-                          <div className="cat-hier-bar-track">
-                            <div className="cat-hier-bar-fill" style={{ width: `${parentPct}%`, background: color }} />
-                          </div>
-                        </button>
-                        {subs.length > 0 && (
-                          <div className="cat-hier-subs">
-                            {subs.map(sub => {
-                              const subPct = Math.round((sub.value / value) * 100);
-                              return (
-                                <button key={sub.id} className="cat-hier-row cat-hier-sub-row" onClick={() => navToLedgerByCategory(sub.id, catBreakdownType)}>
-                                  <div className="cat-hier-meta">
-                                    <span className="cat-hier-sub-name">{sub.name}</span>
-                                    <span className="cat-hier-val">{currencySymbol}{sub.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                    <span className="cat-hier-pct-badge sub">{subPct}%</span>
-                                  </div>
-                                  <div className="cat-hier-bar-track">
-                                    <div className="cat-hier-bar-fill" style={{ width: `${subPct}%`, background: color, opacity: 0.5 }} />
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+              {netPct && (
+                <div className="bg-[#3fff8b]/10 px-3 py-1 rounded-full flex items-center gap-1 border border-[#3fff8b]/20">
+                  <span className={`material-symbols-outlined text-xs ${netPct.up ? 'text-[#3fff8b]' : 'text-[#ff716c]'}`}>
+                    {netPct.up ? 'trending_up' : 'trending_down'}
+                  </span>
+                  <span className={`text-[10px] font-bold ${netPct.up ? 'text-[#3fff8b]' : 'text-[#ff716c]'}`}>{netPct.label}</span>
                 </div>
               )}
             </div>
-            <div className="an-card">
-              <div className="an-card-header">
-                <p className="an-card-title">Top Payees</p>
-                {topPayees.length > 0 && <span className="an-card-hint">by expense</span>}
-              </div>
-              {topPayees.length === 0 ? <EmptyChart h={240} msg="No party data" /> : (
-                <ResponsiveContainer width="100%" height={Math.max(240, topPayees.length * 34)}>
-                  <BarChart data={topPayees} layout="vertical" margin={{ left: 0, right: 24, top: 4, bottom: 4 }}>
-                    <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fontFamily: 'Inter', fill: 'var(--on-surface)' }} width={80} />
+            
+            <div className="h-64 bg-surface-container-low p-6 rounded-[2rem] border border-outline-variant/5">
+              {composedData.length === 0 ? <EmptyChart h={200} /> : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={composedData}>
+                    <XAxis dataKey="label" hide />
+                    <YAxis hide domain={['auto', 'auto']} />
                     <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
-                    <Bar dataKey="value" name="Amount" radius={[0, 5, 5, 0]} barSize={16}>
-                      {topPayees.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} opacity={0.85} />)}
-                    </Bar>
-                  </BarChart>
+                    <Bar dataKey="income" fill="#3fff8b" radius={[4, 4, 0, 0]} opacity={0.2} barSize={20} />
+                    <Bar dataKey="expense" fill="#ff716c" radius={[4, 4, 0, 0]} opacity={0.2} barSize={20} />
+                    <Line type="monotone" dataKey="net" stroke="#3fff8b" strokeWidth={3} dot={false} strokeLinecap="round" />
+                  </ComposedChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </div>
-          {/* Tag Density */}
-          {chartTags.length > 0 && (
-            <div className="an-card" style={{ marginTop: '1.5rem' }}>
-              <div className="an-card-header">
-                <p className="an-card-title">Tag Density{drillCategory && <span className="an-drill-tag">· {drillCategory}</span>}</p>
+          </section>
+
+          {/* Savings Rate Bento */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-surface-container-low p-8 rounded-[2rem] flex flex-col justify-between border-l-4 border-[#3fff8b] shadow-xl">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <p className="text-[10px] tracking-widest uppercase text-zinc-500 font-bold">Savings Rate</p>
+                  <p className="font-headline text-4xl font-extrabold mt-1 text-white">{savRate !== null ? `${savRate}%` : '—'}</p>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-[#3fff8b]/10 flex items-center justify-center border border-[#3fff8b]/20">
+                  <span className="material-symbols-outlined text-[#3fff8b]">analytics</span>
+                </div>
               </div>
-              <ResponsiveContainer width="100%" height={Math.max(160, chartTags.length * 36)}>
-                <BarChart data={chartTags} layout="vertical" margin={{ left: 0, right: 24, top: 4, bottom: 4 }}>
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fontFamily: 'Inter', fill: 'var(--on-surface)' }} width={80} />
-                  <Tooltip cursor={{ fill: 'var(--surface-container-low)' }} content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
-                  <Bar dataKey="value" name="Amount" fill="#8b5cf6" radius={[0, 5, 5, 0]} barSize={20} opacity={0.85} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="space-y-3">
+                <div className="w-full h-2 bg-surface-container-lowest rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-[#3fff8b] to-[#13ea79] rounded-full transition-all duration-1000" 
+                    style={{ width: `${Math.max(0, Math.min(100, savRate || 0))}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-[10px] font-bold text-zinc-500 tracking-wider uppercase">
+                  <span>Efficiency</span>
+                  <span>Target: 40%</span>
+                </div>
+              </div>
             </div>
-          )}
+
+            <div className="bg-surface-container-low p-8 rounded-[2rem] border-l-4 border-[#6e9bff] shadow-xl">
+              <p className="text-[10px] tracking-widest uppercase text-zinc-500 font-bold mb-4">Top Spending Category</p>
+              {chartCategorical.length > 0 ? (
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="w-16 h-16 rounded-2xl bg-[#6e9bff]/10 flex items-center justify-center border border-[#6e9bff]/20">
+                    <span className="material-symbols-outlined text-[#6e9bff] text-3xl">
+                      {getCategoryIcon(chartCategorical[0].name)}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-extrabold text-white">{chartCategorical[0].name}</h4>
+                    <p className="text-[#6e9bff] font-bold font-headline">{currencySymbol}{chartCategorical[0].value.toLocaleString()}</p>
+                  </div>
+                </div>
+              ) : <p className="text-zinc-500 text-sm">No data</p>}
+            </div>
+          </section>
+
+          {/* Distribution */}
+          <section className="space-y-6">
+            <div className="flex justify-between items-baseline">
+              <h3 className="font-headline text-2xl font-bold tracking-tight text-white">Distribution</h3>
+              <span className="text-[10px] text-[#3fff8b] font-bold tracking-widest uppercase" onClick={() => setCatBreakdownType(catBreakdownType === 'expense' ? 'income' : 'expense')}>
+                Switch to {catBreakdownType === 'expense' ? 'Income' : 'Expense'}
+              </span>
+            </div>
+            <div className="bg-surface-container p-6 rounded-[2rem] border border-outline-variant/10 space-y-6">
+              {chartCategorical.slice(0, 5).map(({ name, id, value }, i) => {
+                const pctOfTotal = totalCatVal > 0 ? Math.round((value / totalCatVal) * 100) : 0;
+                const color = PIE_COLORS[i % PIE_COLORS.length];
+                const icon = getCategoryIcon(name);
+                return (
+                  <div key={id} className="flex items-center gap-4 group cursor-pointer" onClick={() => navToLedgerByCategory(id, catBreakdownType)}>
+                    <div className="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center transition-transform group-active:scale-90" style={{ color }}>
+                      <span className="material-symbols-outlined">{icon}</span>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-white">{name}</span>
+                        <span className="text-sm font-extrabold font-headline" style={{ color }}>{currencySymbol}{value.toLocaleString()}</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-surface-container-lowest rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pctOfTotal}%`, background: color }}></div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Recurring Payees */}
+          <section className="space-y-6">
+            <h3 className="font-headline text-2xl font-bold tracking-tight text-white">Top Payees</h3>
+            <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-6 px-6">
+              {topPayees.map((p, i) => (
+                <div key={i} className="flex-shrink-0 w-36 bg-surface-container-low p-6 rounded-[2.5rem] text-center space-y-4 border border-outline-variant/5 active:scale-95 transition-transform">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-surface-container-lowest flex items-center justify-center ring-2 ring-[#3fff8b]/20 ring-offset-4 ring-offset-[#0e0e0e]">
+                    <span className="text-xl font-bold text-[#3fff8b]">{p.name.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white truncate">{p.name}</p>
+                    <p className="text-sm font-extrabold text-[#3fff8b] font-headline mt-1">{currencySymbol}{p.value.toLocaleString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </PageShell>
     );
@@ -2058,20 +2123,29 @@ export default function App() {
       <div className="page-inner fade-in">
         <div className="dashboard-layout">
           <div className="dashboard-main-stack">
-            <div className="portfolio-hero">
-              <div className="portfolio-info">
-                <p className="portfolio-label">Net Worth</p>
-                <h1 className="portfolio-value">{currencySymbol}{balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h1>
-                {portfolioChange !== null && <div className={`portfolio-trend-chip${portfolioChange < 0 ? ' negative' : ''}`}>{portfolioChange >= 0 ? '+' : ''}{portfolioChange}% vs prev period</div>}
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#3fff8b] to-[#005d2c] p-8 rounded-[2rem] shadow-2xl">
+              <div className="relative z-10">
+                <p className="text-[10px] font-bold tracking-[0.2em] text-[#001d4e]/60 uppercase mb-2">Total Net Worth</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold font-['Manrope'] text-[#001d4e]">{currencySymbol}</span>
+                  <h1 className="text-6xl font-extrabold font-['Manrope'] text-[#001d4e] tracking-tighter">
+                    {Math.floor(balance).toLocaleString()}
+                  </h1>
+                  <span className="text-xl font-bold text-[#001d4e]/40 font-['Manrope']">
+                    .{(balance % 1).toFixed(2).split('.')[1]}
+                  </span>
+                </div>
+                {portfolioChange !== null && (
+                  <div className="inline-flex items-center gap-1 px-3 py-1 bg-[#001d4e]/10 rounded-full mt-6 backdrop-blur-md">
+                    <span className="material-symbols-outlined text-[#001d4e] text-sm">
+                      {portfolioChange >= 0 ? 'trending_up' : 'trending_down'}
+                    </span>
+                    <span className="text-[10px] font-extrabold text-[#001d4e]">{Math.abs(portfolioChange)}% vs last</span>
+                  </div>
+                )}
               </div>
-              <div className="portfolio-chart-preview">
-                {sparklineData.map((val, i) => {
-                  const max = Math.max(...sparklineData, 1);
-                  return (
-                    <div key={i} className={`chart-bar${i === sparklineData.length - 1 ? ' active' : ''}`} style={{ height: `${Math.max(8, Math.round((val / max) * 100))}%` }} />
-                  );
-                })}
-              </div>
+              <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/20 rounded-full blur-3xl"></div>
+              <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-[#001d4e]/10 rounded-full blur-2xl"></div>
             </div>
 
             <div className="dash-period-bar">
@@ -2080,27 +2154,45 @@ export default function App() {
               ))}
             </div>
 
-            <div className="summary-cards-grid">
-              <div className="summary-card income"><div className="summary-icon-box">💵</div><p className="summary-label">Income</p><h3 className="summary-value">{currencySymbol}{totalIncome.toLocaleString()}</h3></div>
-              <div className="summary-card expense"><div className="summary-icon-box">🛍️</div><p className="summary-label">Expenses</p><h3 className="summary-value">{currencySymbol}{totalExpense.toLocaleString()}</h3></div>
-              <div className={`summary-card savings${savingsRate !== null && savingsRate < 0 ? ' negative' : ''}`}><div className="summary-icon-box">📈</div><p className="summary-label">Savings Rate</p><h3 className="summary-value">{savingsRate !== null ? `${savingsRate}%` : '—'}</h3></div>
-              <div className="summary-card burn"><div className="summary-icon-box">🔥</div><p className="summary-label">Daily Burn</p><h3 className="summary-value">{currencySymbol}{burnRate.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</h3></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-surface-container-low p-6 rounded-[1.5rem] border border-outline-variant/5">
+                <p className="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant uppercase mb-4">Total Income</p>
+                <div className="flex justify-between items-end">
+                  <h2 className="text-2xl font-extrabold font-['Manrope'] text-[#3fff8b]">
+                    {currencySymbol}{totalIncome.toLocaleString()}
+                  </h2>
+                  <div className="w-10 h-10 rounded-full bg-[#3fff8b]/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[#3fff8b] text-sm">trending_up</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-surface-container-low p-6 rounded-[1.5rem] border border-outline-variant/5">
+                <p className="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant uppercase mb-4">Total Expenses</p>
+                <div className="flex justify-between items-end">
+                  <h2 className="text-2xl font-extrabold font-['Manrope'] text-[#ff716c]">
+                    {currencySymbol}{totalExpense.toLocaleString()}
+                  </h2>
+                  <div className="w-10 h-10 rounded-full bg-[#ff716c]/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[#ff716c] text-sm">trending_down</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="content-section">
               <div className="section-header-row"><h2 className="section-title-editorial">Recent Activity</h2><button className="section-action-link" onClick={navToLedger}>View All</button></div>
-              <div className="editorial-list">
-                {dashTransactions.filter(t => !t.transfer_id).slice(0, 5).map(t => {
-                  const cat = t.categories || { icon: '•', name: 'Uncategorized' };
-                  return (
-                    <div key={t.id} className="editorial-item" onClick={() => openEditTransaction(t)}>
-                      <div className="editorial-icon">{cat.icon}</div>
-                      <div className="editorial-info"><div className="editorial-title">{t.parties?.name || cat.name}</div><div className="editorial-meta">{cat.name}{t.accounts?.name ? ` · ${t.accounts.name}` : ''}{` · ${formatGroupDate(t.transaction_date)}`}</div></div>
-                      <div className="editorial-amount-wrap"><div className={`editorial-amount ${t.type}`}>{t.type === 'income' ? '+' : '-'}{currencySymbol}{parseFloat(t.amount).toFixed(2)}</div><div className="editorial-status">CLEARED</div></div>
-                    </div>
-                  );
-                })}
-                {dashTransactions.filter(t => !t.transfer_id).length === 0 && <p className="body-md" style={{ padding: '1rem 0', textAlign: 'center' }}>No transactions in this period.</p>}
+              <div className="flex flex-col gap-3">
+                {dashTransactions.filter(t => !t.transfer_id).slice(0, 5).map(t => (
+                  <TransactionItem 
+                    key={t.id} 
+                    t={t} 
+                    onClick={openEditTransaction} 
+                    accounts={accounts} 
+                    categories={categories} 
+                    currencySymbol={currencySymbol} 
+                  />
+                ))}
+                {dashTransactions.filter(t => !t.transfer_id).length === 0 && <p className="body-md text-center py-4">No transactions in this period.</p>}
               </div>
             </div>
 
@@ -2109,91 +2201,84 @@ export default function App() {
                 <h2 className="section-title-editorial">Spending by Category</h2>
                 <button className="section-action-link" onClick={navToAnalytics}>Details</button>
               </div>
-              {topCategories.length > 0 ? (() => {
-                const CAT_COLORS = ['#7c83ff', '#10b981', '#f59e0b', '#f97316', '#8b5cf6', '#06b6d4'];
-                const topTotal = topCategories.reduce((s, c) => s + c.amount, 0);
-                const otherAmt = Math.max(0, totalExpense - topTotal);
-                const otherPct = totalExpense > 0 ? Math.round((otherAmt / totalExpense) * 100) : 0;
-                return (
-                  <div className="spend-cat-list">
-                    {topCategories.map(({ name, amount, icon }, i) => {
-                      const pct = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
-                      const color = CAT_COLORS[i % CAT_COLORS.length];
-                      return (
-                        <div key={name} className="spend-cat-row">
-                          <div className="spend-cat-icon" style={{ background: `${color}1a`, color }}>{icon}</div>
-                          <div className="spend-cat-body">
-                            <div className="spend-cat-top">
-                              <span className="spend-cat-name">{name}</span>
-                              <span className="spend-cat-amount">{currencySymbol}{amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-                            </div>
-                            <div className="spend-cat-bar-track">
-                              <div className="spend-cat-bar-fill" style={{ width: `${pct}%`, background: color }} />
-                            </div>
-                            <span className="spend-cat-pct">{pct}% of expenses</span>
+              {topCategories.length > 0 ? (
+                <div className="flex flex-col gap-6 bg-surface-container p-6 rounded-[1.5rem] border border-outline-variant/5">
+                  {topCategories.map(({ name, amount, icon }, i) => {
+                    const pct = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
+                    const catIcon = getCategoryIcon(name);
+                    return (
+                      <div key={name} className="flex flex-col gap-2">
+                        <div className="flex justify-between items-center text-sm font-bold">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[#3fff8b] text-sm">{catIcon}</span>
+                            <span className="text-[#ffffff]">{name}</span>
                           </div>
+                          <span className="font-['Manrope'] text-[#3fff8b]">{pct}%</span>
                         </div>
-                      );
-                    })}
-                    {otherPct > 0 && (
-                      <div className="spend-cat-row">
-                        <div className="spend-cat-icon spend-cat-icon-other">···</div>
-                        <div className="spend-cat-body">
-                          <div className="spend-cat-top">
-                            <span className="spend-cat-name">Other</span>
-                            <span className="spend-cat-amount">{currencySymbol}{otherAmt.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-                          </div>
-                          <div className="spend-cat-bar-track">
-                            <div className="spend-cat-bar-fill" style={{ width: `${otherPct}%`, background: 'var(--outline-variant)' }} />
-                          </div>
-                          <span className="spend-cat-pct">{otherPct}% of expenses</span>
+                        <div className="h-2 bg-surface-container-low rounded-full overflow-hidden">
+                          <div className="h-full bg-[#3fff8b] rounded-full" style={{ width: `${pct}%` }}></div>
                         </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })() : <p className="body-md" style={{ opacity: 0.6, textAlign: 'center', padding: '1.5rem 0' }}>No expense data for this period.</p>}
+                    );
+                  })}
+                </div>
+              ) : <p className="body-md text-center py-8 opacity-50">No expense data for this period.</p>}
             </div>
           </div>
 
           <div className="dashboard-side-stack">
-            <div className="smart-insight-card">
-              <div className="insight-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" /></svg>Smart Insights</div>
-              <div className="insight-list">{smartInsights.map((ins, i) => (<div key={i} className="insight-item"><div className="insight-dot" style={{ background: ins.color }} /><p className="insight-content"><strong>{ins.title}:</strong> {ins.text}</p></div>))}</div>
+            <div className="bg-surface-container-low p-6 rounded-[1.5rem] border border-outline-variant/5">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="material-symbols-outlined text-[#3fff8b]">auto_awesome</span>
+                <h3 className="font-['Manrope'] font-bold text-sm text-[#ffffff] uppercase tracking-wider">AI Insights</h3>
+              </div>
+              <div className="flex flex-col gap-4">
+                {smartInsights.map((ins, i) => (
+                  <div key={i} className="p-4 bg-surface-container rounded-xl border border-outline-variant/10 text-xs">
+                    <p className="text-on-surface-variant leading-relaxed">
+                      <strong className="text-[#3fff8b] font-bold">{ins.title}:</strong> {ins.text}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="analytics-card-sm">
-              <p className="analytics-title-sm">Account Balances</p>
-              {(() => {
-                const maxBal = Math.max(...accounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
-                const renderRow = (a, excluded) => {
-                  const bal = accountBalances[a.id] || 0;
-                  const meta = ACCT_META[a.type || 'asset'];
-                  const pct = Math.min(Math.abs(bal) / maxBal * 100, 100);
+
+            <div className="bg-surface-container-low p-6 rounded-[1.5rem] border border-outline-variant/5">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#3fff8b]">account_balance</span>
+                  <h3 className="font-['Manrope'] font-bold text-sm text-[#ffffff] uppercase tracking-wider">Accounts</h3>
+                </div>
+                <button className="text-[10px] font-bold text-[#3fff8b] uppercase" onClick={() => setView('account_management')}>Manage</button>
+              </div>
+              <div className="flex flex-col gap-3">
+                {(() => {
+                  const maxBal = Math.max(...accounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
                   return (
-                    <div key={a.id} className={`acct-bal-item${excluded ? ' acct-bal-excluded' : ''}`}>
-                      <div className="acct-bal-icon" style={{ background: `${meta.color}18`, color: meta.color }}>{meta.icon}</div>
-                      <div className="acct-bal-info">
-                        <div className="acct-bal-name">{a.name}</div>
-                        <div className="acct-bal-meta">
-                          <span className="acct-bal-type" style={{ color: meta.color }}>{meta.label}</span>
-                          {excluded && <span className="acct-bal-excl">excl.</span>}
-                        </div>
-                        <div className="acct-bal-bar-track">
-                          <div className="acct-bal-bar-fill" style={{ width: `${pct}%`, background: bal < 0 ? 'var(--tertiary-fixed-variant)' : meta.color }} />
-                        </div>
-                      </div>
-                      <span className={`acct-bal-val${bal < 0 ? ' neg' : ''}`}>{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {accounts.map(a => {
+                        const bal = accountBalances[a.id] || 0;
+                        const pct = Math.min(Math.abs(bal) / maxBal * 100, 100);
+                        const isExcluded = a.exclude_from_total;
+                        return (
+                          <div key={a.id} className={`p-4 bg-surface-container rounded-xl border border-outline-variant/10 ${isExcluded ? 'opacity-60' : ''}`}>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs font-bold text-[#ffffff]">{a.name}</span>
+                              <span className={`font-['Manrope'] text-xs font-extrabold ${bal < 0 ? 'text-[#ff716c]' : 'text-[#3fff8b]'}`}>
+                                {currencySymbol}{bal.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="h-1 bg-surface-container-low rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${bal < 0 ? 'bg-[#ff716c]' : 'bg-[#3fff8b]'}`} style={{ width: `${pct}%` }}></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {accounts.length === 0 && <p className="text-xs text-on-surface-variant text-center py-4">No accounts yet.</p>}
                     </div>
                   );
-                };
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {accounts.filter(a => !a.exclude_from_total).map(a => renderRow(a, false))}
-                    {accounts.filter(a => a.exclude_from_total).map(a => renderRow(a, true))}
-                    {accounts.length === 0 && <p className="body-md" style={{ opacity: 0.6 }}>No accounts yet.</p>}
-                  </div>
-                );
-              })()}
+                })()}
+              </div>
             </div>
           </div>
         </div>
