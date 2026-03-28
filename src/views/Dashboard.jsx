@@ -27,39 +27,38 @@ const Dashboard = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Main Content Stack */}
           <div className="lg:col-span-8 space-y-10">
-            {/* Portfolio Hero - Unified Monochromatic */}
-            <div className="relative overflow-hidden bg-on-surface p-10 md:p-14 rounded-[2.5rem] shadow-2xl">
-              <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+            {/* Portfolio Hero - Modern Architectural */}
+            <div className="relative overflow-hidden bg-surface-low p-10 md:p-14 rounded-[3rem] border border-outline-variant/10 shadow-sm">
+              <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-10">
                 <div>
-                  <p className="text-[10px] font-bold tracking-[0.3em] text-surface/50 uppercase mb-4">Total Net Worth</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold font-headline text-surface/80">{currencySymbol}</span>
-                    <h1 className="text-7xl md:text-9xl font-extrabold font-headline text-surface tracking-tighter leading-none">
+                  <p className="text-[10px] font-bold tracking-[0.4em] text-on-surface-variant uppercase mb-6 opacity-60">Total Net Worth</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-extrabold font-headline text-on-surface opacity-40">{currencySymbol}</span>
+                    <h1 className="text-7xl md:text-9xl font-black font-headline text-on-surface tracking-[-0.04em] leading-none">
                       {Math.floor(balance).toLocaleString()}
                     </h1>
-                    <span className="text-2xl font-bold text-surface/30 font-headline">
+                    <span className="text-2xl font-bold text-on-surface-variant opacity-30 font-headline">
                       .{(balance % 1).toFixed(2).split('.')[1]}
                     </span>
                   </div>
                   {portfolioChange !== null && (
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface/5 rounded-full mt-10 border border-surface/5 backdrop-blur-sm">
-                      <span className={`material-symbols-outlined text-sm ${portfolioChange >= 0 ? 'text-accent' : 'text-error'}`}>
+                    <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-on-surface/[0.03] rounded-2xl mt-10 border border-outline-variant/10">
+                      <span className={`material-symbols-outlined text-[14px] ${portfolioChange >= 0 ? 'text-accent' : 'text-error'}`}>
                         {portfolioChange >= 0 ? 'trending_up' : 'trending_down'}
                       </span>
-                      <span className="text-[10px] font-black text-surface/60 uppercase tracking-widest">{Math.abs(portfolioChange)}% vs last</span>
+                      <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">{Math.abs(portfolioChange)}% vs last</span>
                     </div>
                   )}
                 </div>
-                {/* Modern Sparkline */}
-                <div className="flex items-end gap-2 h-20">
-                  {sparklineData.slice(-15).map((v, i) => {
+                {/* Refined Minimalist Bars */}
+                <div className="flex items-end gap-1.5 h-24 pb-2 opacity-20">
+                  {sparklineData.slice(-18).map((v, i) => {
                     const max = Math.max(...sparklineData, 1);
-                    const h = Math.max(15, (v / max) * 100);
-                    return <div key={i} className="w-2 bg-surface/10 rounded-full transition-all duration-500 hover:bg-surface/30" style={{ height: `${h}%` }}></div>;
+                    const h = Math.max(8, (v / max) * 100);
+                    return <div key={i} className="w-1.5 bg-on-surface rounded-full transition-all duration-700" style={{ height: `${h}%` }}></div>;
                   })}
                 </div>
               </div>
-              <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-transparent to-surface/5 pointer-events-none"></div>
             </div>
 
             {/* Quick Stats Grid - Minimalist */}

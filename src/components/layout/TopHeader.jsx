@@ -2,7 +2,7 @@ import React from 'react';
 import Logo from './Logo';
 
 const TopHeader = ({ session, theme, onToggleTheme, collapsed }) => (
-  <nav className={`fixed top-0 right-0 left-0 z-50 flex justify-between items-center px-6 h-16 bg-surface/80 backdrop-blur-xl border-b border-outline-variant transition-all duration-300 ${collapsed ? 'md:left-20' : 'md:left-64'}`}>
+  <nav className={`fixed top-0 right-0 left-0 z-50 flex justify-between items-center px-6 h-16 bg-surface/80 backdrop-blur-xl transition-all duration-300 ${collapsed ? 'md:left-20' : 'md:left-64'}`}>
     {/* Mobile-only branding (since sidebar is hidden on small screens) */}
     <div className="flex md:hidden items-center gap-3">
       <Logo className="w-7 h-7 text-on-surface" />
