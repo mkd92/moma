@@ -40,6 +40,7 @@ export function useAppData(session, navigate, pathname) {
   const [ledgerSort, setLedgerSort] = useState('date_desc');
   const [drillCategory, setDrillCategory] = useState(null);
   const [catBreakdownType, setCatBreakdownType] = useState('expense');
+  const [settingsType, setSettingsType] = useState('expense');
 
   // Bulk selection state (ledger)
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
@@ -679,6 +680,7 @@ export function useAppData(session, navigate, pathname) {
     currencySymbol, setCurrencySymbol, currencyCode, setCurrencyCode, defaultAccountId, setDefaultAccountId,
     dashPeriod, setDashPeriod, analyticsFilters, setAnalyticsFilters, filterOptions, setFilterOptions,
     ledgerSort, setLedgerSort, drillCategory, setDrillCategory, catBreakdownType, setCatBreakdownType,
+    settingsType, setSettingsType,
     bulkSelectMode, setBulkSelectMode, selectedTxIds, setSelectedTxIds, bulkCategory, setBulkCategory,
     accountBalances, dashDateRange, dashTransactions, activeAccountIds, dashActiveTransactions,
     balance, totalIncome, totalExpense, topCategories, topExpenseCat, savingsRate, burnRate,
