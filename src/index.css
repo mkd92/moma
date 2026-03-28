@@ -23,43 +23,43 @@
 }
 
 :root {
-  /* --- Taskee-Inspired Dark Theme (Default) --- */
+  /* --- Unified High-Contrast Dark Theme --- */
   --primary: #ffffff;
   --on-primary: #000000;
-  --accent: #3fff8b; /* Keep the emerald as a functional accent */
+  --accent: #3fff8b;
   
-  --surface: #111111;        /* Main content background */
-  --surface-low: #1a1a1a;    /* Cards / secondary areas */
-  --surface-container: #000000; /* Sidebar background */
-  --surface-high: #222222;
-  --surface-highest: #333333;
+  --surface: #000000;           /* Unified Background */
+  --surface-low: #0a0a0a;       /* Cards / Groupings */
+  --surface-container: #000000;  /* Sidebar */
+  --surface-high: #111111;
+  --surface-highest: #1a1a1a;
   --surface-lowest: #000000;
   
   --on-surface: #ffffff;
-  --on-surface-variant: #888888;
-  --outline-variant: rgba(255, 255, 255, 0.05);
+  --on-surface-variant: #71717a;
+  --outline-variant: rgba(255, 255, 255, 0.08);
   
-  --primary-light: rgba(255, 255, 255, 0.1);
+  --primary-light: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="light"] {
-  /* --- Taskee-Inspired Light Theme --- */
+  /* --- Unified High-Contrast Light Theme --- */
   --primary: #000000;
   --on-primary: #ffffff;
   --accent: #00c853;
   
-  --surface: #f4f4f4;        /* Main content background */
-  --surface-low: #ffffff;    /* Cards */
-  --surface-container: #ffffff; /* Sidebar background */
-  --surface-high: #eeeeee;
-  --surface-highest: #dddddd;
+  --surface: #ffffff;           /* Unified Background */
+  --surface-low: #fafafa;       /* Cards / Groupings */
+  --surface-container: #ffffff;  /* Sidebar */
+  --surface-high: #f4f4f5;
+  --surface-highest: #e4e4e7;
   --surface-lowest: #ffffff;
   
   --on-surface: #000000;
-  --on-surface-variant: #888888;
-  --outline-variant: rgba(0, 0, 0, 0.05);
+  --on-surface-variant: #71717a;
+  --outline-variant: rgba(0, 0, 0, 0.08);
   
-  --primary-light: rgba(0, 0, 0, 0.05);
+  --primary-light: rgba(0, 0, 0, 0.03);
 }
 
 /* Base styles */

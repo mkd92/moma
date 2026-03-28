@@ -27,65 +27,64 @@ const Dashboard = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Main Content Stack */}
           <div className="lg:col-span-8 space-y-10">
-            {/* Portfolio Hero */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-[#3fff8b] to-[#005d2c] p-8 md:p-12 rounded-[2.5rem] shadow-2xl">
+            {/* Portfolio Hero - Unified Monochromatic */}
+            <div className="relative overflow-hidden bg-on-surface p-10 md:p-14 rounded-[2.5rem] shadow-2xl">
               <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
                 <div>
-                  <p className="text-[10px] font-bold tracking-[0.3em] text-[#001d4e]/60 uppercase mb-3">Total Net Worth</p>
+                  <p className="text-[10px] font-bold tracking-[0.3em] text-surface/50 uppercase mb-4">Total Net Worth</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold font-headline text-[#001d4e]">{currencySymbol}</span>
-                    <h1 className="text-6xl md:text-8xl font-extrabold font-headline text-[#001d4e] tracking-tighter leading-none">
+                    <span className="text-4xl font-extrabold font-headline text-surface/80">{currencySymbol}</span>
+                    <h1 className="text-7xl md:text-9xl font-extrabold font-headline text-surface tracking-tighter leading-none">
                       {Math.floor(balance).toLocaleString()}
                     </h1>
-                    <span className="text-2xl font-bold text-[#001d4e]/40 font-headline">
+                    <span className="text-2xl font-bold text-surface/30 font-headline">
                       .{(balance % 1).toFixed(2).split('.')[1]}
                     </span>
                   </div>
                   {portfolioChange !== null && (
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#001d4e]/10 rounded-full mt-8 backdrop-blur-md border border-[#001d4e]/10">
-                      <span className="material-symbols-outlined text-[#001d4e] text-sm">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface/5 rounded-full mt-10 border border-surface/5 backdrop-blur-sm">
+                      <span className={`material-symbols-outlined text-sm ${portfolioChange >= 0 ? 'text-accent' : 'text-error'}`}>
                         {portfolioChange >= 0 ? 'trending_up' : 'trending_down'}
                       </span>
-                      <span className="text-[10px] font-black text-[#001d4e] uppercase tracking-wider">{Math.abs(portfolioChange)}% vs last period</span>
+                      <span className="text-[10px] font-black text-surface/60 uppercase tracking-widest">{Math.abs(portfolioChange)}% vs last</span>
                     </div>
                   )}
                 </div>
-                {/* Minimal Sparkline Preview */}
-                <div className="flex items-end gap-1.5 h-16 opacity-40">
-                  {sparklineData.slice(-12).map((v, i) => {
+                {/* Modern Sparkline */}
+                <div className="flex items-end gap-2 h-20">
+                  {sparklineData.slice(-15).map((v, i) => {
                     const max = Math.max(...sparklineData, 1);
-                    const h = Math.max(10, (v / max) * 100);
-                    return <div key={i} className="w-1.5 bg-[#001d4e] rounded-full" style={{ height: `${h}%` }}></div>;
+                    const h = Math.max(15, (v / max) * 100);
+                    return <div key={i} className="w-2 bg-surface/10 rounded-full transition-all duration-500 hover:bg-surface/30" style={{ height: `${h}%` }}></div>;
                   })}
                 </div>
               </div>
-              <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-[80px]"></div>
-              <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-[#001d4e]/10 rounded-full blur-[60px]"></div>
+              <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-transparent to-surface/5 pointer-events-none"></div>
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-xl transition-transform active:scale-[0.99]">
-                <div className="flex justify-between items-start mb-6">
-                  <p className="text-[10px] font-bold tracking-[0.3em] text-zinc-500 uppercase">Total Income</p>
-                  <div className="w-10 h-10 rounded-full bg-[#3fff8b]/10 flex items-center justify-center border border-[#3fff8b]/10">
-                    <span className="material-symbols-outlined text-[#3fff8b] text-sm">arrow_upward</span>
+            {/* Quick Stats Grid - Minimalist */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant transition-all hover:bg-surface-high group">
+                <p className="text-[10px] font-bold tracking-[0.3em] text-on-surface-variant uppercase mb-8">Inflow</p>
+                <div className="flex justify-between items-end">
+                  <h2 className="text-4xl font-extrabold font-headline text-on-surface tracking-tight">
+                    {currencySymbol}{totalIncome.toLocaleString()}
+                  </h2>
+                  <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center border border-outline-variant group-hover:bg-primary group-hover:text-on-primary transition-all">
+                    <span className="material-symbols-outlined text-sm">arrow_outward</span>
                   </div>
                 </div>
-                <h2 className="text-3xl font-extrabold font-headline text-white tracking-tight">
-                  {currencySymbol}{totalIncome.toLocaleString()}
-                </h2>
               </div>
-              <div className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-xl transition-transform active:scale-[0.99]">
-                <div className="flex justify-between items-start mb-6">
-                  <p className="text-[10px] font-bold tracking-[0.3em] text-zinc-500 uppercase">Total Expenses</p>
-                  <div className="w-10 h-10 rounded-full bg-[#ff716c]/10 flex items-center justify-center border border-[#ff716c]/10">
-                    <span className="material-symbols-outlined text-[#ff716c] text-sm">arrow_downward</span>
+              <div className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant transition-all hover:bg-surface-high group">
+                <p className="text-[10px] font-bold tracking-[0.3em] text-on-surface-variant uppercase mb-8">Outflow</p>
+                <div className="flex justify-between items-end">
+                  <h2 className="text-4xl font-extrabold font-headline text-on-surface tracking-tight">
+                    {currencySymbol}{totalExpense.toLocaleString()}
+                  </h2>
+                  <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center border border-outline-variant group-hover:bg-primary group-hover:text-on-primary transition-all">
+                    <span className="material-symbols-outlined text-sm">south_east</span>
                   </div>
                 </div>
-                <h2 className="text-3xl font-extrabold font-headline text-white tracking-tight">
-                  {currencySymbol}{totalExpense.toLocaleString()}
-                </h2>
               </div>
             </div>
 
