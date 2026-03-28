@@ -9,56 +9,87 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
     { key: 'budgets', label: 'Budgets', onClick: onBudgets, icon: 'account_balance_wallet' },
   ];
   return (
-    <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 border-r border-zinc-800/15 bg-[#131313] z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
-      <div className="p-8 flex items-center gap-3">
-        <div className="w-8 h-8 shrink-0">
-          <img src="/logo.svg" alt="MOMA" className="w-full h-full object-contain" />
+    <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] bg-[#0e0e0e] z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
+      {/* Brand area */}
+      <div className="pt-10 pb-12 px-6 flex items-center gap-4">
+        <div className={`transition-all duration-500 ${collapsed ? 'w-8 h-8' : 'w-10 h-10'}`}>
+          <img src="/logo.svg" alt="MOMA" className="w-full h-full object-contain filter brightness-110" />
         </div>
-        {!collapsed && <span className="text-[#3fff8b] font-bold font-headline text-3xl tracking-tighter">MOMA</span>}
+        {!collapsed && (
+          <span className="text-white font-headline text-2xl font-black tracking-[-0.05em] fade-in">
+            MOMA
+          </span>
+        )}
       </div>
 
-      <nav className="flex-1 px-4 space-y-2">
-        {NAV_ITEMS.map(item => (
-          <button
-            key={item.key}
-            className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all w-full ${view === item.key ? 'text-[#3fff8b] font-bold bg-emerald-500/5 border-r-2 border-[#3fff8b]' : 'text-zinc-400 hover:bg-zinc-900'}`}
-            onClick={item.onClick}
-          >
-            <span className="material-symbols-outlined">{item.icon}</span>
-            {!collapsed && <span className="font-['Manrope'] text-sm tracking-wide">{item.label}</span>}
-          </button>
-        ))}
+      {/* Navigation */}
+      <nav className="flex-1 px-3 space-y-1">
+        {NAV_ITEMS.map(item => {
+          const isActive = view === item.key;
+          return (
+            <button
+              key={item.key}
+              className={`group flex items-center relative w-full h-12 rounded-xl transition-all duration-300 ${isActive ? 'text-[#3fff8b]' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.03]'}`}
+              onClick={item.onClick}
+            >
+              <div className="w-14 flex items-center justify-center shrink-0">
+                <span className={`material-symbols-outlined transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
+                  {item.icon}
+                </span>
+              </div>
+              {!collapsed && (
+                <span className="font-['Inter'] text-[13px] font-semibold tracking-wide uppercase fade-in">
+                  {item.label}
+                </span>
+              )}
+              {isActive && (
+                <div className="absolute left-0 w-1 h-6 bg-[#3fff8b] rounded-r-full shadow-[0_0_12px_rgba(63,255,139,0.4)]"></div>
+              )}
+            </button>
+          );
+        })}
       </nav>
 
-      <div className="p-4 space-y-2 border-t border-zinc-800/15">
-        <button
-          className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full text-zinc-400 hover:bg-zinc-900 transition-all`}
+      {/* Footer Actions */}
+      <div className="px-3 pb-8 space-y-1">
+        <button 
+          className="flex items-center w-full h-12 rounded-xl text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.03] transition-all duration-300"
           onClick={onSettings}
         >
-          <span className="material-symbols-outlined">settings</span>
-          {!collapsed && <span className="font-['Manrope'] text-sm tracking-wide">Settings</span>}
+          <div className="w-14 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined">settings</span>
+          </div>
+          {!collapsed && <span className="font-['Inter'] text-[13px] font-semibold tracking-wide uppercase fade-in">Settings</span>}
         </button>
-        <button
-          className={`flex items-center gap-4 px-4 py-3 rounded-xl w-full text-zinc-400 hover:bg-zinc-900 transition-all`}
+        
+        <button 
+          className="flex items-center w-full h-12 rounded-xl text-zinc-500 hover:text-[#ff716c] hover:bg-[#ff716c]/[0.05] transition-all duration-300"
           onClick={onLogout}
         >
-          <span className="material-symbols-outlined">logout</span>
-          {!collapsed && <span className="font-['Manrope'] text-sm tracking-wide">Logout</span>}
+          <div className="w-14 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined">logout</span>
+          </div>
+          {!collapsed && <span className="font-['Inter'] text-[13px] font-semibold tracking-wide uppercase fade-in">Logout</span>}
         </button>
-        <button 
-          className="mt-4 w-full bg-[#3fff8b] text-[#005d2c] py-3 rounded-xl font-bold active:scale-95 transition-transform flex items-center justify-center gap-2"
-          onClick={onNewTx}
-        >
-          <span className="material-symbols-outlined">add</span>
-          {!collapsed && <span>New Transaction</span>}
-        </button>
+
+        {/* Floating New Transaction FAB - Minimal version */}
+        <div className="pt-6 px-2">
+          <button 
+            className={`flex items-center justify-center gap-3 bg-[#3fff8b] text-[#005d2c] rounded-2xl shadow-lg shadow-[#3fff8b]/10 active:scale-95 transition-all duration-300 overflow-hidden ${collapsed ? 'w-10 h-10 mx-auto' : 'w-full h-12'}`}
+            onClick={onNewTx}
+          >
+            <span className="material-symbols-outlined shrink-0">add</span>
+            {!collapsed && <span className="font-bold text-xs uppercase tracking-widest whitespace-nowrap fade-in">New Entry</span>}
+          </button>
+        </div>
       </div>
       
+      {/* Collapse Toggle - Now more subtle */}
       <button 
-        className="absolute -right-3 top-1/2 bg-[#131313] border border-zinc-800/15 rounded-full p-1 text-zinc-500 hover:text-white"
+        className="absolute -right-3 top-12 w-6 h-6 bg-[#0e0e0e] border border-white/10 rounded-full flex items-center justify-center text-zinc-600 hover:text-white hover:border-white/20 transition-all shadow-xl"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
           {collapsed ? 'chevron_right' : 'chevron_left'}
         </span>
       </button>
