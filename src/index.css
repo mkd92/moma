@@ -6,15 +6,15 @@
   --color-on-primary: #005d2c;
   --color-on-primary-container: #004f24;
   
-  --color-surface: #0e0e0e;
-  --color-surface-low: #131313;
-  --color-surface-container: #1a1a1a;
-  --color-surface-high: #20201f;
-  --color-surface-highest: #262626;
-  --color-surface-lowest: #000000;
+  --color-surface: var(--surface);
+  --color-surface-low: var(--surface-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-high: var(--surface-high);
+  --color-surface-highest: var(--surface-highest);
+  --color-surface-lowest: var(--surface-lowest);
   
-  --color-on-surface: #ffffff;
-  --color-on-surface-variant: #adaaaa;
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
   
   --color-secondary: #6e9bff;
   --color-tertiary: #ffe483;
@@ -25,13 +25,36 @@
 }
 
 :root {
+  /* Default Dark Theme */
   --primary: #3fff8b;
   --primary-container: #13ea79;
   --on-primary: #005d2c;
+  
   --surface: #0e0e0e;
+  --surface-low: #131313;
+  --surface-container: #1a1a1a;
+  --surface-high: #20201f;
+  --surface-highest: #262626;
+  --surface-lowest: #000000;
+  
   --on-surface: #ffffff;
   --on-surface-variant: #adaaaa;
   --outline-variant: #484847;
+  --background: #0e0e0e;
+}
+
+[data-theme="light"] {
+  --surface: #f8fafc;
+  --surface-low: #f1f5f9;
+  --surface-container: #ffffff;
+  --surface-high: #e2e8f0;
+  --surface-highest: #cbd5e1;
+  --surface-lowest: #ffffff;
+  
+  --on-surface: #0f172a;
+  --on-surface-variant: #64748b;
+  --outline-variant: #e2e8f0;
+  --background: #f8fafc;
 }
 
 /* Base styles */
@@ -45,9 +68,10 @@
   html, body, #root {
     height: 100%;
     width: 100%;
-    background-color: #0e0e0e;
-    color: #ffffff;
-    overflow: hidden; /* App shell handles its own scrolling */
+    background-color: var(--surface);
+    color: var(--on-surface);
+    overflow: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body {
@@ -74,7 +98,7 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #262626;
+    background: var(--surface-highest);
     border-radius: 10px;
   }
 }

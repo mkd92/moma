@@ -7,7 +7,7 @@
     width: 100vw;
     height: 100dvh;
     overflow: hidden;
-    background-color: #0e0e0e;
+    background-color: var(--surface);
   }
 
   .page-content {
@@ -20,6 +20,7 @@
     padding-top: 64px; /* Space for TopHeader */
     position: relative;
     height: 100%;
+    background-color: var(--surface);
   }
 
   @media (max-width: 767px) {
@@ -27,8 +28,6 @@
       padding-bottom: 90px; /* Space for BottomNav */
     }
   }
-
-  /* Desktop padding-left for sidebar is handled by inline style/Tailwind in App.jsx */
 
   /* =========================================
      ANIMATIONS
@@ -52,7 +51,7 @@
   .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
@@ -80,8 +79,8 @@
   .ptr-spinner {
     width: 24px;
     height: 24px;
-    border: 2.5px solid rgba(63, 255, 139, 0.1);
-    border-top-color: #3fff8b;
+    border: 2.5px solid var(--primary-light);
+    border-top-color: var(--primary);
     border-radius: 50%;
     animation: ptr-spin 0.8s linear infinite;
   }
@@ -98,28 +97,39 @@
      RECHARTS STYLING
      ========================================= */
   .recharts-cartesian-grid-line {
-    stroke: #484847;
+    stroke: var(--outline-variant);
     opacity: 0.15;
   }
 
   .recharts-tooltip-cursor {
-    fill: #1a1a1a;
+    fill: var(--surface-container);
     opacity: 0.5;
   }
 
   .recharts-default-tooltip {
-    background-color: #1a1a1a !important;
-    border: 1px solid rgba(72, 72, 71, 0.3) !important;
+    background-color: var(--surface-container) !important;
+    border: 1px solid var(--outline-variant) !important;
     border-radius: 12px !important;
-    box-shadow: 0 12px 24px rgba(0,0,0,0.4) !important;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.2) !important;
   }
 
   /* =========================================
      INPUT RESET
      ========================================= */
   input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1) brightness(0.8);
+    filter: invert(var(--date-icon-invert));
     opacity: 0.5;
     cursor: pointer;
   }
 }
+
+:root {
+  --date-icon-invert: 1;
+}
+
+[data-theme="light"] {
+  --date-icon-invert: 0;
+}
+
+.font-headline { font-family: 'Manrope', sans-serif; }
+.font-body { font-family: 'Inter', sans-serif; }
