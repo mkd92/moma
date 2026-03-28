@@ -88,10 +88,10 @@ const Dashboard = ({
             </div>
 
             {/* Recent Activity */}
-            <section className="space-y-6">
-              <div className="flex justify-between items-center px-2">
-                <h3 className="font-headline text-2xl font-bold tracking-tight text-white">Recent Activity</h3>
-                <button className="text-[10px] font-bold text-[#3fff8b] uppercase tracking-[0.2em]" onClick={navToLedger}>View All</button>
+            <section className="space-y-8">
+              <div className="flex justify-between items-center px-4">
+                <h3 className="font-headline text-xs font-black tracking-[0.3em] text-on-surface uppercase">Recent Entries</h3>
+                <button className="text-[9px] font-black text-on-surface-variant hover:text-primary uppercase tracking-[0.2em] transition-all" onClick={navToLedger}>View All</button>
               </div>
               <div className="space-y-3">
                 {dashTransactions.filter(t => !t.transfer_id).slice(0, 5).map(t => (
