@@ -1,4 +1,5 @@
 import React from 'react';
+import Logo from './Logo';
 
 // Sidebar — desktop left-rail navigation
 const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, collapsed, setCollapsed }) => {
@@ -12,6 +13,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
     <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] bg-surface-container z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
       {/* Brand area */}
       <div className="pt-10 pb-10 px-6 flex items-center gap-3">
+        <Logo className={`transition-all duration-500 text-on-surface ${collapsed ? 'w-8 h-8' : 'w-10 h-10'}`} />
         {!collapsed && (
           <span className="text-on-surface font-headline text-2xl font-black tracking-[-0.05em] fade-in">
             MOMA
@@ -47,7 +49,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
       {/* Footer Actions */}
       <div className="px-4 pb-8 space-y-2">
         <button 
-          className="flex items-center w-full h-11 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.05] transition-all duration-300"
+          className="flex items-center w-full h-11 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.03] transition-all duration-300"
           onClick={onSettings}
         >
           <div className="w-12 flex items-center justify-center shrink-0">

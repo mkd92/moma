@@ -1,11 +1,10 @@
 import React from 'react';
+import Logo from './Logo';
 
 const TopHeader = ({ session, theme, onToggleTheme, collapsed }) => (
   <nav className={`fixed top-0 right-0 left-0 z-50 flex justify-between items-center px-6 h-16 bg-surface/80 backdrop-blur-xl border-b border-outline-variant transition-all duration-300 ${collapsed ? 'md:left-20' : 'md:left-64'}`}>
     <div className="flex items-center gap-3">
-      <div className="w-8 h-8 shrink-0">
-        <img src="/logo.svg" alt="MOMA" className="w-full h-full object-contain filter brightness-110" />
-      </div>
+      <Logo className="w-8 h-8 text-on-surface" />
       <span className="font-headline font-black text-xl tracking-tight text-on-surface">MOMA</span>
     </div>
     
