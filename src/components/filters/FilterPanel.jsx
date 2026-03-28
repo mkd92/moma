@@ -63,43 +63,55 @@ const FilterPanel = ({ categories, tags, accounts, filterOptions, onUpdateFilter
         </div>
       </div>
 
-      {/* Category Hierarchy - Re-designed for Architectural theme */}
-      <div className="space-y-6">
+      {/* Category Hierarchy - Architectural Tiered List */}
+      <div className="space-y-8">
         <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase ml-1 opacity-60">Categories</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10">
           {/* Uncategorized Special Case */}
-          <button 
-            className={`p-6 rounded-[2rem] border text-left transition-all group ${filterOptions.categoryIds.includes('__uncategorized__') ? 'bg-on-surface text-surface border-on-surface shadow-xl' : 'bg-on-surface/[0.02] border-outline-variant/10 text-on-surface-variant hover:border-on-surface-variant'}`} 
-            onClick={() => toggleCategory('__uncategorized__')}
-          >
-            <span className="text-[11px] font-black uppercase tracking-[0.2em]">Uncategorized</span>
-          </button>
+          <div className="space-y-4">
+            <button 
+              className={`w-full py-3 px-4 rounded-xl text-left transition-all flex items-center gap-3 ${filterOptions.categoryIds.includes('__uncategorized__') ? 'bg-on-surface text-surface font-black shadow-lg' : 'text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.03]'}`} 
+              onClick={() => toggleCategory('__uncategorized__')}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40"></span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em]">Uncategorized</span>
+            </button>
+          </div>
 
-          {parentCategories.map(parent => (
-            <div key={parent.id} className="space-y-3">
-              <button 
-                className={`w-full p-6 rounded-[2rem] border text-left transition-all flex items-center gap-4 group ${filterOptions.categoryIds.includes(parent.id) ? 'bg-on-surface text-surface border-on-surface shadow-xl' : 'bg-on-surface/[0.02] border-outline-variant/10 text-on-surface-variant hover:border-on-surface-variant'}`} 
-                onClick={() => toggleCategory(parent.id)}
-              >
-                <span className={`text-xl transition-transform duration-500 ${filterOptions.categoryIds.includes(parent.id) ? 'scale-110' : 'group-hover:scale-110'}`}>{parent.icon}</span>
-                <span className="text-[11px] font-black uppercase tracking-[0.2em]">{parent.name}</span>
-              </button>
-              
-              {/* Refined Subcategories */}
-              <div className="grid grid-cols-1 gap-2 pl-4">
-                {getSubs(parent.id).map(sub => (
-                  <button 
-                    key={sub.id} 
-                    className={`w-full py-2.5 px-4 rounded-xl text-left transition-all flex items-center gap-3 ${filterOptions.categoryIds.includes(sub.id) ? 'text-on-surface font-black' : 'text-on-surface-variant/50 hover:text-on-surface'}`} 
-                    onClick={() => toggleCategory(sub.id)}
-                  >
-                    <span className="w-1 h-1 rounded-full bg-current opacity-20"></span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider">{sub.name}</span>
-                  </button>
-                ))}
+          {parentCategories.map(parent => {
+            const subs = getSubs(parent.id);
+            const isParentSelected = filterOptions.categoryIds.includes(parent.id);
+            return (
+              <div key={parent.id} className="space-y-4">
+                <button 
+                  className={`w-full py-3 px-4 rounded-xl text-left transition-all flex items-center gap-4 group ${isParentSelected ? 'bg-on-surface text-surface font-black shadow-lg' : 'text-on-surface hover:bg-on-surface/[0.03]'}`} 
+                  onClick={() => toggleCategory(parent.id)}
+                >
+                  <span className={`text-lg transition-transform duration-500 ${isParentSelected ? 'scale-110' : 'group-hover:scale-110'}`}>{parent.icon}</span>
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em]">{parent.name}</span>
+                </button>
+                
+                {/* Refined Subcategories - Tiered Indentation */}
+                {subs.length > 0 && (
+                  <div className="flex flex-col gap-1 pl-6 border-l border-outline-variant/10 ml-6">
+                    {subs.map(sub => {
+                      const isSubSelected = filterOptions.categoryIds.includes(sub.id);
+                      return (
+                        <button 
+                          key={sub.id} 
+                          className={`w-full py-2 px-4 rounded-lg text-left transition-all flex items-center gap-3 ${isSubSelected ? 'text-primary font-black bg-primary/5' : 'text-on-surface-variant/60 hover:text-on-surface hover:bg-on-surface/[0.02]'}`} 
+                          onClick={() => toggleCategory(sub.id)}
+                        >
+                          <span className={`w-1 h-1 rounded-full bg-current ${isSubSelected ? 'opacity-100' : 'opacity-20'}`}></span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider">{sub.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
