@@ -28,9 +28,9 @@ const AuthView = ({
             Back
           </button>
           <div className="w-16 h-16 rounded-[1.5rem] bg-[#1a1a1a] flex items-center justify-center border border-white/5 shadow-2xl">
-            <span className="material-symbols-outlined text-[#3fff8b] text-3xl">token</span>
+            <img src="/logo.svg" alt="MOMA" className="w-10 h-10 object-contain" />
           </div>
-          <h2 className="font-headline text-3xl font-extrabold text-white tracking-tight">Access Digital Ledger</h2>
+          <h2 className="font-headline text-3xl font-extrabold text-white tracking-tight">Access MOMA</h2>
         </div>
 
         <div className="bg-[#131313] p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-2xl space-y-8">

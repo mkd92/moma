@@ -10,10 +10,11 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
   ];
   return (
     <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 border-r border-zinc-800/15 bg-[#131313] z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
-      <div className="p-8">
-        {!collapsed && <span className="text-[#3fff8b] font-bold font-headline text-xl tracking-tight">Editorial Finance</span>}
-        {collapsed && <span className="text-[#3fff8b] font-bold font-headline text-xl">EF</span>}
-        {!collapsed && <p className="text-zinc-500 text-[10px] mt-1 uppercase tracking-widest font-label font-bold">Premium Tier</p>}
+      <div className="p-8 flex items-center gap-3">
+        <div className="w-8 h-8 shrink-0">
+          <img src="/logo.svg" alt="MOMA" className="w-full h-full object-contain" />
+        </div>
+        {!collapsed && <span className="text-[#3fff8b] font-bold font-headline text-3xl tracking-tighter">MOMA</span>}
       </div>
 
       <nav className="flex-1 px-4 space-y-2">

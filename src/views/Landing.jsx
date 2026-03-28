@@ -8,10 +8,13 @@ const Landing = ({ session, setView }) => {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#6e9bff]/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2"></div>
       
       <div className="relative z-10 max-w-xl text-center space-y-12 fade-in">
-        <div className="space-y-4">
+        <div className="space-y-4 flex flex-col items-center">
+          <div className="w-20 h-20 mb-4">
+            <img src="/logo.svg" alt="MOMA" className="w-full h-full object-contain" />
+          </div>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a1a1a] border border-white/5 mb-4">
             <span className="w-2 h-2 rounded-full bg-[#3fff8b] animate-pulse"></span>
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">The Digital Ledger</span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">MOMA</span>
           </div>
           <h1 className="font-headline text-5xl md:text-7xl font-extrabold text-white tracking-tighter leading-[1.1]">
             Architectural Clarity for <span className="text-[#3fff8b]">Wealth.</span>
