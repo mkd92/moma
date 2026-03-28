@@ -13,8 +13,8 @@ const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNew
         <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: view === 'ledger' ? "'FILL' 1" : "'FILL' 0" }}>list_alt</span>
         <span className="font-['Inter'] text-[10px] font-bold uppercase tracking-[0.05em] mt-1">History</span>
       </button>
-      <button className="flex flex-col items-center justify-center bg-on-surface text-surface w-12 h-12 rounded-2xl shadow-xl active:scale-90 transition-transform -translate-y-4" onClick={onNewTx}>
-        <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>add</span>
+      <button className="flex flex-col items-center justify-center bg-on-surface text-surface w-16 h-16 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] active:scale-90 transition-all -translate-y-6 border-4 border-surface group" onClick={onNewTx}>
+        <span className="material-symbols-outlined transition-transform duration-300 group-hover:rotate-90" style={{ fontSize: '32px', fontVariationSettings: "'wght' 700" }}>add</span>
       </button>
       <button className={`flex flex-col items-center justify-center transition-all duration-300 ${view === 'analytics' ? 'text-primary' : 'text-on-surface-variant'}`} onClick={onAnalytics}>
         <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: view === 'analytics' ? "'FILL' 1" : "'FILL' 0" }}>pie_chart</span>
