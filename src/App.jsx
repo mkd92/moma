@@ -347,6 +347,8 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
       <BottomNav view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onSettings={onSettings} onNewTx={onNewTx} />
     </div>
   );
+};
+
 const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, onSetDefault, defaultAccountId }) => accts.length === 0 ? null : (
   <div className="space-y-4 mb-8">
     <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">{title}</p>
