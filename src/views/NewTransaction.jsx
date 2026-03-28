@@ -50,7 +50,7 @@ const NewTransaction = ({
 
   return (
     <PageShell {...shellProps}>
-      <div className="page-inner max-w-2xl mx-auto space-y-8 pb-32" onKeyDown={(e) => { if (e.key === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleTransaction(); } }}>
+      <div className="page-inner max-w-2xl mx-auto space-y-8 pb-32 px-6" onKeyDown={(e) => { if (e.key === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); handleTransaction(); } }}>
         <div className="flex justify-between items-center px-2">
           <h2 className="font-headline text-3xl font-black tracking-tight text-on-surface uppercase">{isEditing ? 'Edit Entry' : 'New Entry'}</h2>
           <div className="flex items-center gap-4">
