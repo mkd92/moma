@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 
 export function useTransactionForm(session, accounts, categories, transactions, defaultAccountId, fetchTransactions, setView) {
