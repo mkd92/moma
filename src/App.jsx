@@ -347,33 +347,41 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
       <BottomNav view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onSettings={onSettings} onNewTx={onNewTx} />
     </div>
   );
-};
-
 const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, onSetDefault, defaultAccountId }) => accts.length === 0 ? null : (
-  <div style={{ marginBottom: '1.5rem' }}>
-    <p className="label-sm" style={{ marginBottom: '0.75rem' }}>{title}</p>
-    <div className="category-manager">
+  <div className="space-y-4 mb-8">
+    <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">{title}</p>
+    <div className="bg-surface-low rounded-[2rem] border border-outline-variant/10 overflow-hidden divide-y divide-white/5 shadow-xl">
       {accts.map(acc => {
-        const meta = ACCT_META[acc.type || 'asset'];
         const bal = accountBalances[acc.id] || 0;
         const isDefault = acc.id === defaultAccountId;
         return (
-          <div key={acc.id} className="editorial-item">
-            <div className="editorial-icon">{meta.icon}</div>
-            <div className="editorial-info">
-              <div className="editorial-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                {acc.name}
-                <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-low)', color: meta.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{meta.label}</span>
-                {acc.exclude_from_total && <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-low)', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>excl.</span>}
-                {isDefault && <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-full)', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Default</span>}
+          <div key={acc.id} className="p-6 flex items-center justify-between group hover:bg-white/5 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-zinc-400 group-hover:text-[#3fff8b] transition-colors border border-white/5">
+                <span className="material-symbols-outlined">{ACCT_META[acc.type || 'asset']?.icon || 'account_balance'}</span>
               </div>
-              <div className="editorial-meta">{currencySymbol}{bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-white tracking-tight">{acc.name}</p>
+                  {isDefault && <span className="text-[8px] font-black bg-[#3fff8b] text-[#005d2c] px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">Default</span>}
+                </div>
+                <p className={`text-xs font-bold font-headline mt-0.5 ${bal < 0 ? 'text-[#ff716c]' : 'text-[#3fff8b]'}`}>
+                  {currencySymbol}{bal.toLocaleString()}
+                </p>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-              {!isDefault && <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', color: '#f59e0b' }} title="Set as Default" onClick={() => onSetDefault(acc.id)}>☆</button>}
-              {isDefault && <span style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', color: '#f59e0b' }}>★</span>}
-              <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem' }} onClick={() => onEdit(acc)}>✎</button>
-              <button className="delete-btn" onClick={() => onDelete(acc.id)}>✕</button>
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              {!isDefault && (
+                <button className="text-[10px] font-bold text-zinc-500 hover:text-[#3fff8b] uppercase tracking-widest transition-colors mr-2" onClick={() => onSetDefault(acc.id)}>Set Default</button>
+              )}
+              <button className="p-2 text-zinc-500 hover:text-[#3fff8b] transition-colors" onClick={() => onEdit(acc)}>
+                <span className="material-symbols-outlined text-sm">edit</span>
+              </button>
+              {!isDefault && (
+                <button className="p-2 text-zinc-500 hover:text-[#ff716c] transition-colors" onClick={() => onDelete(acc.id)}>
+                  <span className="material-symbols-outlined text-sm">delete</span>
+                </button>
+              )}
             </div>
           </div>
         );
@@ -382,165 +390,110 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
   </div>
 );
 
-const EmptyChart = ({ h = 280, msg = 'No data for this period' }) => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: h, color: 'var(--on-surface-variant)', fontSize: '0.875rem', fontStyle: 'italic' }}>{msg}</div>
+const EmptyChart = ({ h = 280, msg = 'No data available' }) => (
+  <div className="flex flex-col items-center justify-center space-y-4" style={{ height: h }}>
+    <div className="w-12 h-12 rounded-2xl bg-surface-low flex items-center justify-center text-zinc-700 border border-white/5">
+      <span className="material-symbols-outlined">analytics</span>
+    </div>
+    <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest italic">{msg}</p>
+  </div>
 );
 
 const AnalyticsTooltip = ({ active, payload, label, currencySymbol }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--ghost-border)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', boxShadow: 'var(--shadow-ambient)', fontFamily: 'Inter, sans-serif' }}>
-      <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>{label}</p>
-      {payload.filter(e => e.dataKey !== 'expenseMA').map((e, i) => (
-        <p key={i} style={{ fontSize: '0.875rem', fontWeight: 600, color: e.color, margin: '0.15rem 0', fontFamily: 'Manrope, sans-serif' }}>{e.name}: {currencySymbol}{Number(e.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-      ))}
+    <div className="bg-[#1a1a1a] p-4 rounded-2xl border border-outline-variant/20 shadow-2xl space-y-3 min-w-[160px]">
+      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] border-b border-white/5 pb-2">{label}</p>
+      <div className="space-y-2">
+        {payload.filter(e => e.dataKey !== 'expenseMA').map((e, i) => (
+          <div key={i} className="flex justify-between items-center gap-4">
+            <span className="text-[10px] font-bold text-zinc-400 uppercase">{e.name}</span>
+            <span className="text-xs font-black font-headline" style={{ color: e.color }}>
+              {currencySymbol}{Number(e.value).toLocaleString()}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 
-// Advanced Filter Panel Component
-const FilterPanel = ({
-  categories,
-  tags,
-  accounts,
-  filterOptions,
-  onUpdateFilter,
-  onResetFilters
-}) => {
+const FilterPanel = ({ categories, tags, accounts, filterOptions, onUpdateFilter, onResetFilters }) => {
   const parentCategories = categories.filter(c => !c.parent_id);
   const getSubs = (pid) => categories.filter(c => c.parent_id === pid);
-
-  const toggleCategory = (id) => {
-    const next = filterOptions.categoryIds.includes(id)
-      ? filterOptions.categoryIds.filter(x => x !== id)
-      : [...filterOptions.categoryIds, id];
-    onUpdateFilter('categoryIds', next);
-  };
-
-  const toggleTag = (id) => {
-    const next = filterOptions.tagIds.includes(id)
-      ? filterOptions.tagIds.filter(x => x !== id)
-      : [...filterOptions.tagIds, id];
-    onUpdateFilter('tagIds', next);
-  };
-
-  const toggleAccount = (id) => {
-    const next = filterOptions.accountIds.includes(id)
-      ? filterOptions.accountIds.filter(x => x !== id)
-      : [...filterOptions.accountIds, id];
-    onUpdateFilter('accountIds', next);
-  };
+  const toggleCategory = (id) => onUpdateFilter('categoryIds', filterOptions.categoryIds.includes(id) ? filterOptions.categoryIds.filter(x => x !== id) : [...filterOptions.categoryIds, id]);
+  const toggleTag = (id) => onUpdateFilter('tagIds', filterOptions.tagIds.includes(id) ? filterOptions.tagIds.filter(x => x !== id) : [...filterOptions.tagIds, id]);
+  const toggleAccount = (id) => onUpdateFilter('accountIds', filterOptions.accountIds.includes(id) ? filterOptions.accountIds.filter(x => x !== id) : [...filterOptions.accountIds, id]);
 
   return (
-    <div className="advanced-filters slide-up" style={{ marginTop: '1.5rem', background: 'var(--surface-container-low)', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2.5rem' }}>
-
-        {/* Type Section */}
-        <div className="filter-section">
-          <p className="label-sm" style={{ marginBottom: '1rem' }}>Transaction Type</p>
-          <div className="type-toggle-bar" style={{ background: 'var(--surface-container-lowest)' }}>
+    <div className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-2xl space-y-10 fade-in mt-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="space-y-4">
+          <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Type</p>
+          <div className="flex bg-[#0e0e0e] p-1 rounded-xl gap-1 border border-white/5">
             {['all', 'income', 'expense', 'transfer'].map(t => (
-              <button
-                key={t}
-                className={`type-btn ${filterOptions.type === t ? (t === 'all' ? 'active-transfer' : `active-${t}`) : ''}`}
-                onClick={() => onUpdateFilter('type', t)}
-                style={{ textTransform: 'capitalize' }}
-              >
-                {t}
-              </button>
+              <button key={t} className={`flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${filterOptions.type === t ? 'bg-[#3fff8b] text-[#005d2c]' : 'text-zinc-500 hover:text-zinc-300'}`} onClick={() => onUpdateFilter('type', t)}>{t}</button>
             ))}
           </div>
         </div>
-
-        {/* Date Range Section */}
-        <div className="filter-section">
-          <p className="label-sm" style={{ marginBottom: '1rem' }}>Custom Date Range</p>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <input
-              type="date"
-              className="text-input"
-              style={{ background: 'var(--surface-container-lowest)', fontSize: '0.8125rem' }}
-              value={filterOptions.dateRange.start || ''}
-              onChange={(e) => onUpdateFilter('dateRange', { ...filterOptions.dateRange, start: e.target.value })}
-            />
-            <input
-              type="date"
-              className="text-input"
-              style={{ background: 'var(--surface-container-lowest)', fontSize: '0.8125rem' }}
-              value={filterOptions.dateRange.end || ''}
-              onChange={(e) => onUpdateFilter('dateRange', { ...filterOptions.dateRange, end: e.target.value })}
-            />
-          </div>
-        </div>
-
-        {/* Accounts Section */}
-        <div className="filter-section">
-          <p className="label-sm" style={{ marginBottom: '1rem' }}>Accounts</p>
-          <div className="filter-chips">
-            {accounts.map(acc => (
-              <button
-                key={acc.id}
-                className={`filter-chip ${filterOptions.accountIds.includes(acc.id) ? 'active' : ''}`}
-                onClick={() => toggleAccount(acc.id)}
-                style={{ background: filterOptions.accountIds.includes(acc.id) ? 'var(--primary-light)' : 'var(--surface-container-lowest)' }}
-              >
-                {acc.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Categories Section */}
-        <div className="filter-section" style={{ gridColumn: 'span 2' }}>
-          <p className="label-sm" style={{ marginBottom: '1rem' }}>Hierarchical Categories</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', maxHeight: '240px', overflowY: 'auto', paddingRight: '1rem' }}>
-            {/* Uncategorized sentinel chip */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <label className="filter-chip" style={{ cursor: 'pointer', justifyContent: 'flex-start', gap: '0.5rem', background: filterOptions.categoryIds.includes('__uncategorized__') ? 'var(--primary-light)' : 'var(--surface-container-lowest)', borderColor: filterOptions.categoryIds.includes('__uncategorized__') ? 'var(--primary)' : 'var(--ghost-border)' }}>
-                <input type="checkbox" checked={filterOptions.categoryIds.includes('__uncategorized__')} onChange={() => toggleCategory('__uncategorized__')} style={{ display: 'none' }} />
-                <span>•</span>
-                <span style={{ fontWeight: 700 }}>Uncategorized</span>
-              </label>
-            </div>
-            {parentCategories.map(parent => (
-              <div key={parent.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <label className="filter-chip" style={{ cursor: 'pointer', justifyContent: 'flex-start', gap: '0.5rem', background: filterOptions.categoryIds.includes(parent.id) ? 'var(--primary-light)' : 'var(--surface-container-lowest)', borderColor: filterOptions.categoryIds.includes(parent.id) ? 'var(--primary)' : 'var(--ghost-border)' }}>
-                  <input type="checkbox" checked={filterOptions.categoryIds.includes(parent.id)} onChange={() => toggleCategory(parent.id)} style={{ display: 'none' }} />
-                  <span>{parent.icon}</span>
-                  <span style={{ fontWeight: 700 }}>{parent.name}</span>
-                </label>
-                {getSubs(parent.id).map(sub => (
-                  <label key={sub.id} className="filter-chip filter-chip-sub" style={{ cursor: 'pointer', marginLeft: '1.5rem', justifyContent: 'flex-start', gap: '0.5rem', background: filterOptions.categoryIds.includes(sub.id) ? 'var(--primary-light)' : 'transparent', borderColor: filterOptions.categoryIds.includes(sub.id) ? 'var(--primary)' : 'var(--ghost-border)', opacity: filterOptions.categoryIds.includes(sub.id) ? 1 : 0.6 }}>
-                    <input type="checkbox" checked={filterOptions.categoryIds.includes(sub.id)} onChange={() => toggleCategory(sub.id)} style={{ display: 'none' }} />
-                    <span>{sub.icon}</span>
-                    <span>{sub.name}</span>
-                  </label>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Tags Section */}
-        <div className="filter-section" style={{ gridColumn: '1 / -1' }}>
-          <p className="label-sm" style={{ marginBottom: '1rem' }}>Tags</p>
-          <div className="filter-chips">
-            {tags.map(tag => (
-              <button
-                key={tag.id}
-                className={`filter-chip ${filterOptions.tagIds.includes(tag.id) ? 'active' : ''}`}
-                onClick={() => toggleTag(tag.id)}
-                style={{ background: filterOptions.tagIds.includes(tag.id) ? 'var(--primary-light)' : 'var(--surface-container-lowest)' }}
-              >
-                #{tag.name}
-              </button>
-            ))}
+        <div className="space-y-4">
+          <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Date Range</p>
+          <div className="flex items-center gap-3">
+            <input type="date" className="flex-1 bg-[#1a1a1a] border-none rounded-xl p-4 text-xs text-white focus:ring-2 focus:ring-[#3fff8b]/20" value={filterOptions.dateRange.start || ''} onChange={e => onUpdateFilter('dateRange', { ...filterOptions.dateRange, start: e.target.value })} />
+            <span className="text-zinc-800 font-bold">/</span>
+            <input type="date" className="flex-1 bg-[#1a1a1a] border-none rounded-xl p-4 text-xs text-white focus:ring-2 focus:ring-[#3fff8b]/20" value={filterOptions.dateRange.end || ''} onChange={e => onUpdateFilter('dateRange', { ...filterOptions.dateRange, end: e.target.value })} />
           </div>
         </div>
       </div>
 
-      <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--ghost-border)', display: 'flex', justifyContent: 'flex-end' }}>
-        <button className="section-action-link" onClick={onResetFilters} style={{ color: 'var(--tertiary-fixed-variant)' }}>Reset All Filters</button>
+      <div className="space-y-4">
+        <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Account Filter</p>
+        <div className="flex flex-wrap gap-2">
+          {accounts.map(a => (
+            <button key={a.id} className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${filterOptions.accountIds.includes(a.id) ? 'bg-[#3fff8b] text-[#005d2c] border-[#3fff8b]' : 'bg-surface-container text-zinc-500 border-outline-variant/10 hover:border-[#3fff8b]/30'}`} onClick={() => toggleAccount(a.id)}>{a.name}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Category Hierarchy</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <button className={`p-4 rounded-2xl border text-left transition-all ${filterOptions.categoryIds.includes('__uncategorized__') ? 'bg-[#3fff8b]/10 border-[#3fff8b] text-[#3fff8b]' : 'bg-surface-container border-outline-variant/10 text-zinc-500'}`} onClick={() => toggleCategory('__uncategorized__')}>
+            <span className="text-xs font-bold uppercase tracking-widest">Uncategorized</span>
+          </button>
+          {parentCategories.map(parent => (
+            <div key={parent.id} className="space-y-2">
+              <button className={`w-full p-4 rounded-2xl border text-left transition-all flex items-center gap-3 ${filterOptions.categoryIds.includes(parent.id) ? 'bg-[#3fff8b]/10 border-[#3fff8b] text-[#3fff8b]' : 'bg-surface-container border-outline-variant/10 text-zinc-500'}`} onClick={() => toggleCategory(parent.id)}>
+                <span className="text-lg">{parent.icon}</span>
+                <span className="text-xs font-bold uppercase tracking-widest">{parent.name}</span>
+              </button>
+              <div className="pl-4 space-y-1">
+                {getSubs(parent.id).map(sub => (
+                  <button key={sub.id} className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${filterOptions.categoryIds.includes(sub.id) ? 'bg-[#3fff8b]/10 border-[#3fff8b] text-[#3fff8b]' : 'bg-[#0e0e0e]/50 border-white/5 text-zinc-600'}`} onClick={() => toggleCategory(sub.id)}>
+                    <span className="text-xs opacity-70">{sub.icon}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">{sub.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {tags.length > 0 && (
+        <div className="space-y-4">
+          <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Tags</p>
+          <div className="flex flex-wrap gap-2">
+            {tags.map(t => (
+              <button key={t.id} className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${filterOptions.tagIds.includes(t.id) ? 'bg-[#3fff8b] text-[#005d2c] border-[#3fff8b]' : 'bg-surface-container text-zinc-500 border-outline-variant/10 hover:border-[#3fff8b]/30'}`} onClick={() => toggleTag(t.id)}>#{t.name}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center pt-6 border-t border-white/5">
+        <button className="text-[10px] font-bold text-[#ff716c] uppercase tracking-widest hover:text-[#ff716c]/80 transition-colors" onClick={onResetFilters}>Reset All Engine Filters</button>
+        <p className="text-[10px] font-bold text-zinc-700 uppercase tracking-[0.3em]">Vault Filter Matrix</p>
       </div>
     </div>
   );
@@ -1559,49 +1512,113 @@ export default function App() {
     const pillDark = 'theme-pill-option' + (theme === 'dark' ? ' active' : '');
     const currencyOptions = Object.entries(CURRENCY_SYMBOLS).map(([code, sym]) => ({ value: code, label: code + ' (' + sym + ')' }));
     if (view === 'settings') settingsContent = (
-      <div className="page-inner fade-in">
-        <div className="section-header-row"><h2 className="section-title-editorial">Settings</h2></div>
-        <div className="settings-panel">
-          <div className="settings-section">
-            <p className="label-sm">Preferences</p>
-            <div className="settings-group">
-              <div className="settings-card">
-                <span className="sc-text">Currency</span>
-                <div style={{ width: '180px' }}>
+      <div className="page-inner max-w-2xl mx-auto space-y-10 pb-32">
+        <div className="flex justify-between items-center px-2">
+          <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[#3fff8b]">Settings</h2>
+        </div>
+
+        <div className="space-y-8">
+          {/* Preferences Section */}
+          <section className="space-y-4">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">Preferences</p>
+            <div className="bg-surface-low rounded-[2.5rem] border border-outline-variant/10 overflow-hidden divide-y divide-white/5 shadow-2xl">
+              <div className="p-6 flex items-center justify-between gap-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-[#3fff8b]">
+                    <span className="material-symbols-outlined">payments</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Default Currency</p>
+                    <p className="text-xs text-zinc-500">System-wide display currency</p>
+                  </div>
+                </div>
+                <div className="w-48">
                   <CustomDropdown options={currencyOptions} value={currencyCode} onChange={setCurrencyCode} showSearch={false} />
                 </div>
               </div>
-              <div className="settings-card">
-                <span className="sc-text">Appearance</span>
-                <button className="theme-pill-toggle" onClick={toggleTheme}>
-                  <span className={pillLight}><SunIcon />Light</span>
-                  <span className={pillDark}><MoonIcon />Dark</span>
+
+              <div className="p-6 flex items-center justify-between gap-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-[#3fff8b]">
+                    <span className="material-symbols-outlined">{theme === 'dark' ? 'dark_mode' : 'light_mode'}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Appearance</p>
+                    <p className="text-xs text-zinc-500">Dark and Light mode</p>
+                  </div>
+                </div>
+                <div className="flex bg-[#0e0e0e] p-1 rounded-xl gap-1 border border-white/5">
+                  <button 
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${theme === 'light' ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    onClick={() => theme !== 'light' && toggleTheme()}
+                  >
+                    <span className="material-symbols-outlined text-sm">light_mode</span>
+                    Light
+                  </button>
+                  <button 
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
+                    onClick={() => theme !== 'dark' && toggleTheme()}
+                  >
+                    <span className="material-symbols-outlined text-sm">dark_mode</span>
+                    Dark
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Management Section */}
+          <section className="space-y-4">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">Data Management</p>
+            <div className="bg-surface-low rounded-[2.5rem] border border-outline-variant/10 overflow-hidden divide-y divide-white/5 shadow-2xl">
+              {[
+                { key: 'account_management', label: 'Accounts', icon: 'account_balance', desc: 'Bank, cash, and credit cards' },
+                { key: 'category_management', label: 'Categories', icon: 'category', desc: 'Custom expense and income types' },
+                { key: 'party_management', label: 'Parties', icon: 'storefront', desc: 'Frequent payees and sources' },
+                { key: 'tag_management', label: 'Tags', icon: 'label', desc: 'Granular labels for analysis' }
+              ].map(item => (
+                <button 
+                  key={item.key}
+                  className="w-full p-6 flex items-center justify-between group hover:bg-white/5 transition-all text-left"
+                  onClick={() => setView(item.key)}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-zinc-400 group-hover:text-[#3fff8b] transition-colors">
+                      <span className="material-symbols-outlined">{item.icon}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white group-hover:text-[#3fff8b] transition-colors">{item.label}</p>
+                      <p className="text-xs text-zinc-500">{item.desc}</p>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-zinc-700 group-hover:text-[#3fff8b] transition-all">chevron_right</span>
                 </button>
+              ))}
+            </div>
+          </section>
+
+          {/* User Section */}
+          <section className="space-y-4">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">Account</p>
+            <div className="bg-surface-low rounded-[2.5rem] border border-outline-variant/10 p-8 shadow-2xl space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#3fff8b] text-[#005d2c] flex items-center justify-center font-black text-xl">
+                  {session?.user?.email?.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">{session?.user?.email}</p>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Premium User</p>
+                </div>
               </div>
+              <button 
+                className="w-full bg-[#1a1a1a] text-[#ff716c] py-4 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-white/5 hover:bg-[#ff716c]/5 transition-all active:scale-[0.98]"
+                onClick={handleLogout}
+              >
+                <span className="material-symbols-outlined text-sm">logout</span>
+                Sign Out from Vault
+              </button>
             </div>
-          </div>
-          <div className="settings-section">
-            <p className="label-sm">Manage</p>
-            <div className="settings-group">
-              <button className="settings-nav-btn" onClick={() => setView('account_management')}>Accounts <span className="arrow">&#8250;</span></button>
-              <button className="settings-nav-btn" onClick={() => setView('category_management')}>Categories <span className="arrow">&#8250;</span></button>
-              <button className="settings-nav-btn" onClick={() => setView('party_management')}>Parties <span className="arrow">&#8250;</span></button>
-              <button className="settings-nav-btn" onClick={() => setView('tag_management')}>Tags <span className="arrow">&#8250;</span></button>
-            </div>
-          </div>
-          <div className="settings-section">
-            <p className="label-sm">Account</p>
-            <div className="settings-group">
-              <div className="settings-card" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-                <span className="label-sm">Signed in as</span>
-                <span style={{ fontSize: '0.875rem', color: 'var(--on-surface)', fontWeight: 500 }}>{session?.user?.email}</span>
-              </div>
-            </div>
-            <button className="settings-logout-btn" onClick={handleLogout}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-              Sign Out
-            </button>
-          </div>
+          </section>
         </div>
       </div>
     );
@@ -1609,64 +1626,87 @@ export default function App() {
       const assetAccts = accounts.filter(a => (a.type || 'asset') === 'asset');
       const liabilityAccts = accounts.filter(a => a.type === 'liability');
       const tempAccts = accounts.filter(a => a.type === 'temp');
+      
       const editAcctCurrentBalance = editingAccount
         ? (() => {
           const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
-          if (editAcctMode === 'opening') {
-            return txSum + (parseFloat(editAcctValue) || 0);
-          } else {
-            return parseFloat(editAcctValue) || 0;
-          }
+          return editAcctMode === 'opening' ? txSum + (parseFloat(editAcctValue) || 0) : parseFloat(editAcctValue) || 0;
         })()
         : 0;
+
       const editAcctDerivedOpening = editingAccount && editAcctMode === 'current'
         ? (() => {
           const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
           return (parseFloat(editAcctValue) || 0) - txSum;
         })()
         : null;
+
       if (editingAccount) {
         acctEditModal = createPortal(
           <div className="modal-overlay" onClick={() => setEditingAccount(null)}>
-            <div className="modal-sheet" onClick={e => e.stopPropagation()}>
-              <h3 className="headline-md">Edit Account</h3>
-              <form onSubmit={handleUpdateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
-                <div className="category-selection-area">
-                  <p className="label-sm">Account Name</p>
-                  <input type="text" className="text-input" value={editAcctName} onChange={e => setEditAcctName(e.target.value)} required />
+            <div className="bg-[#131313] p-8 rounded-[2.5rem] border border-outline-variant/10 w-full max-w-md slide-up space-y-8" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center">
+                <h3 className="font-headline text-2xl font-bold text-white">Edit Account</h3>
+                <button className="text-zinc-500 hover:text-white" onClick={() => setEditingAccount(null)}>
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateAccount} className="space-y-6">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Account Name</p>
+                  <input 
+                    type="text" 
+                    className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium"
+                    value={editAcctName} 
+                    onChange={e => setEditAcctName(e.target.value)} 
+                    required 
+                  />
                 </div>
-                <div className="category-selection-area">
-                  <p className="label-sm">Balance Mode</p>
-                  <div className="type-toggle-bar" style={{ marginTop: '0.5rem' }}>
-                    <button type="button" className={`type-btn ${editAcctMode === 'opening' ? 'active-transfer' : ''}`} onClick={() => { setEditAcctMode('opening'); setEditAcctValue(String(parseFloat(editingAccount.initial_balance) || 0)); }}>Opening Balance</button>
-                    <button type="button" className={`type-btn ${editAcctMode === 'current' ? 'active-transfer' : ''}`} onClick={() => { setEditAcctMode('current'); setEditAcctValue(String(accountBalances[editingAccount.id] || 0)); }}>Current Balance</button>
+
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Balance Mode</p>
+                  <div className="flex bg-[#0e0e0e] p-1 rounded-xl gap-1 border border-white/5">
+                    <button type="button" className={`flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${editAcctMode === 'opening' ? 'bg-[#3fff8b] text-[#005d2c]' : 'text-zinc-500'}`} onClick={() => { setEditAcctMode('opening'); setEditAcctValue(String(parseFloat(editingAccount.initial_balance) || 0)); }}>Opening</button>
+                    <button type="button" className={`flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${editAcctMode === 'current' ? 'bg-[#3fff8b] text-[#005d2c]' : 'text-zinc-500'}`} onClick={() => { setEditAcctMode('current'); setEditAcctValue(String(accountBalances[editingAccount.id] || 0)); }}>Current</button>
                   </div>
                 </div>
-                <div className="category-selection-area">
-                  <p className="label-sm">{editAcctMode === 'opening' ? 'Opening Balance' : 'Set Current Balance'}</p>
-                  <input type="number" step="0.01" className="text-input" value={editAcctValue} onChange={e => setEditAcctValue(e.target.value)} required />
+
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">{editAcctMode === 'opening' ? 'Opening Balance' : 'Current Balance'}</p>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium"
+                    value={editAcctValue} 
+                    onChange={e => setEditAcctValue(e.target.value)} 
+                    required 
+                  />
                 </div>
-                <div style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', padding: '0.875rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                  {editAcctMode === 'opening' ? (
-                    <p className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
-                      Resulting current balance: <strong style={{ color: 'var(--on-surface)' }}>{currencySymbol}{editAcctCurrentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                    </p>
-                  ) : (
-                    <>
-                      <p className="body-md" style={{ color: 'var(--on-surface-variant)' }}>
-                        Calculated opening balance: <strong style={{ color: 'var(--on-surface)' }}>{currencySymbol}{editAcctDerivedOpening.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                      </p>
-                      <p style={{ fontSize: '0.72rem', color: 'var(--on-surface-variant)', opacity: 0.7 }}>Opening = Current − transaction sum</p>
-                    </>
-                  )}
+
+                <div className="p-4 bg-[#0e0e0e] rounded-xl border border-white/5 space-y-1">
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">
+                    {editAcctMode === 'opening' ? 'Resulting Current' : 'Calculated Opening'}
+                  </p>
+                  <p className="text-sm font-bold text-[#3fff8b] font-headline">
+                    {currencySymbol}{editAcctMode === 'opening' ? editAcctCurrentBalance.toLocaleString() : editAcctDerivedOpening?.toLocaleString()}
+                  </p>
                 </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.25rem 0', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={editAcctExclude} onChange={e => setEditAcctExclude(e.target.checked)} />
-                  <span className="body-md">Exclude from Net Worth</span>
-                </label>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button type="submit" className="add-cat-btn" style={{ flex: 1 }}>Save Changes</button>
-                  <button type="button" className="icon-btn-text" onClick={() => setEditingAccount(null)}>Cancel</button>
+
+                <button 
+                  className="flex items-center gap-3 w-full py-2 group cursor-pointer"
+                  type="button"
+                  onClick={() => setEditAcctExclude(!editAcctExclude)}
+                >
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${editAcctExclude ? 'bg-[#ff716c] border-[#ff716c]' : 'border-zinc-700'}`}>
+                    {editAcctExclude && <span className="material-symbols-outlined text-white text-xs font-black">check</span>}
+                  </div>
+                  <span className="text-xs font-bold text-zinc-400 group-hover:text-zinc-200 transition-colors">Exclude from total Net Worth</span>
+                </button>
+
+                <div className="flex gap-4 pt-4">
+                  <button type="submit" className="flex-1 bg-[#3fff8b] text-[#005d2c] py-4 rounded-xl font-bold uppercase tracking-widest text-xs active:scale-95 transition-all shadow-lg">Save Changes</button>
+                  <button type="button" className="px-6 text-zinc-500 font-bold text-xs uppercase tracking-widest" onClick={() => setEditingAccount(null)}>Cancel</button>
                 </div>
               </form>
             </div>
@@ -1674,49 +1714,114 @@ export default function App() {
           document.body
         );
       }
+
+      const ManagedAcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, defaultAccountId }) => accts.length === 0 ? null : (
+        <div className="space-y-4">
+          <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">{title}</p>
+          <div className="bg-surface-low rounded-[2rem] border border-outline-variant/10 overflow-hidden divide-y divide-white/5 shadow-xl">
+            {accts.map(acc => {
+              const bal = accountBalances[acc.id] || 0;
+              const isDefault = acc.id === defaultAccountId;
+              return (
+                <div key={acc.id} className="p-6 flex items-center justify-between group hover:bg-white/5 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-zinc-400">
+                      <span className="material-symbols-outlined">{ACCT_META[acc.type || 'asset']?.icon || 'account_balance'}</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-white">{acc.name}</p>
+                        {isDefault && <span className="text-[8px] font-black bg-[#3fff8b] text-[#005d2c] px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">Default</span>}
+                        {acc.exclude_from_net_worth && <span className="text-[8px] font-black bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">Excluded</span>}
+                      </div>
+                      <p className={`text-xs font-bold font-headline mt-0.5 ${bal < 0 ? 'text-[#ff716c]' : 'text-[#3fff8b]'}`}>
+                        {currencySymbol}{bal.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className="p-2 text-zinc-500 hover:text-[#3fff8b] transition-colors" onClick={() => onEdit(acc)}>
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                    </button>
+                    {!isDefault && (
+                      <button className="p-2 text-zinc-500 hover:text-[#ff716c] transition-colors" onClick={() => onDelete(acc.id)}>
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+
       settingsContent = (
-        <div className="page-inner slide-up">
-          <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Accounts</h2></div>
-          <div className="settings-controls fade-in">
-            <div style={{ marginBottom: '2rem', padding: '1rem', background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', border: '1px solid var(--ghost-border)' }}>
+        <div className="page-inner max-w-2xl mx-auto space-y-10 pb-32">
+          <div className="flex items-center gap-4 px-2">
+            <button className="w-10 h-10 rounded-xl bg-surface-low flex items-center justify-center text-zinc-500 hover:text-white transition-colors" onClick={() => setView('settings')}>
+              <span className="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[#3fff8b]">Accounts</h2>
+          </div>
+
+          <div className="space-y-10 fade-in">
+            <div className="bg-surface-low p-8 rounded-[2.5rem] border border-[#3fff8b]/20 shadow-2xl shadow-[#3fff8b]/5">
               <CustomDropdown
-                label="Default Account"
-                options={accounts.map(a => ({ value: a.id, label: a.name, icon: ACCT_META[a.type || 'asset']?.icon || '🏦' }))}
+                label="Primary Spending Account"
+                options={accounts.map(a => ({ value: a.id, label: a.name, icon: ACCT_META[a.type || 'asset']?.icon || 'account_balance' }))}
                 value={defaultAccountId}
                 onChange={handleSetDefaultAccount}
                 placeholder="Select Default Account"
               />
-              <p style={{ fontSize: '0.72rem', color: 'var(--on-surface-variant)', marginTop: '0.5rem', opacity: 0.8 }}>
-                This account will be pre-selected when you create a new transaction.
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-4 ml-1 opacity-60">
+                Pre-selected for all new transactions.
               </p>
             </div>
-            <AcctGroup title="Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
-            <AcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
-            <AcctGroup title="Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
-            <form onSubmit={handleCreateAccount} className="add-category-form">
-              <p className="label-sm">Add Account</p>
-              <input type="text" placeholder="Account Name" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required />
-              <input type="number" step="0.01" placeholder="Initial Balance (0)" value={newAccountBalance} onChange={(e) => setNewAccountBalance(e.target.value)} />
-              <CustomDropdown
-                label="Account Type"
-                options={[
-                  { value: 'asset', label: 'Asset (Bank, Cash, Wallet)', icon: '🏦' },
-                  { value: 'liability', label: 'Liability (Loan, Credit Card)', icon: '💳' },
-                  { value: 'temp', label: 'Temporary / Transit', icon: '⏳' }
-                ]}
-                value={newAccountType}
-                onChange={v => {
-                  setNewAccountType(v);
-                  if (v !== 'asset') setNewAccountExclude(true);
-                  else setNewAccountExclude(false);
-                }}
-              />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0', cursor: 'pointer' }}>
-                <input type="checkbox" checked={newAccountExclude} onChange={e => setNewAccountExclude(e.target.checked)} />
-                <span className="body-md">Exclude from total Net Worth</span>
-              </label>
-              <button type="submit" className="add-cat-btn">Add Account</button>
-            </form>
+
+            <ManagedAcctGroup title="Asset Accounts" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+            <ManagedAcctGroup title="Liability Accounts" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+            <ManagedAcctGroup title="Transit & Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+
+            <section className="space-y-4 pt-6">
+              <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">Register New Account</p>
+              <form onSubmit={handleCreateAccount} className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-2xl space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Account Name</p>
+                    <input type="text" placeholder="e.g. Main Checking" className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Initial Balance</p>
+                    <input type="number" step="0.01" placeholder="0.00" className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium" value={newAccountBalance} onChange={(e) => setNewAccountBalance(e.target.value)} />
+                  </div>
+                </div>
+                <CustomDropdown
+                  label="Classification"
+                  options={[
+                    { value: 'asset', label: 'Asset (Cash, Bank)', icon: 'account_balance' },
+                    { value: 'liability', label: 'Liability (Credit, Loan)', icon: 'credit_card' },
+                    { value: 'temp', label: 'Transit / Temporary', icon: 'schedule' }
+                  ]}
+                  value={newAccountType}
+                  onChange={v => {
+                    setNewAccountType(v);
+                    setNewAccountExclude(v !== 'asset');
+                  }}
+                />
+                <button 
+                  className="flex items-center gap-3 py-2 group cursor-pointer"
+                  type="button"
+                  onClick={() => setNewAccountExclude(!newAccountExclude)}
+                >
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${newAccountExclude ? 'bg-[#ff716c] border-[#ff716c]' : 'border-zinc-700'}`}>
+                    {newAccountExclude && <span className="material-symbols-outlined text-white text-xs font-black">check</span>}
+                  </div>
+                  <span className="text-xs font-bold text-zinc-400 group-hover:text-zinc-200 transition-colors">Exclude from total Net Worth</span>
+                </button>
+                <button type="submit" className="w-full bg-[#1a1a1a] text-[#3fff8b] py-4 rounded-xl font-black uppercase tracking-[0.2em] text-xs border border-[#3fff8b]/20 hover:bg-[#3fff8b]/5 transition-all shadow-lg active:scale-[0.98]">Initialize Account</button>
+              </form>
+            </section>
           </div>
         </div>
       );
@@ -1724,36 +1829,61 @@ export default function App() {
     else if (view === 'category_management') {
       const parents = categories.filter(c => !c.parent_id && c.type === settingsType);
       settingsContent = (
-        <div className="page-inner slide-up">
-          <div className="page-header"><button className="icon-btn-text" onClick={() => setView('settings')}>← Back</button><h2 className="section-title-editorial">Categories</h2></div>
-          <div className="type-toggle-bar" style={{ margin: '1.5rem 0' }}><button className={`type-btn ${settingsType === 'expense' ? 'active-expense' : ''}`} onClick={() => setSettingsType('expense')}>Expense</button><button className={`type-btn ${settingsType === 'income' ? 'active-income' : ''}`} onClick={() => setSettingsType('income')}>Income</button></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
+        <div className="page-inner max-w-2xl mx-auto space-y-10 pb-32">
+          <div className="flex items-center gap-4 px-2">
+            <button className="w-10 h-10 rounded-xl bg-surface-low flex items-center justify-center text-zinc-500 hover:text-white transition-colors" onClick={() => setView('settings')}>
+              <span className="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[#3fff8b]">Categories</h2>
+          </div>
+
+          <div className="flex bg-surface-low p-1.5 rounded-2xl gap-1 border border-outline-variant/10 shadow-xl max-w-xs mx-auto">
+            <button className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${settingsType === 'expense' ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg' : 'text-zinc-500'}`} onClick={() => setSettingsType('expense')}>Expense</button>
+            <button className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${settingsType === 'income' ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg' : 'text-zinc-500'}`} onClick={() => setSettingsType('income')}>Income</button>
+          </div>
+
+          <div className="space-y-4 fade-in">
             {parents.map(parent => {
               const subs = categories.filter(c => c.parent_id === parent.id);
               return (
-                <div key={parent.id} style={{ background: 'var(--surface-container-low)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                <div key={parent.id} className="bg-surface-low rounded-[2rem] border border-outline-variant/10 overflow-hidden shadow-xl group">
                   {/* Parent row */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', background: editingCat?.id === parent.id ? 'var(--primary-light)' : 'transparent' }}>
-                    <span style={{ fontSize: '1.1rem', width: '28px', textAlign: 'center' }}>{parent.icon}</span>
-                    <span style={{ flex: 1, fontWeight: 700, fontSize: '0.9375rem', color: 'var(--on-surface)' }}>{parent.name}</span>
-                    {subs.length > 0 && <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.5rem', borderRadius: 'var(--radius-full)', background: 'var(--surface-container-lowest)', color: 'var(--on-surface-variant)' }}>{subs.length}</span>}
+                  <div className={`p-6 flex items-center justify-between transition-colors ${editingCat?.id === parent.id ? 'bg-[#3fff8b]/5' : ''}`}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-[#3fff8b] border border-white/5">
+                        <span className="text-xl">{parent.icon}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white tracking-tight">{parent.name}</p>
+                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{subs.length} subcategories</p>
+                      </div>
+                    </div>
                     {!parent.is_system && (
-                      <div style={{ display: 'flex', gap: '0.25rem' }}>
-                        <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} onClick={() => { setEditingCat(parent); setNewCatName(parent.name); setNewCatIcon(parent.icon); setNewCatParent(''); }}>✎</button>
-                        <button className="delete-btn" onClick={() => handleDeleteCategory(parent.id)}>✕</button>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="p-2 text-zinc-500 hover:text-[#3fff8b] transition-colors" onClick={() => { setEditingCat(parent); setNewCatName(parent.name); setNewCatIcon(parent.icon); setNewCatParent(''); }}>
+                          <span className="material-symbols-outlined text-sm">edit</span>
+                        </button>
+                        <button className="p-2 text-zinc-500 hover:text-[#ff716c] transition-colors" onClick={() => handleDeleteCategory(parent.id)}>
+                          <span className="material-symbols-outlined text-sm">delete</span>
+                        </button>
                       </div>
                     )}
                   </div>
                   {/* Subcategory rows */}
                   {subs.map((sub, i) => (
-                    <div key={sub.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 1rem 0.5rem 2.75rem', borderTop: '1px solid var(--ghost-border)', background: editingCat?.id === sub.id ? 'var(--primary-light)' : 'var(--surface-container-lowest)' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginRight: '-0.25rem' }}>{i === subs.length - 1 ? '└' : '├'}</span>
-                      <span style={{ fontSize: '0.95rem', width: '20px', textAlign: 'center' }}>{sub.icon}</span>
-                      <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--on-surface-variant)' }}>{sub.name}</span>
+                    <div key={sub.id} className={`flex items-center justify-between py-4 pl-16 pr-6 border-t border-white/5 transition-colors ${editingCat?.id === sub.id ? 'bg-[#3fff8b]/5' : 'bg-[#0e0e0e]/30'}`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg opacity-80">{sub.icon}</span>
+                        <span className="text-xs font-bold text-zinc-400">{sub.name}</span>
+                      </div>
                       {!sub.is_system && (
-                        <div style={{ display: 'flex', gap: '0.25rem' }}>
-                          <button className="icon-btn-text" style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} onClick={() => { setEditingCat(sub); setNewCatName(sub.name); setNewCatIcon(sub.icon); setNewCatParent(sub.parent_id || ''); }}>✎</button>
-                          <button className="delete-btn" onClick={() => handleDeleteCategory(sub.id)}>✕</button>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button className="p-2 text-zinc-500 hover:text-[#3fff8b] transition-colors" onClick={() => { setEditingCat(sub); setNewCatName(sub.name); setNewCatIcon(sub.icon); setNewCatParent(sub.parent_id || ''); }}>
+                            <span className="material-symbols-outlined text-sm">edit</span>
+                          </button>
+                          <button className="p-2 text-zinc-500 hover:text-[#ff716c] transition-colors" onClick={() => handleDeleteCategory(sub.id)}>
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -1762,15 +1892,40 @@ export default function App() {
               );
             })}
           </div>
-          <form onSubmit={handleCreateCategory} className="add-category-form">
-            <h3>{editingCat ? 'Edit' : 'Add Custom'} Category</h3>
-            <div style={{ display: 'flex', gap: '1rem' }}><input type="text" maxLength="2" placeholder="🔖" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} style={{ width: '60px', textAlign: 'center' }} required /><input type="text" placeholder="Category Name" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} style={{ flex: 1 }} required /></div>
-            <CustomDropdown label="Parent Category (Optional)" options={[{ value: '', label: '-- Root Category --' }, ...parents.map(p => ({ value: p.id, label: p.name, icon: p.icon }))]} value={newCatParent} onChange={setNewCatParent} />
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              {editingCat && <button type="button" className="icon-btn-text" onClick={() => { setEditingCat(null); setNewCatName(''); setNewCatParent(''); setNewCatIcon('🔖'); }}>Cancel</button>}
-              <button type="submit" className="add-cat-btn" style={{ width: '100%' }}>{editingCat ? 'Update Category' : 'Save Category'}</button>
-            </div>
-          </form>
+
+          <section className="space-y-4 pt-6">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">{editingCat ? 'Modify' : 'Create New'} Category</p>
+            <form onSubmit={handleCreateCategory} className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-2xl space-y-6">
+              <div className="flex gap-6">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Icon</p>
+                  <input type="text" maxLength="2" placeholder="🔖" className="w-20 bg-[#1a1a1a] border-none rounded-xl p-4 text-white text-center focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-lg" value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} required />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Category Name</p>
+                  <input type="text" placeholder="e.g. Subscriptions" className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} required />
+                </div>
+              </div>
+              
+              <CustomDropdown 
+                label="Parent (Keep root for main category)" 
+                options={[{ value: '', label: '-- Root Category --', icon: 'account_tree' }, ...parents.map(p => ({ value: p.id, label: p.name, icon: p.icon }))]} 
+                value={newCatParent} 
+                onChange={setNewCatParent} 
+              />
+
+              <div className="flex gap-4 pt-2">
+                <button type="submit" className="flex-1 bg-[#1a1a1a] text-[#3fff8b] py-4 rounded-xl font-black uppercase tracking-[0.2em] text-xs border border-[#3fff8b]/20 hover:bg-[#3fff8b]/5 transition-all shadow-lg active:scale-[0.98]">
+                  {editingCat ? 'Update Hierarchy' : 'Register Category'}
+                </button>
+                {editingCat && (
+                  <button type="button" className="px-6 text-zinc-500 font-bold text-xs uppercase tracking-widest" onClick={() => { setEditingCat(null); setNewCatName(''); setNewCatParent(''); setNewCatIcon('🔖'); }}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          </section>
         </div>
       );
     } else if (view === 'party_management') {
@@ -1935,53 +2090,56 @@ export default function App() {
     return (
       <PageShell {...shellProps}>
         {/* Sticky controls — sticks to top of .page-content scroll container */}
-        <div className="ledger-sticky-header">
-          <div className="ledger-header-row">
-            <h2 className="section-title-editorial">Transactions</h2>
-            <div className="ledger-header-actions">
+        <div className="bg-[#0e0e0e] sticky top-0 z-[40] px-6 py-6 space-y-6 border-b border-white/5">
+          <div className="flex justify-between items-center">
+            <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[#3fff8b]">History</h2>
+            <div className="flex items-center gap-3">
               <button
-                className={`filter-toggle-btn${bulkSelectMode ? ' active' : ''}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${bulkSelectMode ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-low text-zinc-500'}`}
                 onClick={() => bulkSelectMode ? exitBulk() : setBulkSelectMode(true)}
-                title="Bulk assign category"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
-                {bulkSelectMode ? 'Cancel' : 'Select'}
+                <span className="material-symbols-outlined text-sm">{bulkSelectMode ? 'close' : 'checklist'}</span>
+                {bulkSelectMode ? 'Exit' : 'Select'}
               </button>
-              <button className={`filter-toggle-btn${showAdvancedFilters ? ' active' : ''}`} onClick={() => setShowFilters(!showAdvancedFilters)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
-                <span className="ledger-filter-label">{showAdvancedFilters ? 'Hide' : 'Filter'}</span>{activeFiltersCount > 0 && <span className="filter-badge">{activeFiltersCount}</span>}
+              <button 
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${showAdvancedFilters ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-low text-zinc-500'}`} 
+                onClick={() => setShowFilters(!showAdvancedFilters)}
+              >
+                <span className="material-symbols-outlined text-sm">filter_list</span>
+                {activeFiltersCount > 0 && <span>{activeFiltersCount}</span>}
               </button>
-              <button className="section-action-link ledger-dashboard-link" onClick={navToDashboard}>Dashboard</button>
             </div>
           </div>
-          <div className="relative bg-surface-container-low rounded-xl border border-outline-variant/10">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">search</span>
+
+          <div className="relative group">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-[#3fff8b] transition-colors">search</span>
             <input 
               type="text" 
-              placeholder="Search transactions..." 
-              className="w-full bg-transparent pl-12 pr-4 py-4 text-sm font-medium focus:outline-none text-white placeholder:text-zinc-600" 
+              placeholder="Search in vault..." 
+              className="w-full bg-[#131313] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3fff8b]/20 text-white placeholder:text-zinc-700 transition-all shadow-inner" 
               value={filterOptions.searchTerm} 
               onChange={(e) => updateFilter('searchTerm', e.target.value)} 
             />
           </div>
-          <div className="flex items-center gap-4 overflow-x-auto pb-2 hide-scrollbar mt-4">
+
+          <div className="flex items-center gap-4 overflow-x-auto pb-2 hide-scrollbar">
             <div className="flex gap-2">
               {[{ p: 'all', label: 'All' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }, { p: 'last_3m', label: '3M' }].map(({ p, label }) => (
                 <button 
                   key={p} 
-                  className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${filterOptions.preset === p ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-container text-zinc-500'}`} 
+                  className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${filterOptions.preset === p ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-low text-zinc-500'}`} 
                   onClick={() => applyDatePreset(p)}
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <div className="h-4 w-px bg-zinc-800"></div>
+            <div className="h-4 w-px bg-zinc-800 shrink-0"></div>
             <div className="flex gap-2">
               {[{ key: 'date_desc', label: 'Recent' }, { key: 'amount_desc', label: 'Highest' }].map(s => (
                 <button 
                   key={s.key} 
-                  className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${ledgerSort === s.key ? 'bg-white text-black' : 'bg-surface-container text-zinc-500'}`} 
+                  className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${ledgerSort === s.key ? 'bg-white text-black' : 'bg-surface-low text-zinc-500'}`} 
                   onClick={() => setLedgerSort(s.key)}
                 >
                   {s.label}
@@ -1989,27 +2147,32 @@ export default function App() {
               ))}
             </div>
           </div>
-          {activeFiltersCount > 0 && !showAdvancedFilters && (<div className="filter-active-summary slide-up" style={{ marginTop: '0.75rem' }}><span className="label-sm" style={{ marginRight: '0.5rem' }}>Active:</span>{filterOptions.type !== 'all' && <span className="active-filter-tag">{filterOptions.type} <span className="active-filter-remove" onClick={() => updateFilter('type', 'all')}>✕</span></span>}{filterOptions.categoryIds.map(id => { if (id === '__uncategorized__') return <span key={id} className="active-filter-tag">• Uncategorized <span className="active-filter-remove" onClick={() => updateFilter('categoryIds', filterOptions.categoryIds.filter(x => x !== id))}>✕</span></span>; const c = categories.find(x => x.id === id); return c ? <span key={id} className="active-filter-tag">{c.icon} {c.name} <span className="active-filter-remove" onClick={() => updateFilter('categoryIds', filterOptions.categoryIds.filter(x => x !== id))}>✕</span></span> : null; })}{filterOptions.tagIds.map(id => { const t = tags.find(x => x.id === id); return t ? <span key={id} className="active-filter-tag">#{t.name} <span className="active-filter-remove" onClick={() => updateFilter('tagIds', filterOptions.tagIds.filter(x => x !== id))}>✕</span></span> : null; })}<button className="section-action-link" style={{ marginLeft: 'auto', fontSize: '0.7rem' }} onClick={resetFilters}>Clear All</button></div>)}
+
           {showAdvancedFilters && (<FilterPanel categories={categories} tags={tags} accounts={accounts} filterOptions={filterOptions} onUpdateFilter={updateFilter} onResetFilters={resetFilters} />)}
+          
           {bulkSelectMode && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.75rem', padding: '0.625rem 1rem', background: 'var(--primary-light)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
-                <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }} />
-                <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Select all ({allVisibleIds.length})</span>
+            <div className="flex items-center justify-between px-4 py-3 bg-[#3fff8b]/10 rounded-2xl border border-[#3fff8b]/20 slide-up">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${allSelected ? 'bg-[#3fff8b] border-[#3fff8b]' : 'border-[#3fff8b]/30 group-hover:border-[#3fff8b]'}`}>
+                  {allSelected && <span className="material-symbols-outlined text-[#005d2c] text-xs font-black">check</span>}
+                </div>
+                <input type="checkbox" checked={allSelected} onChange={toggleAll} className="hidden" />
+                <span className="text-[10px] font-black text-[#3fff8b] uppercase tracking-widest">Select All ({allVisibleIds.length})</span>
               </label>
-              {selectedTxIds.size > 0 && <span style={{ color: 'var(--primary)', fontSize: '0.8rem' }}>{selectedTxIds.size} selected</span>}
+              {selectedTxIds.size > 0 && <span className="text-[10px] font-black text-[#3fff8b] uppercase tracking-widest bg-[#3fff8b]/20 px-3 py-1 rounded-full">{selectedTxIds.size} Marked</span>}
             </div>
           )}
         </div>
 
         {/* Scrollable transaction list */}
+        <div className="px-6 py-8">
           <div className="flex flex-col gap-4">
             {groupedLedger.map(([date, txs]) => (
               <div key={date} className="flex flex-col gap-2">
                 {date !== '__flat__' && (
-                  <div className="flex items-center gap-4 py-2 mt-4 sticky top-0 bg-[#0e0e0e] z-10">
-                    <span className="text-[10px] font-bold tracking-[0.1em] text-zinc-500 uppercase">{formatGroupDate(date)}</span>
-                    <div className="h-px flex-1 bg-zinc-800/30"></div>
+                  <div className="flex items-center gap-4 py-4 sticky top-[240px] bg-[#0e0e0e]/95 backdrop-blur-sm z-30">
+                    <span className="text-[10px] font-black tracking-[0.3em] text-zinc-600 uppercase">{formatGroupDate(date)}</span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-zinc-800/50 to-transparent"></div>
                   </div>
                 )}
                 <div className="flex flex-col gap-3">
@@ -2030,29 +2193,40 @@ export default function App() {
                 </div>
               </div>
             ))}
+            {filteredLedger.length === 0 && (
+              <div className="py-24 flex flex-col items-center justify-center text-center space-y-4 bg-surface-low rounded-[3rem] border border-dashed border-white/5 mx-2">
+                <div className="w-16 h-16 rounded-[2rem] bg-[#1a1a1a] flex items-center justify-center text-zinc-800">
+                  <span className="material-symbols-outlined text-4xl">history</span>
+                </div>
+                <p className="text-zinc-600 font-bold uppercase text-[10px] tracking-widest">End of transaction stream</p>
+              </div>
+            )}
           </div>
+        </div>
 
         {/* Sticky bulk-action bar */}
         {bulkSelectMode && selectedTxIds.size > 0 && (
-          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200, background: 'var(--surface-container-lowest)', borderTop: '1px solid var(--ghost-border)', padding: '1rem 2rem', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 -4px 24px rgba(0,0,0,0.1)' }}>
-            <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--primary)', whiteSpace: 'nowrap' }}>{selectedTxIds.size} selected</span>
-            <div style={{ flex: 1, maxWidth: '320px' }}>
-              <CustomDropdown
-                options={allCatOptions}
-                value={bulkCategory}
-                onChange={setBulkCategory}
-                placeholder="Assign category..."
-                showSearch={true}
-              />
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xl px-6 fade-in">
+            <div className="bg-[#131313] border border-outline-variant/20 rounded-[2.5rem] p-4 flex items-center gap-4 shadow-[0_32px_64px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+              <div className="flex-1">
+                <CustomDropdown
+                  options={allCatOptions}
+                  value={bulkCategory}
+                  onChange={setBulkCategory}
+                  placeholder="Assign group category..."
+                  showSearch={true}
+                />
+              </div>
+              <button
+                className={`px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${bulkCategory ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg shadow-[#3fff8b]/20 scale-105' : 'bg-zinc-800 text-zinc-600 opacity-50 cursor-not-allowed'}`}
+                onClick={bulkCategory ? handleBulkAssignCategory : undefined}
+              >
+                Process
+              </button>
+              <button className="p-4 text-zinc-500 hover:text-white transition-colors" onClick={exitBulk}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
-            <button
-              className="add-cat-btn"
-              style={{ whiteSpace: 'nowrap', padding: '0.75rem 1.5rem', opacity: bulkCategory ? 1 : 0.4, cursor: bulkCategory ? 'pointer' : 'not-allowed' }}
-              onClick={bulkCategory ? handleBulkAssignCategory : undefined}
-            >
-              Apply
-            </button>
-            <button className="icon-btn-text" onClick={exitBulk}>Cancel</button>
           </div>
         )}
       </PageShell>
