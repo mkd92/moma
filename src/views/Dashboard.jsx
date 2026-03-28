@@ -114,48 +114,47 @@ const Dashboard = ({
           </div>
 
           {/* Sidebar Content Stack */}
-          <div className="lg:col-span-4 space-y-10">
-            {/* AI Insights Card */}
-            <section className="bg-surface-low p-8 rounded-[2.5rem] border-l-4 border-[#3fff8b] shadow-2xl">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-2xl bg-[#3fff8b]/10 flex items-center justify-center border border-[#3fff8b]/10">
-                  <span className="material-symbols-outlined text-[#3fff8b] text-sm">auto_awesome</span>
-                </div>
-                <h3 className="font-headline font-bold text-sm text-white uppercase tracking-widest">AI Insights</h3>
+          <div className="lg:col-span-4 space-y-8">
+            {/* AI Insights Card - Simplified */}
+            <section className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant shadow-sm space-y-8">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-primary text-xl">auto_awesome</span>
+                <h3 className="font-headline font-black text-xs text-on-surface uppercase tracking-[0.3em]">Vault Intelligence</h3>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {smartInsights.map((ins, i) => (
-                  <div key={i} className="group cursor-default">
-                    <p className="text-xs text-zinc-400 leading-relaxed transition-colors group-hover:text-zinc-200">
-                      <strong className="text-[#3fff8b] font-bold tracking-tight">{ins.title}:</strong> {ins.text}
+                  <div key={i} className="space-y-2 group">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">{ins.title}</p>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">
+                      {ins.text}
                     </p>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* Account Distribution */}
-            <section className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/5 shadow-2xl">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="font-headline font-bold text-sm text-white uppercase tracking-widest">Accounts</h3>
-                <button className="text-[10px] font-bold text-[#3fff8b] uppercase tracking-widest" onClick={() => setView('account_management')}>Manage</button>
+            {/* Account Distribution - Monochromatic */}
+            <section className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant shadow-sm space-y-8">
+              <div className="flex items-center justify-between">
+                <h3 className="font-headline font-black text-xs text-on-surface uppercase tracking-[0.3em]">Assets</h3>
+                <button className="text-[9px] font-bold text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors" onClick={() => setView('account_management')}>Manage</button>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {(() => {
                   const maxBal = Math.max(...accounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
                   return accounts.map(a => {
                     const bal = accountBalances[a.id] || 0;
                     const pct = Math.min(Math.abs(bal) / maxBal * 100, 100);
                     return (
-                      <div key={a.id} className="p-4 bg-surface-container rounded-2xl border border-outline-variant/10 group hover:border-[#3fff8b]/20 transition-all">
+                      <div key={a.id} className="py-4 border-b border-outline-variant last:border-0 group cursor-default">
                         <div className="flex justify-between items-center mb-3">
-                          <span className="text-xs font-bold text-white tracking-tight">{a.name}</span>
-                          <span className={`font-headline text-xs font-black ${bal < 0 ? 'text-[#ff716c]' : 'text-[#3fff8b]'}`}>
+                          <span className="text-xs font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">{a.name}</span>
+                          <span className={`font-headline text-xs font-black ${bal < 0 ? 'text-error' : 'text-on-surface'}`}>
                             {currencySymbol}{bal.toLocaleString()}
                           </span>
                         </div>
-                        <div className="h-1 bg-surface-lowest rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all duration-1000 ${bal < 0 ? 'bg-[#ff716c]' : 'bg-[#3fff8b]'}`} style={{ width: `${pct}%` }}></div>
+                        <div className="h-1 bg-on-surface/[0.03] rounded-full overflow-hidden">
+                          <div className="h-full bg-on-surface transition-all duration-1000 origin-left" style={{ width: `${pct}%`, opacity: 0.15 + (pct/200) }}></div>
                         </div>
                       </div>
                     );
@@ -164,27 +163,27 @@ const Dashboard = ({
               </div>
             </section>
 
-            {/* Spending Breakdown */}
-            <section className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/5 shadow-2xl">
-              <div className="flex justify-between items-center mb-8">
-                <h3 className="font-headline font-bold text-sm text-white uppercase tracking-widest">Spending</h3>
-                <button className="text-[10px] font-bold text-[#3fff8b] uppercase tracking-widest" onClick={navToAnalytics}>Details</button>
+            {/* Spending Breakdown - Architectural */}
+            <section className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant shadow-sm space-y-8">
+              <div className="flex justify-between items-center">
+                <h3 className="font-headline font-black text-xs text-on-surface uppercase tracking-[0.3em]">Distribution</h3>
+                <button className="text-[9px] font-bold text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors" onClick={navToAnalytics}>Details</button>
               </div>
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {topCategories.length > 0 ? topCategories.slice(0, 4).map(({ name, amount }, i) => {
                   const pct = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
                   return (
-                    <div key={name} className="space-y-2">
-                      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-                        <span className="text-zinc-400">{name}</span>
-                        <span className="text-white">{pct}%</span>
+                    <div key={name} className="space-y-3 group">
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em]">
+                        <span className="text-on-surface-variant group-hover:text-on-surface transition-colors">{name}</span>
+                        <span className="text-on-surface opacity-40">{pct}%</span>
                       </div>
-                      <div className="h-1.5 bg-surface-lowest rounded-full overflow-hidden">
-                        <div className="h-full bg-zinc-700 rounded-full group-hover:bg-[#3fff8b] transition-all" style={{ width: `${pct}%` }}></div>
+                      <div className="h-1 bg-on-surface/[0.03] rounded-full overflow-hidden">
+                        <div className="h-full bg-on-surface transition-all duration-700" style={{ width: `${pct}%`, opacity: 0.1 + (pct/150) }}></div>
                       </div>
                     </div>
                   );
-                }) : <p className="text-[10px] text-zinc-600 font-bold uppercase text-center py-4">No data</p>}
+                }) : <p className="text-[10px] text-on-surface-variant font-bold uppercase text-center py-4">No data</p>}
               </div>
             </section>
           </div>

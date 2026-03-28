@@ -11,44 +11,52 @@ const TransactionItem = ({ t, onClick, onDelete, accounts, categories, currencyS
   
   return (
     <div 
-      className={`active:scale-[0.98] transition-all bg-surface-container p-4 rounded-xl flex items-center gap-4 cursor-pointer border border-outline-variant/10 ${isSelected ? 'ring-2 ring-[#3fff8b] bg-[#3fff8b]/5' : ''}`}
+      className={`group relative py-6 flex items-center gap-6 cursor-pointer border-b border-outline-variant/10 last:border-0 transition-all active:scale-[0.99]`}
       onClick={() => bulkSelectMode && !isTransfer ? onToggleSelect(t.id) : onClick(t)}
     >
       {bulkSelectMode && !isTransfer && (
         <div 
-          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-[#3fff8b] border-[#3fff8b]' : 'border-zinc-700'}`}
+          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-primary border-primary' : 'border-outline-variant group-hover:border-on-surface-variant'}`}
           onClick={(e) => { e.stopPropagation(); onToggleSelect(t.id); }}
         >
-          {isSelected && <span className="material-symbols-outlined text-[#005d2c] text-xs font-bold">check</span>}
+          {isSelected && <span className="material-symbols-outlined text-on-primary text-xs font-black">check</span>}
         </div>
       )}
-      <div className="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center shrink-0">
-        <span className="material-symbols-outlined text-[#3fff8b]">{icon}</span>
+      
+      <div className="w-10 h-10 rounded-xl bg-on-surface/[0.03] flex items-center justify-center shrink-0 group-hover:bg-on-surface/[0.06] transition-colors text-on-surface-variant group-hover:text-on-surface">
+        <span className="material-symbols-outlined text-[20px] font-light">{icon}</span>
       </div>
-      <div className="flex-1 min-width-0">
-        <div className="flex justify-between items-baseline gap-2">
-          <h3 className="font-bold text-[#ffffff] text-sm truncate">{t.note || cat?.name || (isTransfer ? 'Transfer' : 'Transaction')}</h3>
-          <span className={`font-['Manrope'] font-extrabold whitespace-nowrap ${isNeg ? 'text-[#ff716c]' : 'text-[#3fff8b]'}`}>
-            {isTransfer ? '⇄' : (isNeg ? '-' : '+')} {currencySymbol}{Math.abs(amt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+
+      <div className="flex-1 min-width-0 flex items-center justify-between gap-4">
+        <div className="min-width-0">
+          <h3 className="font-bold text-on-surface text-sm tracking-tight truncate group-hover:text-primary transition-colors">
+            {t.note || cat?.name || (isTransfer ? 'Internal Transfer' : 'Entry')}
+          </h3>
+          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-1 opacity-60">
+            {cat?.name || (isTransfer ? 'Transfer' : 'General')}
+          </p>
+        </div>
+
+        <div className="text-right shrink-0">
+          <span className={`font-headline text-lg font-black tracking-tight ${isNeg ? 'text-on-surface' : 'text-accent'}`}>
+            {isTransfer ? '' : (isNeg ? '-' : '+')}
+            <span className="opacity-40 text-sm mr-0.5">{currencySymbol}</span>
+            {Math.abs(amt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
-        </div>
-        <div className="flex justify-between items-center mt-1">
-          <p className="text-xs text-on-surface-variant truncate">{cat?.name || (isTransfer ? 'Transfer' : 'General')}</p>
-          <div className="flex items-center gap-2">
-            <p className="text-[10px] text-on-surface-variant/60 uppercase tracking-tighter whitespace-nowrap">
-              {t.transaction_date || t.created_at?.split('T')[0]}
-            </p>
-            {!bulkSelectMode && onDelete && (
-              <button 
-                className="text-zinc-600 hover:text-[#ff716c] transition-colors"
-                onClick={(e) => { e.stopPropagation(); onDelete(t, e); }}
-              >
-                <span className="material-symbols-outlined text-sm">delete</span>
-              </button>
-            )}
-          </div>
+          <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter mt-1 opacity-40">
+            {t.transaction_date || t.created_at?.split('T')[0]}
+          </p>
         </div>
       </div>
+
+      {!bulkSelectMode && onDelete && (
+        <button 
+          className="absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-error/5 text-error opacity-0 group-hover:opacity-100 hover:bg-error hover:text-on-primary transition-all flex items-center justify-center shadow-lg"
+          onClick={(e) => { e.stopPropagation(); onDelete(t, e); }}
+        >
+          <span className="material-symbols-outlined text-sm">delete</span>
+        </button>
+      )}
     </div>
   );
 };

@@ -54,56 +54,57 @@ const Ledger = ({
   return (
     <PageShell {...shellProps}>
       {/* Sticky controls — sticks to top of .page-content scroll container */}
-      <div className="bg-[#0e0e0e] sticky top-0 z-[40] px-6 py-6 space-y-6 border-b border-white/5">
+      <div className="bg-surface sticky top-0 z-[40] px-6 py-8 space-y-10 border-b border-outline-variant/10">
         <div className="flex justify-between items-center">
-          <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[#3fff8b]">History</h2>
-          <div className="flex items-center gap-3">
+          <h2 className="font-headline text-4xl font-black tracking-tight text-on-surface uppercase">Vault Stream</h2>
+          <div className="flex items-center gap-2">
             <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${bulkSelectMode ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-low text-zinc-500'}`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all border ${bulkSelectMode ? 'bg-on-surface text-surface border-on-surface shadow-xl' : 'bg-surface-low text-on-surface-variant border-outline-variant hover:text-on-surface'}`}
               onClick={() => bulkSelectMode ? exitBulk() : setBulkSelectMode(true)}
             >
-              <span className="material-symbols-outlined text-sm">{bulkSelectMode ? 'close' : 'checklist'}</span>
+              <span className="material-symbols-outlined text-[14px]">{bulkSelectMode ? 'close' : 'checklist'}</span>
               {bulkSelectMode ? 'Exit' : 'Select'}
             </button>
             <button 
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${showAdvancedFilters ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-low text-zinc-500'}`} 
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all border ${showAdvancedFilters ? 'bg-on-surface text-surface border-on-surface shadow-xl' : 'bg-surface-low text-on-surface-variant border-outline-variant hover:text-on-surface'}`} 
               onClick={() => setShowFilters(!showAdvancedFilters)}
             >
-              <span className="material-symbols-outlined text-sm">filter_list</span>
-              {activeFiltersCount > 0 && <span>{activeFiltersCount}</span>}
+              <span className="material-symbols-outlined text-[14px]">tune</span>
+              {activeFiltersCount > 0 ? `Filters (${activeFiltersCount})` : 'Refine'}
             </button>
           </div>
         </div>
 
-        <div className="relative group">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-[#3fff8b] transition-colors">search</span>
+        <div className="relative group max-w-3xl">
+          <span className="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors opacity-40">search</span>
           <input 
             type="text" 
-            placeholder="Search in vault..." 
-            className="w-full bg-[#131313] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3fff8b]/20 text-white placeholder:text-zinc-700 transition-all shadow-inner" 
+            placeholder="Search entries, tags, or payees..." 
+            className="w-full bg-transparent border-none pl-8 pr-4 py-2 text-sm font-medium focus:outline-none text-on-surface placeholder:text-on-surface-variant/40 transition-all" 
             value={filterOptions.searchTerm} 
             onChange={(e) => updateFilter('searchTerm', e.target.value)} 
           />
+          <div className="absolute bottom-0 left-0 w-full h-px bg-outline-variant/20 group-focus-within:bg-primary/40 transition-all"></div>
         </div>
 
-        <div className="flex items-center gap-4 overflow-x-auto pb-2 hide-scrollbar">
+        <div className="flex items-center gap-6 overflow-x-auto pb-2 hide-scrollbar">
           <div className="flex gap-2">
-            {[{ p: 'all', label: 'All' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }, { p: 'last_3m', label: '3M' }].map(({ p, label }) => (
+            {[{ p: 'all', label: 'All Time' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }, { p: 'last_3m', label: 'Quarter' }].map(({ p, label }) => (
               <button 
                 key={p} 
-                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${filterOptions.preset === p ? 'bg-[#3fff8b] text-[#005d2c]' : 'bg-surface-low text-zinc-500'}`} 
+                className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] transition-all ${filterOptions.preset === p ? 'bg-on-surface text-surface' : 'text-on-surface-variant hover:text-on-surface'}`} 
                 onClick={() => applyDatePreset(p)}
               >
                 {label}
               </button>
             ))}
           </div>
-          <div className="h-4 w-px bg-zinc-800 shrink-0"></div>
+          <div className="h-3 w-px bg-outline-variant/30 shrink-0"></div>
           <div className="flex gap-2">
             {[{ key: 'date_desc', label: 'Recent' }, { key: 'amount_desc', label: 'Highest' }].map(s => (
               <button 
                 key={s.key} 
-                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${ledgerSort === s.key ? 'bg-white text-black' : 'bg-surface-low text-zinc-500'}`} 
+                className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] transition-all ${ledgerSort === s.key ? 'bg-primary/10 text-primary border border-primary/20' : 'text-on-surface-variant hover:text-on-surface'}`} 
                 onClick={() => setLedgerSort(s.key)}
               >
                 {s.label}
@@ -115,15 +116,15 @@ const Ledger = ({
         {showAdvancedFilters && (<FilterPanel categories={categories} tags={tags} accounts={accounts} filterOptions={filterOptions} onUpdateFilter={updateFilter} onResetFilters={resetFilters} />)}
         
         {bulkSelectMode && (
-          <div className="flex items-center justify-between px-4 py-3 bg-[#3fff8b]/10 rounded-2xl border border-[#3fff8b]/20 slide-up">
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${allSelected ? 'bg-[#3fff8b] border-[#3fff8b]' : 'border-[#3fff8b]/30 group-hover:border-[#3fff8b]'}`}>
-                {allSelected && <span className="material-symbols-outlined text-[#005d2c] text-xs font-black">check</span>}
+          <div className="flex items-center justify-between px-6 py-4 bg-on-surface text-surface rounded-3xl shadow-2xl slide-up">
+            <label className="flex items-center gap-4 cursor-pointer group">
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${allSelected ? 'bg-surface border-surface' : 'border-surface/30 group-hover:border-surface'}`}>
+                {allSelected && <span className="material-symbols-outlined text-on-surface text-xs font-black">check</span>}
               </div>
               <input type="checkbox" checked={allSelected} onChange={toggleAll} className="hidden" />
-              <span className="text-[10px] font-black text-[#3fff8b] uppercase tracking-widest">Select All ({allVisibleIds.length})</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Select Visible ({allVisibleIds.length})</span>
             </label>
-            {selectedTxIds.size > 0 && <span className="text-[10px] font-black text-[#3fff8b] uppercase tracking-widest bg-[#3fff8b]/20 px-3 py-1 rounded-full">{selectedTxIds.size} Marked</span>}
+            {selectedTxIds.size > 0 && <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-surface/10 px-4 py-1.5 rounded-full border border-surface/10">{selectedTxIds.size} Selected</span>}
           </div>
         )}
       </div>
