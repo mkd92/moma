@@ -199,29 +199,78 @@ const Analytics = ({
             </div>
           </div>
           <div className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant shadow-sm space-y-2">
-            {(chartCategorical || []).slice(0, 6).map(({ name, id, value }, i) => {
+            {(chartCategorical || []).slice(0, 8).map(({ name, id, value, subs }, i) => {
               const pctOfTotal = totalCatVal > 0 ? Math.round((value / totalCatVal) * 100) : 0;
               const icon = getCategoryIcon(name);
+              const [expanded, setExpanded] = React.useState(false);
+              const hasSubs = subs && subs.length > 0;
+
               return (
-                <div key={id} className="flex items-center gap-6 group py-5 px-2 rounded-2xl hover:bg-on-surface/[0.02] transition-all cursor-pointer" onClick={() => navToLedgerByCategory && navToLedgerByCategory(id, catBreakdownType)}>
-                  <div className="w-12 h-12 rounded-2xl bg-on-surface/[0.03] flex items-center justify-center transition-all group-hover:bg-on-surface group-hover:text-surface text-on-surface-variant">
-                    <span className="material-symbols-outlined text-[20px] font-light">{icon}</span>
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-black uppercase tracking-widest text-on-surface group-hover:text-primary transition-colors">{name}</span>
-                      <span className="text-sm font-black font-headline text-on-surface">
-                        <span className="text-[10px] font-bold opacity-30 mr-1">{currencySymbol}</span>
-                        {(value || 0).toLocaleString()}
-                      </span>
+                <div key={id} className="flex flex-col">
+                  <div className="flex items-center gap-6 group py-5 px-2 rounded-2xl hover:bg-on-surface/[0.02] transition-all cursor-pointer">
+                    {/* Dedicated Expand Trigger */}
+                    <div className="flex items-center">
+                      {hasSubs ? (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${expanded ? 'bg-on-surface text-surface' : 'text-on-surface-variant hover:text-on-surface'}`}
+                        >
+                          <span className={`material-symbols-outlined text-[18px] transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>expand_more</span>
+                        </button>
+                      ) : (
+                        <div className="w-8"></div>
+                      )}
                     </div>
-                    <div className="w-full h-1 bg-on-surface/[0.03] rounded-full overflow-hidden">
-                      <div className="h-full bg-on-surface transition-all duration-1000 origin-left" style={{ width: `${pctOfTotal}%`, opacity: 0.1 + (pctOfTotal/150) }}></div>
+
+                    <div className="flex-1 flex items-center gap-6" onClick={() => navToLedgerByCategory && navToLedgerByCategory(id, catBreakdownType)}>
+                      <div className="w-12 h-12 rounded-2xl bg-on-surface/[0.03] flex items-center justify-center transition-all group-hover:bg-on-surface group-hover:text-surface text-on-surface-variant">
+                        <span className="material-symbols-outlined text-[20px] font-light">{icon}</span>
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-black uppercase tracking-widest text-on-surface group-hover:text-primary transition-colors">{name}</span>
+                          <span className="text-sm font-black font-headline text-on-surface">
+                            <span className="text-[10px] font-bold opacity-30 mr-1">{currencySymbol}</span>
+                            {(value || 0).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full h-1 bg-on-surface/[0.03] rounded-full overflow-hidden">
+                          <div className="h-full bg-on-surface transition-all duration-1000 origin-left" style={{ width: `${pctOfTotal}%`, opacity: 0.1 + (pctOfTotal/150) }}></div>
+                        </div>
+                      </div>
+                      <div className="w-12 text-right">
+                        <span className="text-[10px] font-black text-on-surface-variant opacity-40 group-hover:opacity-100 transition-opacity">{pctOfTotal}%</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="w-12 text-right">
-                    <span className="text-[10px] font-black text-on-surface-variant opacity-40 group-hover:opacity-100 transition-opacity">{pctOfTotal}%</span>
-                  </div>
+
+                  {/* Expanded Subcategories */}
+                  {hasSubs && expanded && (
+                    <div className="ml-14 pl-10 border-l border-outline-variant/10 py-4 space-y-6 fade-in">
+                      {subs.map((sub) => {
+                        const subPct = value > 0 ? Math.round((sub.value / value) * 100) : 0;
+                        return (
+                          <div key={sub.id} className="flex items-center gap-6 group/sub cursor-pointer" onClick={() => navToLedgerByCategory && navToLedgerByCategory(sub.id, catBreakdownType)}>
+                            <div className="flex-1 space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant group-hover/sub:text-on-surface transition-colors">{sub.name}</span>
+                                <span className="text-xs font-black font-headline text-on-surface-variant group-hover/sub:text-on-surface transition-colors">
+                                  <span className="text-[9px] opacity-30 mr-0.5">{currencySymbol}</span>
+                                  {sub.value.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="w-full h-0.5 bg-on-surface/[0.02] rounded-full overflow-hidden">
+                                <div className="h-full bg-on-surface transition-all duration-700 origin-left" style={{ width: `${subPct}%`, opacity: 0.1 }}></div>
+                              </div>
+                            </div>
+                            <div className="w-10 text-right">
+                              <span className="text-[9px] font-bold text-on-surface-variant opacity-30">{subPct}%</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
