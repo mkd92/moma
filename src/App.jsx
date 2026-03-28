@@ -200,6 +200,9 @@ const TransactionItem = ({ t, onClick, onDelete, accounts, categories, currencyS
   );
 };
 
+// Sub-views that support swipe-back gesture
+const SUB_VIEWS = new Set(['new_transaction', 'account_management', 'category_management', 'party_management', 'tag_management']);
+
 // Sidebar — desktop left-rail navigation
 const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout }) => {
   const [collapsed, setCollapsed] = useState(false);
