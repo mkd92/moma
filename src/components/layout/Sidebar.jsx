@@ -9,14 +9,14 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
     { key: 'budgets', label: 'Budgets', onClick: onBudgets, icon: 'account_balance_wallet' },
   ];
   return (
-    <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] bg-[#0e0e0e] z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
+    <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] bg-surface border-r border-outline-variant/10 z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
       {/* Brand area */}
       <div className="pt-10 pb-12 px-6 flex items-center gap-4">
         <div className={`transition-all duration-500 ${collapsed ? 'w-8 h-8' : 'w-10 h-10'}`}>
           <img src="/logo.svg" alt="MOMA" className="w-full h-full object-contain filter brightness-110" />
         </div>
         {!collapsed && (
-          <span className="text-white font-headline text-2xl font-black tracking-[-0.05em] fade-in">
+          <span className="text-on-surface font-headline text-2xl font-black tracking-[-0.05em] fade-in">
             MOMA
           </span>
         )}
@@ -29,7 +29,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
           return (
             <button
               key={item.key}
-              className={`group flex items-center relative w-full h-12 rounded-xl transition-all duration-300 ${isActive ? 'text-[#3fff8b]' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.03]'}`}
+              className={`group flex items-center relative w-full h-12 rounded-xl transition-all duration-300 ${isActive ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.03]'}`}
               onClick={item.onClick}
             >
               <div className="w-14 flex items-center justify-center shrink-0">
@@ -43,7 +43,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
                 </span>
               )}
               {isActive && (
-                <div className="absolute left-0 w-1 h-6 bg-[#3fff8b] rounded-r-full shadow-[0_0_12px_rgba(63,255,139,0.4)]"></div>
+                <div className="absolute left-0 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_12px_rgba(63,255,139,0.4)]"></div>
               )}
             </button>
           );
@@ -53,7 +53,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
       {/* Footer Actions */}
       <div className="px-3 pb-8 space-y-1">
         <button 
-          className="flex items-center w-full h-12 rounded-xl text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.03] transition-all duration-300"
+          className="flex items-center w-full h-12 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.03] transition-all duration-300"
           onClick={onSettings}
         >
           <div className="w-14 flex items-center justify-center shrink-0">
@@ -63,7 +63,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
         </button>
         
         <button 
-          className="flex items-center w-full h-12 rounded-xl text-zinc-500 hover:text-[#ff716c] hover:bg-[#ff716c]/[0.05] transition-all duration-300"
+          className="flex items-center w-full h-12 rounded-xl text-on-surface-variant hover:text-error hover:bg-error/[0.05] transition-all duration-300"
           onClick={onLogout}
         >
           <div className="w-14 flex items-center justify-center shrink-0">
@@ -75,7 +75,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
         {/* Floating New Transaction FAB - Minimal version */}
         <div className="pt-6 px-2">
           <button 
-            className={`flex items-center justify-center gap-3 bg-[#3fff8b] text-[#005d2c] rounded-2xl shadow-lg shadow-[#3fff8b]/10 active:scale-95 transition-all duration-300 overflow-hidden ${collapsed ? 'w-10 h-10 mx-auto' : 'w-full h-12'}`}
+            className={`flex items-center justify-center gap-3 bg-primary text-on-primary rounded-2xl shadow-lg shadow-primary/10 active:scale-95 transition-all duration-300 overflow-hidden ${collapsed ? 'w-10 h-10 mx-auto' : 'w-full h-12'}`}
             onClick={onNewTx}
           >
             <span className="material-symbols-outlined shrink-0">add</span>
@@ -86,7 +86,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
       
       {/* Collapse Toggle - Now more subtle */}
       <button 
-        className="absolute -right-3 top-12 w-6 h-6 bg-[#0e0e0e] border border-white/10 rounded-full flex items-center justify-center text-zinc-600 hover:text-white hover:border-white/20 transition-all shadow-xl"
+        className="absolute -right-3 top-12 w-6 h-6 bg-surface border border-outline-variant rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all shadow-xl"
         onClick={() => setCollapsed(!collapsed)}
       >
         <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
