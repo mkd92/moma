@@ -49,7 +49,7 @@ const Analytics = ({
               <span className="material-symbols-outlined">filter_list</span>
             </button>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+          <div className="flex gap-2 overflow-x-auto py-4 -my-4 hide-scrollbar">
             {['today', 'this_week', 'this_month', 'last_3m', 'this_year'].map(p => (
               <button 
                 key={p} 

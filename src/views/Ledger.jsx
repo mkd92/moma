@@ -90,7 +90,7 @@ const Ledger = ({
             <div className="absolute bottom-0 left-0 w-full h-px bg-outline-variant/20 group-focus-within:bg-primary/40 transition-all"></div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6 overflow-x-auto pb-2 hide-scrollbar">
+          <div className="flex items-center gap-4 md:gap-6 overflow-x-auto py-4 -my-4 hide-scrollbar">
             <div className="flex gap-2">
               {[{ p: 'all', label: 'All' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }, { p: 'last_3m', label: '3M' }].map(({ p, label }) => (
                 <button 
