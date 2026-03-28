@@ -49,14 +49,6 @@ const TransactionItem = ({ t, onClick, onDelete, accounts, categories, currencyS
         </div>
       </div>
 
-      {!bulkSelectMode && onDelete && (
-        <button 
-          className="absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-on-surface/[0.03] border border-outline-variant/10 text-on-surface-variant md:opacity-0 group-hover:opacity-100 hover:text-error transition-all flex items-center justify-center shadow-sm"
-          onClick={(e) => { e.stopPropagation(); onDelete(t, e); }}
-        >
-          <span className="material-symbols-outlined text-sm">delete</span>
-        </button>
-      )}
     </div>
   );
 };

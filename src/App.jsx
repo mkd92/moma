@@ -131,7 +131,12 @@ export default function App() {
   }
 
   if (view === 'new_transaction') {
-    return <NewTransaction {...viewProps} />;
+    return (
+      <NewTransaction 
+        {...viewProps}
+        onDelete={handleDeleteTransaction}
+      />
+    );
   }
 
   if (view === 'settings') {
