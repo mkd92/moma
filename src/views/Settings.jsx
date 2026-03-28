@@ -45,34 +45,6 @@ const Settings = ({
                   <CustomDropdown options={currencyOptions} value={currencyCode} onChange={setCurrencyCode} showSearch={true} />
                 </div>
               </div>
-
-              <div className="p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:bg-on-surface/[0.02] transition-colors group">
-                <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 rounded-2xl bg-on-surface/[0.03] flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
-                    <span className="material-symbols-outlined text-[22px]">{theme === 'dark' ? 'dark_mode' : 'light_mode'}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-on-surface">Atmosphere</p>
-                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-1 opacity-60">Visual rendering mode</p>
-                  </div>
-                </div>
-                <div className="flex bg-on-surface/[0.03] p-1 rounded-2xl gap-1 border border-outline-variant/5 w-full sm:w-auto">
-                  <button 
-                    className={`flex-1 flex items-center justify-center gap-3 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'light' ? 'bg-on-surface text-surface shadow-xl scale-[1.02]' : 'text-on-surface-variant hover:text-on-surface'}`}
-                    onClick={() => theme !== 'light' && toggleTheme()}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">light_mode</span>
-                    Light
-                  </button>
-                  <button 
-                    className={`flex-1 flex items-center justify-center gap-3 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${theme === 'dark' ? 'bg-on-surface text-surface shadow-xl scale-[1.02]' : 'text-on-surface-variant hover:text-on-surface'}`}
-                    onClick={() => theme !== 'dark' && toggleTheme()}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">dark_mode</span>
-                    Dark
-                  </button>
-                </div>
-              </div>
             </div>
           </section>
 
