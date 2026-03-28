@@ -134,7 +134,7 @@ const Dashboard = ({
             </section>
 
             {/* Account Distribution - Monochromatic */}
-            <section className="bg-surface-low p-10 rounded-[2.5rem] shadow-sm space-y-10">
+            <section className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant shadow-sm space-y-10">
               <div className="flex items-center justify-between px-2">
                 <h3 className="font-headline font-black text-xs text-on-surface uppercase tracking-[0.3em]">Assets</h3>
                 <button className="text-[9px] font-black text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors" onClick={() => setView('account_management')}>Manage</button>
