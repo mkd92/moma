@@ -1,15 +1,31 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 
 // Modular Imports
 import { PATH_VIEWS, VIEW_PATHS } from './constants';
 import { useAuth, useAppData, useTransactionForm } from './hooks';
-import { 
-  Landing, AuthView, Dashboard, Ledger, Analytics, 
-  Budgets, NewTransaction, Settings, AccountManagement, 
-  CategoryManagement, PartyManagement, TagManagement 
-} from './views';
+
+// Lazy-loaded Views
+const Landing = lazy(() => import('./views/Landing'));
+const AuthView = lazy(() => import('./views/AuthView'));
+const Dashboard = lazy(() => import('./views/Dashboard'));
+const Ledger = lazy(() => import('./views/Ledger'));
+const Analytics = lazy(() => import('./views/Analytics'));
+const Budgets = lazy(() => import('./views/Budgets'));
+const NewTransaction = lazy(() => import('./views/NewTransaction'));
+const Settings = lazy(() => import('./views/Settings'));
+const AccountManagement = lazy(() => import('./views/Management/AccountManagement'));
+const CategoryManagement = lazy(() => import('./views/Management/CategoryManagement'));
+const PartyManagement = lazy(() => import('./views/Management/PartyManagement'));
+const TagManagement = lazy(() => import('./views/Management/TagManagement'));
+
+// Loading fallback component
+const ViewLoader = () => (
+  <div className="min-h-screen bg-surface flex items-center justify-center">
+    <div className="w-10 h-10 border-2 border-primary/10 border-t-primary rounded-full animate-spin"></div>
+  </div>
+);
 
 export default function App() {
   const navigate = useNavigate();
@@ -31,16 +47,22 @@ export default function App() {
 
   const toggleTheme = useCallback(() => setTheme(t => t === 'dark' ? 'light' : 'dark'), []);
 
-  // --- UI State ---
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [showAnalyticsFilters, setShowAnalyticsFilters] = useState(false);
+  // --- Persistent Sidebar State ---
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem('moma-sidebar-collapsed');
+    return saved === 'true';
+  });
+
+  const handleSetCollapsed = useCallback((val) => {
+    setCollapsed(val);
+    localStorage.setItem('moma-sidebar-collapsed', val);
+  }, []);
 
   // --- Auth Hook ---
-  const auth = useAuth();
   const { 
     session, authMode, setAuthMode, email, setEmail, password, setPassword,
     authLoading, authError, setAuthError, handleAuth, handleGoogleSignIn, handleLogout 
-  } = auth;
+  } = useAuth(setView);
 
   // --- App Data Hook ---
   const appData = useAppData(session, navigate, pathname);
@@ -50,18 +72,15 @@ export default function App() {
     fetchTransactions, fetchAccounts, refreshData,
     handleCreateCategory, handleDeleteCategory, handleCreateParty, handleDeleteParty,
     handleDeleteTransaction, handleCreateTag, handleDeleteTag, handleCreateAccount,
-    handleDeleteAccount, handleUpdateAccount, handleSetDefaultAccount, handleSaveBudget
+    handleDeleteAccount, handleUpdateAccount, handleSetDefaultAccount, handleSaveBudget,
+    showAdvancedFilters, setShowFilters: setShowAdvancedFilters,
+    showAnalyticsFilters, setShowAnalyticsFilters
   } = appData;
 
   // --- Transaction Form Hook ---
   const txForm = useTransactionForm(session, accounts, categories, transactions, defaultAccountId, fetchTransactions, setView);
   const {
-    txToEdit, setTxToEdit, txType, setTxType, amount, setAmount,
-    selectedCategory, setSelectedCategory, selectedSubcategory, setSelectedSubcategory,
-    selectedParty, setSelectedParty, selectedAccount, setSelectedAccount,
-    note, setNote, txDate, setTxDate, selectedTags, setSelectedTags,
-    transferFromAccount, setTransferFromAccount, transferToAccount, setTransferToAccount,
-    resetForm, openEditTransaction, handleTransaction
+    txToEdit, resetForm, openEditTransaction, handleTransaction
   } = txForm;
 
   // --- Global Navigation Props ---
@@ -77,87 +96,65 @@ export default function App() {
     session,
     onRefresh: refreshData,
     theme,
-    onToggleTheme: toggleTheme
+    onToggleTheme: toggleTheme,
+    collapsed,
+    setCollapsed: handleSetCollapsed
   };
 
   // --- View Selection ---
-  if (view === 'landing') {
-    return <Landing session={session} setView={setView} />;
-  }
+  const renderView = () => {
+    if (view === 'landing') {
+      return <Landing session={session} setView={setView} />;
+    }
 
-  if (view === 'auth') {
-    return (
-      <AuthView 
-        authMode={authMode} setAuthMode={setAuthMode}
-        email={email} setEmail={setEmail}
-        password={password} setPassword={setPassword}
-        authLoading={authLoading} authError={authError} setAuthError={setAuthError}
-        handleAuth={handleAuth} handleGoogleSignIn={handleGoogleSignIn}
-        setView={setView}
-      />
-    );
-  }
+    if (view === 'auth') {
+      return (
+        <AuthView 
+          authMode={authMode} setAuthMode={setAuthMode}
+          email={email} setEmail={setEmail}
+          password={password} setPassword={setPassword}
+          authLoading={authLoading} authError={authError} setAuthError={setAuthError}
+          handleAuth={handleAuth} handleGoogleSignIn={handleGoogleSignIn}
+          setView={setView}
+        />
+      );
+    }
 
-  // Grouped props for easier passing
-  const viewProps = {
-    shellProps,
-    ...appData,
-    ...txForm,
-    openEditTransaction,
-    navToLedger: () => { resetForm(); setView('ledger'); },
-    navToAnalytics: () => setView('analytics'),
-    navToDashboard: () => setView('dashboard'),
-    setView,
-    showAdvancedFilters,
-    setShowFilters: setShowAdvancedFilters,
-    showAnalyticsFilters,
-    setShowAnalyticsFilters
+    // Grouped props for easier passing
+    const viewProps = {
+      shellProps,
+      ...appData,
+      ...txForm,
+      openEditTransaction,
+      onDelete: handleDeleteTransaction,
+      navToLedger: () => { resetForm(); setView('ledger'); },
+      navToAnalytics: () => setView('analytics'),
+      navToDashboard: () => setView('dashboard'),
+      setView,
+      showAdvancedFilters,
+      setShowFilters: setShowAdvancedFilters,
+      showAnalyticsFilters,
+      setShowAnalyticsFilters
+    };
+
+    switch (view) {
+      case 'dashboard': return <Dashboard {...viewProps} />;
+      case 'ledger': return <Ledger {...viewProps} />;
+      case 'analytics': return <Analytics {...viewProps} />;
+      case 'budgets': return <Budgets {...viewProps} />;
+      case 'new_transaction': return <NewTransaction {...viewProps} />;
+      case 'settings': return <Settings {...viewProps} />;
+      case 'account_management': return <AccountManagement {...viewProps} />;
+      case 'category_management': return <CategoryManagement {...viewProps} />;
+      case 'party_management': return <PartyManagement {...viewProps} />;
+      case 'tag_management': return <TagManagement {...viewProps} />;
+      default: return null;
+    }
   };
 
-  if (view === 'dashboard') {
-    return <Dashboard {...viewProps} />;
-  }
-
-  if (view === 'ledger') {
-    return <Ledger {...viewProps} />;
-  }
-
-  if (view === 'analytics') {
-    return <Analytics {...viewProps} />;
-  }
-
-  if (view === 'budgets') {
-    return <Budgets {...viewProps} />;
-  }
-
-  if (view === 'new_transaction') {
-    return (
-      <NewTransaction 
-        {...viewProps}
-        onDelete={handleDeleteTransaction}
-      />
-    );
-  }
-
-  if (view === 'settings') {
-    return <Settings {...viewProps} />;
-  }
-
-  if (view === 'account_management') {
-    return <AccountManagement {...viewProps} />;
-  }
-
-  if (view === 'category_management') {
-    return <CategoryManagement {...viewProps} />;
-  }
-
-  if (view === 'party_management') {
-    return <PartyManagement {...viewProps} />;
-  }
-
-  if (view === 'tag_management') {
-    return <TagManagement {...viewProps} />;
-  }
-
-  return null;
+  return (
+    <Suspense fallback={<ViewLoader />}>
+      {renderView()}
+    </Suspense>
+  );
 }

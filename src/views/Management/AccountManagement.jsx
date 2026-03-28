@@ -6,35 +6,35 @@ import { CURRENCY_SYMBOLS, ACCT_META } from '../../constants';
 
 const ManagedAcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, defaultAccountId }) => 
   accts.length === 0 ? null : (
-    <div className="space-y-4">
-      <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">{title}</p>
-      <div className="bg-surface-low rounded-[2rem] border border-outline-variant/10 overflow-hidden divide-y divide-white/5 shadow-xl">
+    <div className="space-y-6">
+      <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">{title}</p>
+      <div className="bg-surface-low rounded-[2.5rem] border border-outline-variant/10 overflow-hidden divide-y divide-outline-variant/5 shadow-xl">
         {accts.map(acc => {
           const bal = accountBalances[acc.id] || 0;
           const isDefault = acc.id === defaultAccountId;
           return (
-            <div key={acc.id} className="p-6 flex items-center justify-between group hover:bg-white/5 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-zinc-400">
-                  <span className="material-symbols-outlined">{ACCT_META[acc.type || 'asset']?.icon || 'account_balance'}</span>
+            <div key={acc.id} className="p-8 flex items-center justify-between group hover:bg-on-surface/[0.02] transition-colors">
+              <div className="flex items-center gap-5">
+                <div className="w-12 h-12 rounded-2xl bg-on-surface/[0.03] flex items-center justify-center text-on-surface-variant group-hover:text-on-surface transition-colors border border-outline-variant/5">
+                  <span className="material-symbols-outlined text-[22px]">{ACCT_META[acc.type || 'asset']?.icon || 'account_balance'}</span>
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-white">{acc.name}</p>
-                    {isDefault && <span className="text-[8px] font-black bg-[#3fff8b] text-[#005d2c] px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">Default</span>}
-                    {acc.exclude_from_net_worth && <span className="text-[8px] font-black bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">Excluded</span>}
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-bold text-on-surface">{acc.name}</p>
+                    {isDefault && <span className="text-[9px] font-black bg-on-surface text-surface px-2 py-0.5 rounded-sm uppercase tracking-tighter shadow-sm">Default</span>}
+                    {acc.exclude_from_total && <span className="text-[9px] font-black bg-on-surface/[0.05] text-on-surface-variant px-2 py-0.5 rounded-sm uppercase tracking-tighter">Excluded</span>}
                   </div>
-                  <p className={`text-xs font-bold font-headline mt-0.5 ${bal < 0 ? 'text-[#ff716c]' : 'text-[#3fff8b]'}`}>
+                  <p className={`text-xs font-bold font-headline mt-1.5 ${bal < 0 ? 'text-error' : 'text-on-surface opacity-60'}`}>
                     {currencySymbol}{bal.toLocaleString()}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-2 text-zinc-500 hover:text-[#3fff8b] transition-colors" onClick={() => onEdit(acc)}>
+              <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button className="p-2 text-on-surface-variant hover:text-on-surface transition-colors" onClick={() => onEdit(acc)}>
                   <span className="material-symbols-outlined text-sm">edit</span>
                 </button>
                 {!isDefault && (
-                  <button className="p-2 text-zinc-500 hover:text-[#ff716c] transition-colors" onClick={() => onDelete(acc.id)}>
+                  <button className="p-2 text-on-surface-variant hover:text-error transition-colors" onClick={() => onDelete(acc.id)}>
                     <span className="material-symbols-outlined text-sm">delete</span>
                   </button>
                 )}
@@ -97,69 +97,70 @@ export default function AccountManagement({
 
   const acctEditModal = editingAccount ? createPortal(
     <div className="modal-overlay" onClick={() => setEditingAccount(null)}>
-      <div className="bg-[#131313] p-8 rounded-[2.5rem] border border-outline-variant/10 w-full max-w-md slide-up space-y-8" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 w-full max-w-md slide-up space-y-10 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center">
-          <h3 className="font-headline text-2xl font-bold text-white">Edit Account</h3>
-          <button className="text-zinc-500 hover:text-white" onClick={() => setEditingAccount(null)}>
+          <h3 className="font-headline text-2xl font-black text-on-surface uppercase tracking-tight">Modify Vault</h3>
+          <button className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors hover:bg-on-surface/[0.05]" onClick={() => setEditingAccount(null)}>
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <form onSubmit={handleUpdateAccount} className="space-y-6">
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Account Name</p>
+        <form onSubmit={handleUpdateAccount} className="space-y-8">
+          <div className="space-y-3">
+            <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Identity</p>
             <input 
               type="text" 
-              className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium"
+              className="w-full bg-surface-lowest border border-outline-variant/10 rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-on-surface/10 transition-all text-sm font-bold outline-none"
               value={editAcctName} 
               onChange={e => setEditAcctName(e.target.value)} 
               required 
             />
           </div>
 
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Balance Mode</p>
-            <div className="flex bg-[#0e0e0e] p-1 rounded-xl gap-1 border border-white/5">
-              <button type="button" className={`flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${editAcctMode === 'opening' ? 'bg-[#3fff8b] text-[#005d2c]' : 'text-zinc-500'}`} onClick={() => { setEditAcctMode('opening'); setEditAcctValue(String(parseFloat(editingAccount.initial_balance) || 0)); }}>Opening</button>
-              <button type="button" className={`flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${editAcctMode === 'current' ? 'bg-[#3fff8b] text-[#005d2c]' : 'text-zinc-500'}`} onClick={() => { setEditAcctMode('current'); setEditAcctValue(String(accountBalances[editingAccount.id] || 0)); }}>Current</button>
+          <div className="space-y-3">
+            <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Calculation Mode</p>
+            <div className="flex bg-surface-lowest p-1.5 rounded-2xl gap-1 border border-outline-variant/5">
+              <button type="button" className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${editAcctMode === 'opening' ? 'bg-on-surface text-surface shadow-lg scale-[1.02]' : 'text-on-surface-variant hover:text-on-surface'}`} onClick={() => { setEditAcctMode('opening'); setEditAcctValue(String(parseFloat(editingAccount.initial_balance) || 0)); }}>Opening</button>
+              <button type="button" className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${editAcctMode === 'current' ? 'bg-on-surface text-surface shadow-lg scale-[1.02]' : 'text-on-surface-variant hover:text-on-surface'}`} onClick={() => { setEditAcctMode('current'); setEditAcctValue(String(accountBalances[editingAccount.id] || 0)); }}>Current</button>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">{editAcctMode === 'opening' ? 'Opening Balance' : 'Current Balance'}</p>
+          <div className="space-y-3">
+            <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">{editAcctMode === 'opening' ? 'Initial Unit Value' : 'Current Unit Value'}</p>
             <input 
               type="number" 
               step="0.01" 
-              className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium"
+              className="w-full bg-surface-lowest border border-outline-variant/10 rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-on-surface/10 transition-all text-sm font-bold outline-none"
               value={editAcctValue} 
               onChange={e => setEditAcctValue(e.target.value)} 
               required 
             />
           </div>
 
-          <div className="p-4 bg-[#0e0e0e] rounded-xl border border-white/5 space-y-1">
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">
-              {editAcctMode === 'opening' ? 'Resulting Current' : 'Calculated Opening'}
+          <div className="p-6 bg-surface-lowest rounded-2xl border border-outline-variant/5 space-y-2">
+            <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-[0.2em] opacity-40">
+              {editAcctMode === 'opening' ? 'Projected Current' : 'Calculated Opening'}
             </p>
-            <p className="text-sm font-bold text-[#3fff8b] font-headline">
-              {currencySymbol}{editAcctMode === 'opening' ? editAcctCurrentBalance.toLocaleString() : editAcctDerivedOpening?.toLocaleString()}
+            <p className="text-xl font-black text-on-surface font-headline tracking-tight">
+              <span className="text-xs opacity-30 mr-1 font-bold">{currencySymbol}</span>
+              {editAcctMode === 'opening' ? editAcctCurrentBalance.toLocaleString() : editAcctDerivedOpening?.toLocaleString()}
             </p>
           </div>
 
           <button 
-            className="flex items-center gap-3 w-full py-2 group cursor-pointer"
+            className="flex items-center gap-4 w-full py-2 group cursor-pointer"
             type="button"
             onClick={() => setEditAcctExclude(!editAcctExclude)}
           >
-            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${editAcctExclude ? 'bg-[#ff716c] border-[#ff716c]' : 'border-zinc-700'}`}>
-              {editAcctExclude && <span className="material-symbols-outlined text-white text-xs font-black">check</span>}
+            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${editAcctExclude ? 'bg-on-surface border-on-surface' : 'border-outline-variant group-hover:border-on-surface-variant'}`}>
+              {editAcctExclude && <span className="material-symbols-outlined text-surface text-sm font-black">check</span>}
             </div>
-            <span className="text-xs font-bold text-zinc-400 group-hover:text-zinc-200 transition-colors">Exclude from total Net Worth</span>
+            <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest group-hover:text-on-surface transition-colors">Exclude from Total Wealth</span>
           </button>
 
-          <div className="flex gap-4 pt-4">
-            <button type="submit" className="flex-1 bg-[#3fff8b] text-[#005d2c] py-4 rounded-xl font-bold uppercase tracking-widest text-xs active:scale-95 transition-all shadow-lg">Save Changes</button>
-            <button type="button" className="px-6 text-zinc-500 font-bold text-xs uppercase tracking-widest" onClick={() => setEditingAccount(null)}>Cancel</button>
+          <div className="flex gap-4 pt-6">
+            <button type="submit" className="flex-1 bg-on-surface text-surface py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] active:scale-[0.98] transition-all shadow-xl">Commit Updates</button>
+            <button type="button" className="px-8 text-on-surface-variant font-black text-[11px] uppercase tracking-[0.2em] hover:text-on-surface" onClick={() => setEditingAccount(null)}>Cancel</button>
           </div>
         </form>
       </div>
@@ -169,43 +170,43 @@ export default function AccountManagement({
 
   return (
     <PageShell {...shellProps}>
-      <div className="page-inner max-w-2xl mx-auto space-y-10 pb-32">
-        <div className="flex items-center gap-4 px-2">
-          <button className="w-10 h-10 rounded-xl bg-surface-low flex items-center justify-center text-zinc-500 hover:text-white transition-colors" onClick={() => setView('settings')}>
-            <span className="material-symbols-outlined">arrow_back</span>
+      <div className="page-inner max-w-2xl mx-auto space-y-12 pb-32 pt-4 md:pt-0 px-6">
+        <div className="flex items-center gap-5 px-2">
+          <button className="w-12 h-12 rounded-2xl bg-surface-low border border-outline-variant/10 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.05] transition-all" onClick={() => setView('settings')}>
+            <span className="material-symbols-outlined text-[22px]">arrow_back</span>
           </button>
-          <h2 className="font-headline text-3xl font-extrabold tracking-tight text-[#3fff8b]">Accounts</h2>
+          <h2 className="font-headline text-4xl font-black tracking-tight text-on-surface uppercase">Vault Entities</h2>
         </div>
 
-        <div className="space-y-10 fade-in">
-          <div className="bg-surface-low p-8 rounded-[2.5rem] border border-[#3fff8b]/20 shadow-2xl shadow-[#3fff8b]/5">
+        <div className="space-y-12 fade-in">
+          <div className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant shadow-2xl space-y-6">
             <CustomDropdown
-              label="Primary Spending Account"
+              label="Primary Selection"
               options={accounts.map(a => ({ value: a.id, label: a.name, icon: ACCT_META[a.type || 'asset']?.icon || 'account_balance' }))}
               value={defaultAccountId}
               onChange={handleSetDefaultAccount}
-              placeholder="Select Default Account"
+              placeholder="Assign Core Account"
             />
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-4 ml-1 opacity-60">
-              Pre-selected for all new transactions.
+            <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] ml-1 opacity-40">
+              Pre-selected for every new vault entry.
             </p>
           </div>
 
-          <ManagedAcctGroup title="Asset Accounts" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
-          <ManagedAcctGroup title="Liability Accounts" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
-          <ManagedAcctGroup title="Transit & Temporary" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+          <ManagedAcctGroup title="Liquid Assets" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+          <ManagedAcctGroup title="Liabilities" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+          <ManagedAcctGroup title="Transit / Temp" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
 
-          <section className="space-y-4 pt-6">
-            <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase px-2">Register New Account</p>
-            <form onSubmit={handleCreateAccount} className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-2xl space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Account Name</p>
-                  <input type="text" placeholder="e.g. Main Checking" className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required />
+          <section className="space-y-6 pt-10">
+            <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">Register New Entity</p>
+            <form onSubmit={handleCreateAccount} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Entity Name</p>
+                  <input type="text" placeholder="e.g. Primary Savings" className="w-full bg-surface-lowest border border-outline-variant/10 rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-on-surface/10 transition-all text-sm font-bold outline-none placeholder:text-on-surface-variant/20" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} required />
                 </div>
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Initial Balance</p>
-                  <input type="number" step="0.01" placeholder="0.00" className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium" value={newAccountBalance} onChange={(e) => setNewAccountBalance(e.target.value)} />
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Initial Balance</p>
+                  <input type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-lowest border border-outline-variant/10 rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-on-surface/10 transition-all text-sm font-bold outline-none placeholder:text-on-surface-variant/20" value={newAccountBalance} onChange={(e) => setNewAccountBalance(e.target.value)} />
                 </div>
               </div>
               <CustomDropdown
@@ -222,16 +223,16 @@ export default function AccountManagement({
                 }}
               />
               <button 
-                className="flex items-center gap-3 py-2 group cursor-pointer"
+                className="flex items-center gap-4 py-2 group cursor-pointer"
                 type="button"
                 onClick={() => setNewAccountExclude(!newAccountExclude)}
               >
-                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${newAccountExclude ? 'bg-[#ff716c] border-[#ff716c]' : 'border-zinc-700'}`}>
-                  {newAccountExclude && <span className="material-symbols-outlined text-white text-xs font-black">check</span>}
+                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${newAccountExclude ? 'bg-on-surface border-on-surface' : 'border-outline-variant group-hover:border-on-surface-variant'}`}>
+                  {newAccountExclude && <span className="material-symbols-outlined text-surface text-sm font-black">check</span>}
                 </div>
-                <span className="text-xs font-bold text-zinc-400 group-hover:text-zinc-200 transition-colors">Exclude from total Net Worth</span>
+                <span className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest group-hover:text-on-surface transition-colors">Exclude from Total Wealth</span>
               </button>
-              <button type="submit" className="w-full bg-[#1a1a1a] text-[#3fff8b] py-4 rounded-xl font-black uppercase tracking-[0.2em] text-xs border border-[#3fff8b]/20 hover:bg-[#3fff8b]/5 transition-all shadow-lg active:scale-[0.98]">Initialize Account</button>
+              <button type="submit" className="w-full bg-on-surface text-surface py-6 rounded-2xl font-black uppercase tracking-[0.3em] text-[11px] shadow-xl active:scale-[0.98] transition-all hover:brightness-110">Initialize Entity</button>
             </form>
           </section>
         </div>

@@ -6,9 +6,8 @@ import BottomNav from './BottomNav';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SUB_VIEWS } from '../../constants';
 
-const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session, onRefresh, theme, onToggleTheme }) => {
+const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session, onRefresh, theme, onToggleTheme, collapsed, setCollapsed }) => {
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
   const { containerRef, pullY, refreshing } = usePullToRefresh(onRefresh || (() => Promise.resolve()));
 
   // Swipe-back: right-edge swipe on sub-views
