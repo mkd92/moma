@@ -111,9 +111,12 @@ const Analytics = ({
                   <XAxis dataKey="label" hide />
                   <YAxis hide domain={['auto', 'auto']} />
                   <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
-                  <Bar dataKey="income" fill="currentColor" className="text-on-surface opacity-10" radius={[4, 4, 0, 0]} barSize={24} />
-                  <Bar dataKey="expense" fill="currentColor" className="text-on-surface opacity-5" radius={[4, 4, 0, 0]} barSize={24} />
-                  <Line type="monotone" dataKey="net" stroke="currentColor" className="text-on-surface" strokeWidth={4} dot={false} strokeLinecap="round" />
+                  {/* Income: Pure white with very low opacity for architectural feel */}
+                  <Bar dataKey="income" name="Inflow" fill="currentColor" className="text-on-surface opacity-20" radius={[4, 4, 0, 0]} barSize={24} />
+                  {/* Expense: Pure white with even lower opacity to differentiate */}
+                  <Bar dataKey="expense" name="Outflow" fill="currentColor" className="text-on-surface opacity-5" radius={[4, 4, 0, 0]} barSize={24} />
+                  {/* Net: High contrast precise line */}
+                  <Line type="monotone" dataKey="net" name="Net" stroke="currentColor" className="text-on-surface" strokeWidth={2} dot={false} strokeLinecap="round" />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
