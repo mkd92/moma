@@ -98,13 +98,15 @@ export default function App() {
     );
   }
 
-  // Common props for Management views
-  const managementProps = {
-    ...shellProps,
-    ...appData, // categories, accounts, etc.
+  // Grouped props for easier passing
+  const viewProps = {
+    shellProps,
+    ...appData,
+    ...txForm,
     openEditTransaction,
-    navToLedger: () => setView('ledger'),
+    navToLedger: () => { resetForm(); setView('ledger'); },
     navToAnalytics: () => setView('analytics'),
+    navToDashboard: () => setView('dashboard'),
     setView,
     showAdvancedFilters,
     setShowFilters: setShowAdvancedFilters,
@@ -113,59 +115,43 @@ export default function App() {
   };
 
   if (view === 'dashboard') {
-    return <Dashboard {...managementProps} />;
+    return <Dashboard {...viewProps} />;
   }
 
   if (view === 'ledger') {
-    return <Ledger {...managementProps} />;
+    return <Ledger {...viewProps} />;
   }
 
   if (view === 'analytics') {
-    return (
-      <Analytics 
-        {...managementProps}
-        composedData={appData.chartTimeSeries}
-        savRate={appData.savingsRate}
-      />
-    );
+    return <Analytics {...viewProps} />;
   }
 
   if (view === 'budgets') {
-    return <Budgets {...managementProps} />;
+    return <Budgets {...viewProps} />;
   }
 
   if (view === 'new_transaction') {
-    return (
-      <NewTransaction 
-        {...shellProps}
-        {...txForm}
-        categories={categories}
-        accounts={accounts}
-        parties={parties}
-        tags={tags}
-        currencySymbol={currencySymbol}
-      />
-    );
+    return <NewTransaction {...viewProps} />;
   }
 
   if (view === 'settings') {
-    return <Settings {...managementProps} />;
+    return <Settings {...viewProps} />;
   }
 
   if (view === 'account_management') {
-    return <AccountManagement {...managementProps} />;
+    return <AccountManagement {...viewProps} />;
   }
 
   if (view === 'category_management') {
-    return <CategoryManagement {...managementProps} />;
+    return <CategoryManagement {...viewProps} />;
   }
 
   if (view === 'party_management') {
-    return <PartyManagement {...managementProps} />;
+    return <PartyManagement {...viewProps} />;
   }
 
   if (view === 'tag_management') {
-    return <TagManagement {...managementProps} />;
+    return <TagManagement {...viewProps} />;
   }
 
   return null;
