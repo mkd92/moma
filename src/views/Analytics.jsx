@@ -106,7 +106,7 @@ const Analytics = ({
           
           <div className="h-80 bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-sm relative group overflow-hidden">
             {composedData && composedData.length === 0 ? <EmptyChart h={200} /> : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <ComposedChart data={composedData || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="currentColor" className="text-on-surface opacity-[0.03]" />
                   <XAxis 
