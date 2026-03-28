@@ -259,8 +259,8 @@ const Analytics = ({
                                   {sub.value.toLocaleString()}
                                 </span>
                               </div>
-                              <div className="w-full h-0.5 bg-on-surface/[0.02] rounded-full overflow-hidden">
-                                <div className="h-full bg-on-surface transition-all duration-700 origin-left" style={{ width: `${subPct}%`, opacity: 0.1 }}></div>
+                              <div className="w-full h-1 bg-on-surface/[0.05] rounded-full overflow-hidden">
+                                <div className="h-full bg-on-surface transition-all duration-700 origin-left" style={{ width: `${subPct}%`, opacity: 0.3 }}></div>
                               </div>
                             </div>
                             <div className="w-10 text-right">
