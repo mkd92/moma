@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed": "#003076",
+                        "secondary-dim": "#0f6df3",
+                        "surface-tint": "#3fff8b",
+                        "primary-fixed-dim": "#24f07e",
+                        "on-primary-container": "#004f24",
+                        "secondary": "#6e9bff",
+                        "surface-variant": "#262626",
+                        "on-tertiary-fixed": "#433700",
+                        "surface-bright": "#2c2c2c",
+                        "on-surface-variant": "#adaaaa",
+                        "tertiary-dim": "#edc600",
+                        "on-tertiary": "#635200",
+                        "surface-dim": "#0e0e0e",
+                        "on-primary-fixed": "#004820",
+                        "primary": "#3fff8b",
+                        "outline-variant": "#484847",
+                        "on-secondary-container": "#f7f7ff",
+                        "on-secondary-fixed-variant": "#004baf",
+                        "primary-container": "#13ea79",
+                        "on-surface": "#ffffff",
+                        "on-primary-fixed-variant": "#006832",
+                        "on-error": "#490006",
+                        "tertiary-fixed": "#fdd400",
+                        "surface-container-low": "#131313",
+                        "secondary-fixed-dim": "#acc3ff",
+                        "surface-container": "#1a1a1a",
+                        "secondary-container": "#0058ca",
+                        "inverse-surface": "#fcf9f8",
+                        "error-container": "#9f0519",
+                        "tertiary": "#ffe483",
+                        "on-error-container": "#ffa8a3",
+                        "error": "#ff716c",
+                        "background": "#0e0e0e",
+                        "surface-container-lowest": "#000000",
+                        "on-background": "#ffffff",
+                        "on-secondary": "#001d4e",
+                        "surface-container-high": "#20201f",
+                        "surface": "#0e0e0e",
+                        "primary-fixed": "#3fff8b",
+                        "on-tertiary-container": "#594a00",
+                        "on-primary": "#005d2c",
+                        "primary-dim": "#24f07e",
+                        "tertiary-fixed-dim": "#edc600",
+                        "inverse-on-surface": "#565555",
+                        "error-dim": "#d7383b",
+                        "tertiary-container": "#fdd400",
+                        "surface-container-highest": "#262626",
+                        "inverse-primary": "#006e35",
+                        "secondary-fixed": "#c0d1ff",
+                        "on-tertiary-fixed-variant": "#645300",
+                        "outline": "#767575"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body selection:bg-primary/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e]/80 backdrop-blur-xl bg-gradient-to-b from-[#131313] to-transparent">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-md mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-white/10">
+<img alt="User" class="w-full h-full object-cover" data-alt="close-up studio portrait of a young professional woman with confident expression, soft dramatic lighting, high fashion style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRAL7cJ6sXIBRjIAjk9BvGDDL4M5LY60SnSshY3UZY6QLHs-jURw4Ry4xLcl3Zr-e1xh7jI3iavZ9tXTjCj7TaeIDYE339pld-qC5y6t_nhjRJ3lL8uM6n-MiEl0s-ga7b0aj_5sSAIKaRysKToe5SBpRpP2kkWHbSRGYrD2-KGh0OpTxeYhFPpQ_jHyM4LBEiC3BgSQV5F7Pd94BbUsC7BdDpvFjlVcBOrhTlzY7myoC12T5mF7iwlJTaC5W_4jlDnXDZby4Iep6H"/>
+</div>
+<h1 class="font-headline font-bold text-xl tracking-tight text-[#3fff8b]">Insights</h1>
+</div>
+<button class="text-gray-400 active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-20 pb-32 px-6 max-w-md mx-auto space-y-8">
+<!-- Net Cash Flow Hero Section -->
+<section class="space-y-4">
+<div class="flex justify-between items-end">
+<div>
+<span class="font-label text-[10px] tracking-widest uppercase text-on-surface-variant/60">Net Cash Flow</span>
+<h2 class="font-headline text-3xl font-extrabold text-on-surface">+$4,290.50</h2>
+</div>
+<div class="flex items-center gap-1 text-primary text-sm font-bold bg-primary/10 px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+                    12.4%
+                </div>
+</div>
+<!-- Asymmetric Grid Chart Visualization -->
+<div class="h-48 flex items-end justify-between gap-1 mt-6">
+<div class="w-full bg-surface-container-high rounded-t-xl h-[30%] opacity-20"></div>
+<div class="w-full bg-surface-container-high rounded-t-xl h-[45%] opacity-30"></div>
+<div class="w-full bg-surface-container-high rounded-t-xl h-[35%] opacity-40"></div>
+<div class="w-full bg-primary/40 rounded-t-xl h-[60%]"></div>
+<div class="w-full bg-primary/60 rounded-t-xl h-[85%]"></div>
+<div class="w-full bg-primary rounded-t-xl h-[100%] shadow-[0_0_20px_rgba(63,255,139,0.3)]"></div>
+<div class="w-full bg-primary/50 rounded-t-xl h-[75%]"></div>
+</div>
+</section>
+<!-- Savings Rate Progress Card -->
+<section class="bg-surface-container-low rounded-[32px] p-6 space-y-6">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<h3 class="font-headline font-bold text-lg">Savings Rate</h3>
+<p class="text-on-surface-variant text-sm">Target: 35.0%</p>
+</div>
+<div class="text-right">
+<p class="font-headline font-extrabold text-2xl text-primary">28.4%</p>
+</div>
+</div>
+<div class="space-y-2">
+<div class="w-full h-3 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container rounded-full" style="width: 81%"></div>
+</div>
+<div class="flex justify-between text-[10px] font-label tracking-tighter uppercase text-on-surface-variant/40">
+<span>$0.00</span>
+<span>Goal: $12,500</span>
+</div>
+</div>
+</section>
+<!-- Spending by Category (Bento-ish Layout) -->
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="font-headline font-bold text-lg">Spending Breakdown</h3>
+<span class="text-primary text-xs font-bold">Details</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container rounded-[24px] p-4 flex flex-col justify-between h-32">
+<div class="w-10 h-10 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+</div>
+<div>
+<p class="text-[10px] font-label tracking-widest uppercase text-on-surface-variant/60">Dining</p>
+<p class="font-headline font-bold text-lg">$1,240</p>
+</div>
+</div>
+<div class="bg-surface-container rounded-[24px] p-4 flex flex-col justify-between h-32 border-l-4 border-primary/40">
+<div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+</div>
+<div>
+<p class="text-[10px] font-label tracking-widest uppercase text-on-surface-variant/60">Lifestyle</p>
+<p class="font-headline font-bold text-lg">$2,890</p>
+</div>
+</div>
+<div class="col-span-2 bg-surface-container rounded-[24px] p-5 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-2xl bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+</div>
+<div>
+<p class="text-[10px] font-label tracking-widest uppercase text-on-surface-variant/60">Fixed Costs</p>
+<p class="font-headline font-bold text-xl">$4,500</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/40" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Top Payees -->
+<section class="space-y-4">
+<h3 class="font-headline font-bold text-lg">Top Payees</h3>
+<div class="space-y-1">
+<!-- No dividers as per "No-Line" rule, using spacing and surface shifts -->
+<div class="group flex items-center justify-between p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-headline font-bold text-on-surface-variant overflow-hidden">
+<img alt="Spotify" class="w-full h-full object-cover" data-alt="vibrant abstract logo on dark background with neon lighting and modern digital aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-cj0aStqPpHvNSQomiNphpFb3XiEdtWhBFJwqJ-wLVv2yyxbKVdO7kN0mNTRdFmwHtXpqizH8MSlNvgdiV3C1_Zfq86uLaRipN799Asj5k1mEgab8UWJT_5w0QIX6Hbj-3u2dL55UfbrmmfQ9sZa35sSjfB6JjjVkyti9C9jy6exUI0Gkf5eDXW3GNhMreXw1FFYOYvAAoBvRwT3bXACTDCqSwgxladiXCc4AcbtD065R452XM6mZbYWqU7v1PW1cduws1qHyKHVK"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">Spotify Premium</p>
+<p class="text-xs text-on-surface-variant">Entertainment</p>
+</div>
+</div>
+<p class="font-headline font-bold text-error">-$14.99</p>
+</div>
+<div class="group flex items-center justify-between p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-headline font-bold text-on-surface-variant overflow-hidden">
+<img alt="Amazon" class="w-full h-full object-cover" data-alt="industrial warehouse interior with soft depth of field and warm ambient lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDplH3hPbrvRx_6DWp0TQZA-DJ_s0yZSdS2KSXxPfZRsLiLEtwzhOOm1LEUoaOuzYJGid9q6HXlbbnkVvUhqh3EUUQRM0N1wi6fQtSmwEe1zXTnynng-o7hi-fgk4jT0gXpP635IObtDHHXCTYXBV7vjprYb_1GbtQY1wlF7gFxU4BzXZsyRNJRnpY9bHAaB-r3Em2T4Kgt2e5S9K6w96e5dmeFwvctpmNiiNSTuMw2JFJlZhFCmUNp2NpHOq81uDkXBoa0Uaey6Ib"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">Amazon Prime</p>
+<p class="text-xs text-on-surface-variant">Shopping</p>
+</div>
+</div>
+<p class="font-headline font-bold text-error">-$139.00</p>
+</div>
+<div class="group flex items-center justify-between p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-headline font-bold text-on-surface-variant overflow-hidden">
+<img alt="Office" class="w-full h-full object-cover" data-alt="modern skyscraper glass facade reflecting a blue sky with soft white clouds" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCr8ArCHvruFYr0am2G8gAUaJ7wEMFiRLHh7dzmcqCj1zvbDlXF_RQi7-9mwmFGLDFcOnma8bL8vWIQAFUHSZv4CDHgWTgf9RacqiKBhMaU7rbLJQ23X0eTfb8amg9tEU8bE2BkgsM8xRbFwty-4G8w_HfUP4vqAERnHlhlfYTPrYtbPCarEK4mEyiLoH4fgN9arHhP2oVhg3p9TVm30rufy_P-TVhWzO_oI2anpTZxyi2QMM-coH0xS3W6QhvUhj1rvAmXQVsZYVe8"/>
+</div>
+<div>
+<p class="font-bold text-on-surface">WeWork</p>
+<p class="text-xs text-on-surface-variant">Office</p>
+</div>
+</div>
+<p class="font-headline font-bold text-error">-$450.00</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#0e0e0e]/90 backdrop-blur-2xl rounded-t-[32px] z-50 border-t border-white/10 shadow-[0_-24px_48px_rgba(0,0,0,0.4)]">
+<a class="flex flex-col items-center justify-center text-gray-500 opacity-60 px-4 py-2 hover:text-[#3fff8b] transition-colors active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-label font-medium text-[10px] tracking-widest uppercase">Ledger</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#3fff8b] bg-[#3fff8b]/10 rounded-2xl px-4 py-2 active:scale-90 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="analytics" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-label font-medium text-[10px] tracking-widest uppercase">Insights</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 opacity-60 px-4 py-2 hover:text-[#3fff8b] transition-colors active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="shield_with_heart">shield_with_heart</span>
+<span class="font-label font-medium text-[10px] tracking-widest uppercase">Vault</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 opacity-60 px-4 py-2 hover:text-[#3fff8b] transition-colors active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span class="font-label font-medium text-[10px] tracking-widest uppercase">Settings</span>
+</a>
+</nav>
+</body></html>

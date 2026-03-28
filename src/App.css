@@ -1,216 +1,125 @@
-@import "tailwindcss";
-
-:root {
-  /* --- Primary Colors (Stitch Dark Theme) --- */
-  --primary: #3fff8b;
-  --primary-container: #13ea79;
-  --on-primary: #005d2c;
-  --on-primary-container: #004f24;
-  --primary-light: rgba(63, 255, 139, 0.1);
-
-  /* --- Surface Hierarchy --- */
-  --surface: #0e0e0e;
-  --surface-dim: #0e0e0e;
-  --surface-bright: #2c2c2c;
-  --surface-container-lowest: #000000;
-  --surface-container-low: #131313;
-  --surface-container: #1a1a1a;
-  --surface-container-high: #20201f;
-  --surface-container-highest: #262626;
-  --surface-variant: #262626;
-
-  /* --- Text Colors --- */
-  --on-surface: #ffffff;
-  --on-surface-variant: #adaaaa;
-  --background: #0e0e0e;
-  --on-background: #ffffff;
-
-  /* --- Semantic Colors --- */
-  --secondary: #6e9bff;
-  --secondary-dim: #0f6df3;
-  --on-secondary: #001d4e;
-  --secondary-container: #0058ca;
-  --on-secondary-container: #f7f7ff;
-
-  --tertiary: #ffe483;
-  --on-tertiary: #635200;
-  --tertiary-container: #fdd400;
-  --on-tertiary-container: #594a00;
-
-  --error: #ff716c;
-  --on-error: #490006;
-  --error-container: #9f0519;
-  --on-error-container: #ffa8a3;
-
-  /* --- Functional --- */
-  --outline: #767575;
-  --outline-variant: #484847;
-  --ghost-border: rgba(72, 72, 71, 0.15);
-
-  /* --- Spacing --- */
-  --spacing-4: 1rem;
-  --spacing-8: 2rem;
-  --spacing-10: 2.5rem;
-
-  /* --- Border Radius --- */
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-full: 9999px;
-
-  /* --- Shadows --- */
-  --shadow-ambient: 0 12px 32px rgba(0, 0, 0, 0.4);
-
-  /* --- Legacy Compatibility --- */
-  --tertiary-fixed-variant: var(--error);
-  --on-surface-variant-alt: #adaaaa;
-}
-
-/* =========================================
-   APP SHELL
-   ========================================= */
-.app-shell {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: var(--surface);
-}
-
-.page-content {
-  flex: 1;
-  overflow-y: auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding-top: 64px; /* Fixed TopHeader offset */
-  position: relative;
-}
-
-@media (max-width: 767px) {
-  .page-content {
-    padding-bottom: 96px; /* BottomNav offset */
+@layer components {
+  /* =========================================
+     APP SHELL & LAYOUT
+     ========================================= */
+  .app-shell {
+    display: flex;
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+    background-color: #0e0e0e;
   }
-}
 
-@media (min-width: 768px) {
-  /* Sidebar is 16rem (w-64) or 5rem (w-20) when collapsed */
-  /* Handled by fixed positioning + padding in App.jsx and Tailwind classes */
-}
+  .page-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding-top: 64px; /* Space for TopHeader */
+    position: relative;
+    height: 100%;
+  }
 
-/* =========================================
-   ANIMATIONS
-   ========================================= */
-.fade-in { animation: fadeIn 0.35s ease-out forwards; }
-.slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @media (max-width: 767px) {
+    .page-content {
+      padding-bottom: 90px; /* Space for BottomNav */
+    }
+  }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+  /* Desktop padding-left for sidebar is handled by inline style/Tailwind in App.jsx */
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(32px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+  /* =========================================
+     ANIMATIONS
+     ========================================= */
+  .fade-in { animation: fadeIn 0.35s ease-out forwards; }
+  .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-/* =========================================
-   CUSTOM SCROLLBAR
-   ========================================= */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--surface-container-highest);
-  border-radius: 10px;
-}
+  /* =========================================
+     MODAL OVERLAY
+     ========================================= */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 1.5rem;
+  }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--outline);
-}
+  /* =========================================
+     PULL TO REFRESH
+     ========================================= */
+  .ptr-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    z-index: 40;
+    pointer-events: none;
+  }
 
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+  .ptr-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2.5px solid rgba(63, 255, 139, 0.1);
+    border-top-color: #3fff8b;
+    border-radius: 50%;
+    animation: ptr-spin 0.8s linear infinite;
+  }
 
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
+  .ptr-spinner-static {
+    animation: none;
+  }
 
-/* =========================================
-   MODAL OVERLAY
-   ========================================= */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-blur: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  padding: 1.5rem;
-}
+  @keyframes ptr-spin {
+    to { transform: rotate(360deg); }
+  }
 
-/* =========================================
-   PULL TO REFRESH
-   ========================================= */
-.ptr-indicator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  z-index: 40;
-  pointer-events: none;
-}
+  /* =========================================
+     RECHARTS STYLING
+     ========================================= */
+  .recharts-cartesian-grid-line {
+    stroke: #484847;
+    opacity: 0.15;
+  }
 
-.ptr-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2.5px solid var(--primary-light);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: ptr-spin 0.8s linear infinite;
-}
+  .recharts-tooltip-cursor {
+    fill: #1a1a1a;
+    opacity: 0.5;
+  }
 
-.ptr-spinner-static {
-  animation: none;
-}
+  .recharts-default-tooltip {
+    background-color: #1a1a1a !important;
+    border: 1px solid rgba(72, 72, 71, 0.3) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.4) !important;
+  }
 
-@keyframes ptr-spin {
-  to { transform: rotate(360deg); }
-}
-
-/* =========================================
-   UTILITIES
-   ========================================= */
-.font-headline { font-family: 'Manrope', sans-serif; }
-.font-body { font-family: 'Inter', sans-serif; }
-
-/* Input Date Reset */
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  opacity: 0.5;
-  cursor: pointer;
-}
-
-/* Recharts Overrides */
-.recharts-cartesian-grid-line {
-  stroke: var(--outline-variant);
-  opacity: 0.1;
-}
-
-.recharts-tooltip-cursor {
-  fill: var(--surface-container);
-  opacity: 0.5;
+  /* =========================================
+     INPUT RESET
+     ========================================= */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(0.8);
+    opacity: 0.5;
+    cursor: pointer;
+  }
 }

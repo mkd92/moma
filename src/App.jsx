@@ -204,8 +204,7 @@ const TransactionItem = ({ t, onClick, onDelete, accounts, categories, currencyS
 const SUB_VIEWS = new Set(['new_transaction', 'account_management', 'category_management', 'party_management', 'tag_management']);
 
 // Sidebar — desktop left-rail navigation
-const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout }) => {
-  const [collapsed, setCollapsed] = useState(false);
+const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, collapsed, setCollapsed }) => {
   const NAV_ITEMS = [
     { key: 'dashboard', label: 'Dashboard', onClick: onDashboard, icon: 'dashboard' },
     { key: 'ledger', label: 'Transactions', onClick: onLedger, icon: 'receipt_long' },
@@ -213,7 +212,7 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
     { key: 'budgets', label: 'Budgets', onClick: onBudgets, icon: 'account_balance_wallet' },
   ];
   return (
-    <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 border-r border-zinc-800/15 bg-[#131313] ${collapsed ? 'w-20' : 'w-64'}`}>
+    <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 border-r border-zinc-800/15 bg-[#131313] z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
       <div className="p-8">
         {!collapsed && <span className="text-[#3fff8b] font-bold font-headline text-xl tracking-tight">Editorial Finance</span>}
         {collapsed && <span className="text-[#3fff8b] font-bold font-headline text-xl">EF</span>}
@@ -269,10 +268,10 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
   );
 };
 
-const TopHeader = ({ session, theme, onToggleTheme, onOpenSearch }) => (
-  <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#131313] md:pl-[17rem] transition-all">
+const TopHeader = ({ session, theme, onToggleTheme, collapsed }) => (
+  <nav className={`fixed top-0 right-0 left-0 z-50 flex justify-between items-center px-6 h-16 bg-[#131313]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300 ${collapsed ? 'md:left-20' : 'md:left-64'}`}>
     <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest border border-outline-variant/15 flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1a1a1a] border border-white/5 flex items-center justify-center">
         {session?.user?.email ? (
           <div className="w-full h-full bg-[#3fff8b] text-[#005d2c] flex items-center justify-center font-bold text-xs">
             {session.user.email.charAt(0).toUpperCase()}
@@ -281,13 +280,13 @@ const TopHeader = ({ session, theme, onToggleTheme, onOpenSearch }) => (
           <span className="material-symbols-outlined text-zinc-500" style={{ fontSize: '20px' }}>person</span>
         )}
       </div>
-      <span className="font-['Manrope'] font-bold text-2xl tracking-tight text-[#3fff8b]">Digital Ledger</span>
+      <span className="font-['Manrope'] font-bold text-xl tracking-tight text-[#3fff8b]">Editorial Finance</span>
     </div>
     <div className="flex items-center gap-2">
-      <button className="p-2 text-[#3fff8b] active:scale-95 transition-transform" onClick={onToggleTheme}>
+      <button className="p-2 text-zinc-400 hover:text-[#3fff8b] active:scale-95 transition-all" onClick={onToggleTheme}>
         <span className="material-symbols-outlined">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
       </button>
-      <button className="p-2 text-[#3fff8b] active:scale-95 transition-transform">
+      <button className="p-2 text-zinc-400 hover:text-[#3fff8b] active:scale-95 transition-all">
         <span className="material-symbols-outlined">search</span>
       </button>
     </div>
@@ -296,6 +295,7 @@ const TopHeader = ({ session, theme, onToggleTheme, onOpenSearch }) => (
 
 const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session, onRefresh, theme, onToggleTheme }) => {
   const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
   const { containerRef, pullY, refreshing } = usePullToRefresh(onRefresh || (() => Promise.resolve()));
 
   // Swipe-back: right-edge swipe on sub-views
@@ -318,8 +318,19 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
       onTouchStart={handleSwipeTouchStart}
       onTouchEnd={handleSwipeTouchEnd}
     >
-      <Sidebar view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onBudgets={onBudgets} onNewTx={onNewTx} onSettings={onSettings} onLogout={onLogout} />
-      <div className="page-content" ref={containerRef}>
+      <Sidebar 
+        view={view} 
+        onDashboard={onDashboard} 
+        onLedger={onLedger} 
+        onAnalytics={onAnalytics} 
+        onBudgets={onBudgets} 
+        onNewTx={onNewTx} 
+        onSettings={onSettings} 
+        onLogout={onLogout}
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+      />
+      <div className={`page-content transition-all duration-300 ${collapsed ? 'md:ml-20' : 'md:ml-64'}`} ref={containerRef}>
         {(pullY > 0 || refreshing) && (
           <div className="ptr-indicator" style={{ height: refreshing ? 48 : pullY }}>
             <div
@@ -328,8 +339,10 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
             />
           </div>
         )}
-        <TopHeader session={session} theme={theme} onToggleTheme={onToggleTheme} />
-        {children}
+        <TopHeader session={session} theme={theme} onToggleTheme={onToggleTheme} collapsed={collapsed} />
+        <main className="flex-1 w-full relative">
+          {children}
+        </main>
       </div>
       <BottomNav view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onSettings={onSettings} onNewTx={onNewTx} />
     </div>
@@ -1416,22 +1429,124 @@ export default function App() {
   const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, onLogout: handleLogout, session, onRefresh: refreshData, theme, onToggleTheme: toggleTheme };
 
   if (view === 'landing') return (
-    <div className="landing-container fade-in">
-      <svg className="landing-graphic" viewBox="0 0 200 200" fill="none"><rect x="20" y="100" width="24" height="80" rx="4" stroke="#000666" strokeWidth="1.5" /><rect x="56" y="60" width="24" height="120" rx="4" stroke="#000666" strokeWidth="1.5" /><rect x="92" y="40" width="24" height="140" rx="4" stroke="#000666" strokeWidth="1.5" /><rect x="128" y="75" width="24" height="105" rx="4" stroke="#000666" strokeWidth="1.5" /><rect x="164" y="55" width="24" height="125" rx="4" stroke="#000666" strokeWidth="1.5" /><line x1="10" y1="190" x2="195" y2="190" stroke="#000666" strokeWidth="1.5" /></svg>
-      <p className="landing-eyebrow">The Digital Ledger</p>
-      <h1 className="hero-title">Architectural Clarity<br />for Your Wealth.</h1>
-      <button className="launch-btn" onClick={() => session ? setView('dashboard') : setView('auth')}>Get Started</button>
+    <div className="min-h-screen bg-[#0e0e0e] flex flex-col items-center justify-center p-8 overflow-hidden relative">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-[#3fff8b]/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#6e9bff]/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2"></div>
+      
+      <div className="relative z-10 max-w-xl text-center space-y-12 fade-in">
+        <div className="space-y-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a1a1a] border border-white/5 mb-4">
+            <span className="w-2 h-2 rounded-full bg-[#3fff8b] animate-pulse"></span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">The Digital Ledger</span>
+          </div>
+          <h1 className="font-headline text-5xl md:text-7xl font-extrabold text-white tracking-tighter leading-[1.1]">
+            Architectural Clarity for <span className="text-[#3fff8b]">Wealth.</span>
+          </h1>
+          <p className="text-zinc-500 font-medium text-lg md:text-xl max-w-md mx-auto leading-relaxed">
+            A premium financial ecosystem designed for the modern era of asset management.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center gap-6">
+          <button 
+            className="w-full md:w-auto px-12 py-5 bg-gradient-to-br from-[#3fff8b] to-[#13ea79] text-[#005d2c] rounded-2xl font-black text-lg uppercase tracking-[0.2em] shadow-[0_20px_40px_rgba(63,255,139,0.2)] active:scale-95 transition-all hover:brightness-110"
+            onClick={() => session ? setView('dashboard') : setView('auth')}
+          >
+            Enter Vault
+          </button>
+          <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">End-to-End Encrypted · Open Source</p>
+        </div>
+      </div>
     </div>
   );
 
   if (view === 'auth') return (
-    <div className="auth-view fade-in">
-      <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><button className="icon-btn-text" onClick={() => setView('landing')}>← Back</button><h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', fontFamily: 'Manrope' }}>MOMA</h2></div>
-        <div className="auth-box">
-          <div className="auth-tabs"><button className={`auth-tab ${authMode === 'login' ? 'active' : ''}`} onClick={() => { setAuthMode('login'); setAuthError(''); }}>Log In</button><button className={`auth-tab ${authMode === 'signup' ? 'active' : ''}`} onClick={() => { setAuthMode('signup'); setAuthError(''); }}>Sign Up</button></div>
-          <form onSubmit={handleAuth} className="auth-form"><input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required /><input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />{authError && <p className="auth-error">{authError}</p>}<button type="submit" className="auth-submit-btn" disabled={authLoading}>{authLoading ? 'Authenticating...' : authMode === 'login' ? 'Enter Vault' : 'Create Account'}</button></form>
-          <div className="auth-social-btns"><button type="button" className="auth-social-btn" onClick={handleGoogleSignIn}><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>Continue with Google</button></div>
+    <div className="min-h-screen bg-[#0e0e0e] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#3fff8b]/5 rounded-full blur-[150px]"></div>
+      
+      <div className="w-full max-w-md space-y-8 relative z-10 fade-in">
+        <div className="flex flex-col items-center gap-4">
+          <button 
+            className="self-start flex items-center gap-2 text-zinc-500 hover:text-white transition-colors font-bold uppercase text-[10px] tracking-widest" 
+            onClick={() => setView('landing')}
+          >
+            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            Back
+          </button>
+          <div className="w-16 h-16 rounded-[1.5rem] bg-[#1a1a1a] flex items-center justify-center border border-white/5 shadow-2xl">
+            <span className="material-symbols-outlined text-[#3fff8b] text-3xl">token</span>
+          </div>
+          <h2 className="font-headline text-3xl font-extrabold text-white tracking-tight">Access Digital Ledger</h2>
+        </div>
+
+        <div className="bg-[#131313] p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-2xl space-y-8">
+          <div className="flex bg-[#0e0e0e] p-1.5 rounded-xl gap-1">
+            <button 
+              className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${authMode === 'login' ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`} 
+              onClick={() => { setAuthMode('login'); setAuthError(''); }}
+            >
+              Log In
+            </button>
+            <button 
+              className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${authMode === 'signup' ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`} 
+              onClick={() => { setAuthMode('signup'); setAuthError(''); }}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Email</p>
+              <input 
+                type="email" 
+                placeholder="email@vault.com" 
+                className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium"
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                required 
+              />
+            </div>
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase ml-1">Password</p>
+              <input 
+                type="password" 
+                placeholder="••••••••" 
+                className="w-full bg-[#1a1a1a] border-none rounded-xl p-4 text-white focus:ring-2 focus:ring-[#3fff8b]/30 transition-all text-sm font-medium"
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+              />
+            </div>
+            {authError && (
+              <div className="p-4 bg-[#ff716c]/10 rounded-xl border border-[#ff716c]/20 flex items-center gap-3">
+                <span className="material-symbols-outlined text-[#ff716c] text-sm">error</span>
+                <p className="text-[10px] font-bold text-[#ff716c] uppercase tracking-wider leading-relaxed">{authError}</p>
+              </div>
+            )}
+            <button 
+              type="submit" 
+              className="w-full bg-[#3fff8b] text-[#005d2c] py-4 rounded-xl font-black uppercase tracking-[0.2em] shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 mt-4" 
+              disabled={authLoading}
+            >
+              {authLoading ? 'Verifying...' : authMode === 'login' ? 'Enter Vault' : 'Initialize Account'}
+            </button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#131313] px-4 text-zinc-600 font-bold tracking-widest">Or Secure Link</span></div>
+          </div>
+
+          <button 
+            type="button" 
+            className="w-full bg-[#1a1a1a] text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-white/5 hover:bg-[#262626] transition-all active:scale-[0.98]" 
+            onClick={handleGoogleSignIn}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
+            Continue with Google
+          </button>
         </div>
       </div>
     </div>
@@ -2288,68 +2403,79 @@ export default function App() {
   // --- DASHBOARD VIEW ---
   return (
     <PageShell {...shellProps}>
-      <div className="page-inner fade-in">
-        <div className="dashboard-layout">
-          <div className="dashboard-main-stack">
-            <div className="relative overflow-hidden bg-gradient-to-br from-[#3fff8b] to-[#005d2c] p-8 rounded-[2rem] shadow-2xl">
-              <div className="relative z-10">
-                <p className="text-[10px] font-bold tracking-[0.2em] text-[#001d4e]/60 uppercase mb-2">Total Net Worth</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold font-['Manrope'] text-[#001d4e]">{currencySymbol}</span>
-                  <h1 className="text-6xl font-extrabold font-['Manrope'] text-[#001d4e] tracking-tighter">
-                    {Math.floor(balance).toLocaleString()}
-                  </h1>
-                  <span className="text-xl font-bold text-[#001d4e]/40 font-['Manrope']">
-                    .{(balance % 1).toFixed(2).split('.')[1]}
-                  </span>
-                </div>
-                {portfolioChange !== null && (
-                  <div className="inline-flex items-center gap-1 px-3 py-1 bg-[#001d4e]/10 rounded-full mt-6 backdrop-blur-md">
-                    <span className="material-symbols-outlined text-[#001d4e] text-sm">
-                      {portfolioChange >= 0 ? 'trending_up' : 'trending_down'}
+      <div className="page-inner space-y-10 pb-32 max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Main Content Stack */}
+          <div className="lg:col-span-8 space-y-10">
+            {/* Portfolio Hero */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#3fff8b] to-[#005d2c] p-8 md:p-12 rounded-[2.5rem] shadow-2xl">
+              <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div>
+                  <p className="text-[10px] font-bold tracking-[0.3em] text-[#001d4e]/60 uppercase mb-3">Total Net Worth</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-extrabold font-headline text-[#001d4e]">{currencySymbol}</span>
+                    <h1 className="text-6xl md:text-8xl font-extrabold font-headline text-[#001d4e] tracking-tighter leading-none">
+                      {Math.floor(balance).toLocaleString()}
+                    </h1>
+                    <span className="text-2xl font-bold text-[#001d4e]/40 font-headline">
+                      .{(balance % 1).toFixed(2).split('.')[1]}
                     </span>
-                    <span className="text-[10px] font-extrabold text-[#001d4e]">{Math.abs(portfolioChange)}% vs last</span>
                   </div>
-                )}
-              </div>
-              <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/20 rounded-full blur-3xl"></div>
-              <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-[#001d4e]/10 rounded-full blur-2xl"></div>
-            </div>
-
-            <div className="dash-period-bar">
-              {[{ key: 'this_month', label: 'This Month' }, { key: 'last_month', label: 'Last Month' }, { key: 'last_3m', label: '3 Months' }, { key: 'this_year', label: 'This Year' }, { key: 'all', label: 'All Time' }].map(p => (
-                <button key={p.key} className={`dash-period-btn${dashPeriod === p.key ? ' active' : ''}`} onClick={() => setDashPeriod(p.key)}>{p.label}</button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-surface-container-low p-6 rounded-[1.5rem] border border-outline-variant/5">
-                <p className="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant uppercase mb-4">Total Income</p>
-                <div className="flex justify-between items-end">
-                  <h2 className="text-2xl font-extrabold font-['Manrope'] text-[#3fff8b]">
-                    {currencySymbol}{totalIncome.toLocaleString()}
-                  </h2>
-                  <div className="w-10 h-10 rounded-full bg-[#3fff8b]/10 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[#3fff8b] text-sm">trending_up</span>
-                  </div>
+                  {portfolioChange !== null && (
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#001d4e]/10 rounded-full mt-8 backdrop-blur-md border border-[#001d4e]/10">
+                      <span className="material-symbols-outlined text-[#001d4e] text-sm">
+                        {portfolioChange >= 0 ? 'trending_up' : 'trending_down'}
+                      </span>
+                      <span className="text-[10px] font-black text-[#001d4e] uppercase tracking-wider">{Math.abs(portfolioChange)}% vs last period</span>
+                    </div>
+                  )}
+                </div>
+                {/* Minimal Sparkline Preview */}
+                <div className="flex items-end gap-1.5 h-16 opacity-40">
+                  {sparklineData.slice(-12).map((v, i) => {
+                    const max = Math.max(...sparklineData, 1);
+                    const h = Math.max(10, (v / max) * 100);
+                    return <div key={i} className="w-1.5 bg-[#001d4e] rounded-full" style={{ height: `${h}%` }}></div>;
+                  })}
                 </div>
               </div>
-              <div className="bg-surface-container-low p-6 rounded-[1.5rem] border border-outline-variant/5">
-                <p className="text-[10px] font-bold tracking-[0.2em] text-on-surface-variant uppercase mb-4">Total Expenses</p>
-                <div className="flex justify-between items-end">
-                  <h2 className="text-2xl font-extrabold font-['Manrope'] text-[#ff716c]">
-                    {currencySymbol}{totalExpense.toLocaleString()}
-                  </h2>
-                  <div className="w-10 h-10 rounded-full bg-[#ff716c]/10 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[#ff716c] text-sm">trending_down</span>
+              <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-[80px]"></div>
+              <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-[#001d4e]/10 rounded-full blur-[60px]"></div>
+            </div>
+
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-xl transition-transform active:scale-[0.99]">
+                <div className="flex justify-between items-start mb-6">
+                  <p className="text-[10px] font-bold tracking-[0.3em] text-zinc-500 uppercase">Total Income</p>
+                  <div className="w-10 h-10 rounded-full bg-[#3fff8b]/10 flex items-center justify-center border border-[#3fff8b]/10">
+                    <span className="material-symbols-outlined text-[#3fff8b] text-sm">arrow_upward</span>
                   </div>
                 </div>
+                <h2 className="text-3xl font-extrabold font-headline text-white tracking-tight">
+                  {currencySymbol}{totalIncome.toLocaleString()}
+                </h2>
+              </div>
+              <div className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/10 shadow-xl transition-transform active:scale-[0.99]">
+                <div className="flex justify-between items-start mb-6">
+                  <p className="text-[10px] font-bold tracking-[0.3em] text-zinc-500 uppercase">Total Expenses</p>
+                  <div className="w-10 h-10 rounded-full bg-[#ff716c]/10 flex items-center justify-center border border-[#ff716c]/10">
+                    <span className="material-symbols-outlined text-[#ff716c] text-sm">arrow_downward</span>
+                  </div>
+                </div>
+                <h2 className="text-3xl font-extrabold font-headline text-white tracking-tight">
+                  {currencySymbol}{totalExpense.toLocaleString()}
+                </h2>
               </div>
             </div>
 
-            <div className="content-section">
-              <div className="section-header-row"><h2 className="section-title-editorial">Recent Activity</h2><button className="section-action-link" onClick={navToLedger}>View All</button></div>
-              <div className="flex flex-col gap-3">
+            {/* Recent Activity */}
+            <section className="space-y-6">
+              <div className="flex justify-between items-center px-2">
+                <h3 className="font-headline text-2xl font-bold tracking-tight text-white">Recent Activity</h3>
+                <button className="text-[10px] font-bold text-[#3fff8b] uppercase tracking-[0.2em]" onClick={navToLedger}>View All</button>
+              </div>
+              <div className="space-y-3">
                 {dashTransactions.filter(t => !t.transfer_id).slice(0, 5).map(t => (
                   <TransactionItem 
                     key={t.id} 
@@ -2360,94 +2486,89 @@ export default function App() {
                     currencySymbol={currencySymbol} 
                   />
                 ))}
-                {dashTransactions.filter(t => !t.transfer_id).length === 0 && <p className="body-md text-center py-4">No transactions in this period.</p>}
+                {dashTransactions.filter(t => !t.transfer_id).length === 0 && (
+                  <div className="bg-surface-low/50 rounded-[2.5rem] py-12 text-center border border-dashed border-outline-variant/10">
+                    <p className="text-zinc-600 font-bold uppercase text-[10px] tracking-widest">No entries found</p>
+                  </div>
+                )}
               </div>
-            </div>
-
-            <div className="content-section">
-              <div className="section-header-row">
-                <h2 className="section-title-editorial">Spending by Category</h2>
-                <button className="section-action-link" onClick={navToAnalytics}>Details</button>
-              </div>
-              {topCategories.length > 0 ? (
-                <div className="flex flex-col gap-6 bg-surface-container p-6 rounded-[1.5rem] border border-outline-variant/5">
-                  {topCategories.map(({ name, amount, icon }, i) => {
-                    const pct = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
-                    const catIcon = getCategoryIcon(name);
-                    return (
-                      <div key={name} className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center text-sm font-bold">
-                          <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[#3fff8b] text-sm">{catIcon}</span>
-                            <span className="text-[#ffffff]">{name}</span>
-                          </div>
-                          <span className="font-['Manrope'] text-[#3fff8b]">{pct}%</span>
-                        </div>
-                        <div className="h-2 bg-surface-container-low rounded-full overflow-hidden">
-                          <div className="h-full bg-[#3fff8b] rounded-full" style={{ width: `${pct}%` }}></div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : <p className="body-md text-center py-8 opacity-50">No expense data for this period.</p>}
-            </div>
+            </section>
           </div>
 
-          <div className="dashboard-side-stack">
-            <div className="bg-surface-container-low p-6 rounded-[1.5rem] border border-outline-variant/5">
-              <div className="flex items-center gap-2 mb-6">
-                <span className="material-symbols-outlined text-[#3fff8b]">auto_awesome</span>
-                <h3 className="font-['Manrope'] font-bold text-sm text-[#ffffff] uppercase tracking-wider">AI Insights</h3>
+          {/* Sidebar Content Stack */}
+          <div className="lg:col-span-4 space-y-10">
+            {/* AI Insights Card */}
+            <section className="bg-surface-low p-8 rounded-[2.5rem] border-l-4 border-[#3fff8b] shadow-2xl">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-2xl bg-[#3fff8b]/10 flex items-center justify-center border border-[#3fff8b]/10">
+                  <span className="material-symbols-outlined text-[#3fff8b] text-sm">auto_awesome</span>
+                </div>
+                <h3 className="font-headline font-bold text-sm text-white uppercase tracking-widest">AI Insights</h3>
               </div>
-              <div className="flex flex-col gap-4">
+              <div className="space-y-6">
                 {smartInsights.map((ins, i) => (
-                  <div key={i} className="p-4 bg-surface-container rounded-xl border border-outline-variant/10 text-xs">
-                    <p className="text-on-surface-variant leading-relaxed">
-                      <strong className="text-[#3fff8b] font-bold">{ins.title}:</strong> {ins.text}
+                  <div key={i} className="group cursor-default">
+                    <p className="text-xs text-zinc-400 leading-relaxed transition-colors group-hover:text-zinc-200">
+                      <strong className="text-[#3fff8b] font-bold tracking-tight">{ins.title}:</strong> {ins.text}
                     </p>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            <div className="bg-surface-container-low p-6 rounded-[1.5rem] border border-outline-variant/5">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#3fff8b]">account_balance</span>
-                  <h3 className="font-['Manrope'] font-bold text-sm text-[#ffffff] uppercase tracking-wider">Accounts</h3>
-                </div>
-                <button className="text-[10px] font-bold text-[#3fff8b] uppercase" onClick={() => setView('account_management')}>Manage</button>
+            {/* Account Distribution */}
+            <section className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/5 shadow-2xl">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="font-headline font-bold text-sm text-white uppercase tracking-widest">Accounts</h3>
+                <button className="text-[10px] font-bold text-[#3fff8b] uppercase tracking-widest" onClick={() => setView('account_management')}>Manage</button>
               </div>
-              <div className="flex flex-col gap-3">
+              <div className="space-y-4">
                 {(() => {
                   const maxBal = Math.max(...accounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
-                  return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {accounts.map(a => {
-                        const bal = accountBalances[a.id] || 0;
-                        const pct = Math.min(Math.abs(bal) / maxBal * 100, 100);
-                        const isExcluded = a.exclude_from_total;
-                        return (
-                          <div key={a.id} className={`p-4 bg-surface-container rounded-xl border border-outline-variant/10 ${isExcluded ? 'opacity-60' : ''}`}>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs font-bold text-[#ffffff]">{a.name}</span>
-                              <span className={`font-['Manrope'] text-xs font-extrabold ${bal < 0 ? 'text-[#ff716c]' : 'text-[#3fff8b]'}`}>
-                                {currencySymbol}{bal.toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="h-1 bg-surface-container-low rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${bal < 0 ? 'bg-[#ff716c]' : 'bg-[#3fff8b]'}`} style={{ width: `${pct}%` }}></div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {accounts.length === 0 && <p className="text-xs text-on-surface-variant text-center py-4">No accounts yet.</p>}
-                    </div>
-                  );
+                  return accounts.map(a => {
+                    const bal = accountBalances[a.id] || 0;
+                    const pct = Math.min(Math.abs(bal) / maxBal * 100, 100);
+                    return (
+                      <div key={a.id} className="p-4 bg-surface-container rounded-2xl border border-outline-variant/10 group hover:border-[#3fff8b]/20 transition-all">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-xs font-bold text-white tracking-tight">{a.name}</span>
+                          <span className={`font-headline text-xs font-black ${bal < 0 ? 'text-[#ff716c]' : 'text-[#3fff8b]'}`}>
+                            {currencySymbol}{bal.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="h-1 bg-surface-lowest rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-1000 ${bal < 0 ? 'bg-[#ff716c]' : 'bg-[#3fff8b]'}`} style={{ width: `${pct}%` }}></div>
+                        </div>
+                      </div>
+                    );
+                  });
                 })()}
               </div>
-            </div>
+            </section>
+
+            {/* Spending Breakdown */}
+            <section className="bg-surface-low p-8 rounded-[2.5rem] border border-outline-variant/5 shadow-2xl">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="font-headline font-bold text-sm text-white uppercase tracking-widest">Spending</h3>
+                <button className="text-[10px] font-bold text-[#3fff8b] uppercase tracking-widest" onClick={navToAnalytics}>Details</button>
+              </div>
+              <div className="space-y-6">
+                {topCategories.length > 0 ? topCategories.slice(0, 4).map(({ name, amount }, i) => {
+                  const pct = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
+                  return (
+                    <div key={name} className="space-y-2">
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
+                        <span className="text-zinc-400">{name}</span>
+                        <span className="text-white">{pct}%</span>
+                      </div>
+                      <div className="h-1.5 bg-surface-lowest rounded-full overflow-hidden">
+                        <div className="h-full bg-zinc-700 rounded-full group-hover:bg-[#3fff8b] transition-all" style={{ width: `${pct}%` }}></div>
+                      </div>
+                    </div>
+                  );
+                }) : <p className="text-[10px] text-zinc-600 font-bold uppercase text-center py-4">No data</p>}
+              </div>
+            </section>
           </div>
         </div>
       </div>
