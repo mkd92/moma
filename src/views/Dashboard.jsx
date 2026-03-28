@@ -134,22 +134,22 @@ const Dashboard = ({
             </section>
 
             {/* Account Distribution - Monochromatic */}
-            <section className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant shadow-sm space-y-8">
-              <div className="flex items-center justify-between">
+            <section className="bg-surface-low p-10 rounded-[2.5rem] shadow-sm space-y-10">
+              <div className="flex items-center justify-between px-2">
                 <h3 className="font-headline font-black text-xs text-on-surface uppercase tracking-[0.3em]">Assets</h3>
-                <button className="text-[9px] font-bold text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors" onClick={() => setView('account_management')}>Manage</button>
+                <button className="text-[9px] font-black text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors" onClick={() => setView('account_management')}>Manage</button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {(() => {
                   const maxBal = Math.max(...accounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
                   return accounts.map(a => {
                     const bal = accountBalances[a.id] || 0;
                     const pct = Math.min(Math.abs(bal) / maxBal * 100, 100);
                     return (
-                      <div key={a.id} className="py-4 border-b border-outline-variant last:border-0 group cursor-default">
-                        <div className="flex justify-between items-center mb-3">
+                      <div key={a.id} className="py-6 px-2 group cursor-default">
+                        <div className="flex justify-between items-center mb-4">
                           <span className="text-xs font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">{a.name}</span>
-                          <span className={`font-headline text-xs font-black ${bal < 0 ? 'text-error' : 'text-on-surface'}`}>
+                          <span className={`font-headline text-sm font-black ${bal < 0 ? 'text-error' : 'text-on-surface'}`}>
                             {currencySymbol}{bal.toLocaleString()}
                           </span>
                         </div>
