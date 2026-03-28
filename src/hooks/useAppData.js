@@ -473,20 +473,6 @@ export function useAppData(session, navigate, pathname) {
       if (type !== 'all') {
         const isTransfer = !!t.transfer_id;
         if (type === 'transfer' && !isTransfer) return false;
-        if (type !== 'transfer' && (isTx || t.type !== type)) return false; // Fixed isTx variable
-        // Wait, isTx is not defined here.
-      }
-      // ... rest of the logic
-    });
-  }, [transactions, filterOptions, categories]);
-
-  // Re-reading filteredLedger to fix isTx and finish
-  const filteredLedgerFixed = useMemo(() => {
-    return transactions.filter(t => {
-      const { type, dateRange, categoryIds, tagIds, accountIds, searchTerm } = filterOptions;
-      if (type !== 'all') {
-        const isTransfer = !!t.transfer_id;
-        if (type === 'transfer' && !isTransfer) return false;
         if (type !== 'transfer' && (isTransfer || t.type !== type)) return false;
       }
       if (dateRange.start && t.transaction_date < dateRange.start) return false;
@@ -504,7 +490,7 @@ export function useAppData(session, navigate, pathname) {
       if (accountIds.length > 0 && !accountIds.includes(t.account_id)) return false;
       if (searchTerm) {
         const s = searchTerm.toLowerCase();
-        const amountStr = parseFloat(t.amount).toFixed(2);
+        const amountStr = (parseFloat(t.amount) || 0).toFixed(2);
         if (
           !(t.note || '').toLowerCase().includes(s) &&
           !(t.parties?.name || '').toLowerCase().includes(s) &&
@@ -520,18 +506,18 @@ export function useAppData(session, navigate, pathname) {
     const amtOf = t => parseFloat(t.amount) || 0;
     if (ledgerSort === 'amount_desc' || ledgerSort === 'amount_asc') {
       const dir = ledgerSort === 'amount_desc' ? -1 : 1;
-      const sorted = [...filteredLedgerFixed].sort((a, b) => dir * (amtOf(a) - amtOf(b)));
+      const sorted = [...filteredLedger].sort((a, b) => dir * (amtOf(a) - amtOf(b)));
       return sorted.length ? [['__flat__', sorted]] : [];
     }
     const groups = {};
-    filteredLedgerFixed.forEach(t => {
+    filteredLedger.forEach(t => {
       const d = t.transaction_date || t.created_at?.split('T')[0] || 'Unknown';
       if (!groups[d]) groups[d] = [];
       groups[d].push(t);
     });
     const dir = ledgerSort === 'date_asc' ? 1 : -1;
     return Object.entries(groups).sort(([a], [b]) => dir * a.localeCompare(b));
-  }, [filteredLedgerFixed, ledgerSort]);
+  }, [filteredLedger, ledgerSort]);
 
   // Management Actions
   const handleCreateCategory = useCallback(async (payload, editingId = null) => {
@@ -698,7 +684,7 @@ export function useAppData(session, navigate, pathname) {
     balance, totalIncome, totalExpense, topCategories, topExpenseCat, savingsRate, burnRate,
     portfolioChange, sparklineData, smartInsights, budgetProgress, analyticsTransactions,
     prevAnalyticsTransactions, prevPeriodKPIs, chartTimeSeries, chartCategorical, chartTags,
-    analyticsKPIs, filteredLedger: filteredLedgerFixed, groupedLedger, totalCatVal, topPayees,
+    analyticsKPIs, filteredLedger, groupedLedger, totalCatVal, topPayees,
     fetchCategories, fetchParties, fetchTags, fetchAccounts, fetchBudgets, fetchTransactions, fetchInitialData, refreshData,
     handleCreateCategory, handleDeleteCategory, handleCreateParty, handleDeleteParty,
     handleDeleteTransaction, handleCreateTag, handleDeleteTag, handleCreateAccount,
