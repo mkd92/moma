@@ -4,7 +4,7 @@ import React from 'react';
 const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNewTx }) => {
   const settingsViews = ['settings', 'account_management', 'category_management', 'party_management', 'tag_management'];
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-surface/80 backdrop-blur-xl shadow-2xl">
+    <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-5 bg-surface/80 backdrop-blur-xl shadow-2xl">
       <button className={`flex flex-col items-center justify-center transition-all duration-300 ${view === 'dashboard' ? 'text-primary' : 'text-on-surface-variant'}`} onClick={onDashboard}>
         <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: view === 'dashboard' ? "'FILL' 1" : "'FILL' 0" }}>home</span>
         <span className="font-['Inter'] text-[10px] font-bold uppercase tracking-[0.05em] mt-1">Home</span>
