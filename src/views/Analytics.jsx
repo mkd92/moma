@@ -181,16 +181,29 @@ const Analytics = ({
         <section className="space-y-10">
           <div className="flex justify-between items-center px-4">
             <h3 className="font-headline text-xs font-black tracking-[0.4em] text-on-surface uppercase opacity-60">Distribution Matrix</h3>
-            <button className="text-[9px] font-black text-primary uppercase tracking-[0.3em] cursor-pointer hover:brightness-125 transition-all" onClick={() => setCatBreakdownType && setCatBreakdownType(catBreakdownType === 'expense' ? 'income' : 'expense')}>
-              Switch Logic
-            </button>
+            
+            {/* Minimalist Logic Switcher */}
+            <div className="flex bg-on-surface/[0.03] rounded-full p-1 border border-outline-variant/10 shadow-inner">
+              <button 
+                onClick={() => catBreakdownType !== 'expense' && setCatBreakdownType('expense')}
+                className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${catBreakdownType === 'expense' ? 'bg-on-surface text-surface shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
+                Out
+              </button>
+              <button 
+                onClick={() => catBreakdownType !== 'income' && setCatBreakdownType('income')}
+                className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${catBreakdownType === 'income' ? 'bg-on-surface text-surface shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+              >
+                In
+              </button>
+            </div>
           </div>
-          <div className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant shadow-sm space-y-4">
+          <div className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant shadow-sm space-y-2">
             {(chartCategorical || []).slice(0, 6).map(({ name, id, value }, i) => {
               const pctOfTotal = totalCatVal > 0 ? Math.round((value / totalCatVal) * 100) : 0;
               const icon = getCategoryIcon(name);
               return (
-                <div key={id} className="flex items-center gap-6 group py-6 border-b border-outline-variant/10 last:border-0 cursor-pointer" onClick={() => navToLedgerByCategory && navToLedgerByCategory(id, catBreakdownType)}>
+                <div key={id} className="flex items-center gap-6 group py-5 px-2 rounded-2xl hover:bg-on-surface/[0.02] transition-all cursor-pointer" onClick={() => navToLedgerByCategory && navToLedgerByCategory(id, catBreakdownType)}>
                   <div className="w-12 h-12 rounded-2xl bg-on-surface/[0.03] flex items-center justify-center transition-all group-hover:bg-on-surface group-hover:text-surface text-on-surface-variant">
                     <span className="material-symbols-outlined text-[20px] font-light">{icon}</span>
                   </div>
