@@ -74,7 +74,8 @@ export default function App() {
     handleDeleteTransaction, handleCreateTag, handleDeleteTag, handleCreateAccount,
     handleDeleteAccount, handleUpdateAccount, handleSetDefaultAccount, handleSaveBudget,
     showAdvancedFilters, setShowFilters: setShowAdvancedFilters,
-    showAnalyticsFilters, setShowAnalyticsFilters
+    showAnalyticsFilters, setShowAnalyticsFilters,
+    settingsType, setSettingsType
   } = appData;
 
   // --- Transaction Form Hook ---
