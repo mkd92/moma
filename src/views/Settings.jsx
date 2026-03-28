@@ -21,7 +21,7 @@ const Settings = ({
 
   return (
     <PageShell {...shellProps}>
-      <div className="page-inner max-w-2xl mx-auto space-y-12 pb-32 pt-4 md:pt-0">
+      <div className="page-inner max-w-2xl mx-auto space-y-12 pb-32 pt-4 md:pt-0 px-6">
         <div className="flex justify-between items-center px-4">
           <h2 className="font-headline text-4xl font-black tracking-tight text-on-surface uppercase">Vault Core</h2>
         </div>
