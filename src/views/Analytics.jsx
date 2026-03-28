@@ -1,6 +1,6 @@
 import React from 'react';
 import { PageShell } from '../components/layout';
-import { ComposedChart, Bar, XAxis, YAxis, Tooltip, Line, ResponsiveContainer } from 'recharts';
+import { ComposedChart, Bar, XAxis, YAxis, Tooltip, Line, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
 import EmptyChart from '../components/analytics/EmptyChart';
 import AnalyticsTooltip from '../components/analytics/AnalyticsTooltip';
 import { getCategoryIcon } from '../utils/formatters';
@@ -107,15 +107,21 @@ const Analytics = ({
           <div className="h-80 bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-sm relative group overflow-hidden">
             {composedData && composedData.length === 0 ? <EmptyChart h={200} /> : (
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={composedData || []}>
-                  <XAxis dataKey="label" hide />
+                <ComposedChart data={composedData || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="currentColor" className="text-on-surface opacity-[0.03]" />
+                  <XAxis 
+                    dataKey="label" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 9, fontWeight: 700, fill: 'var(--on-surface-variant)', opacity: 0.4 }}
+                    interval="preserveStartEnd"
+                    minTickGap={30}
+                  />
                   <YAxis hide domain={['auto', 'auto']} />
                   <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} />
-                  {/* Income: Pure white with very low opacity for architectural feel */}
+                  <ReferenceLine y={0} stroke="currentColor" className="text-on-surface opacity-10" strokeWidth={1} />
                   <Bar dataKey="income" name="Inflow" fill="currentColor" className="text-on-surface opacity-20" radius={[4, 4, 0, 0]} barSize={24} />
-                  {/* Expense: Pure white with even lower opacity to differentiate */}
                   <Bar dataKey="expense" name="Outflow" fill="currentColor" className="text-on-surface opacity-5" radius={[4, 4, 0, 0]} barSize={24} />
-                  {/* Net: High contrast precise line */}
                   <Line type="monotone" dataKey="net" name="Net" stroke="currentColor" className="text-on-surface" strokeWidth={2} dot={false} strokeLinecap="round" />
                 </ComposedChart>
               </ResponsiveContainer>
