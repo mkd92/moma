@@ -1,15 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PageShell } from '../../components/layout';
 
 export default function TagManagement({
   tags,
-  newTagName,
-  setNewTagName,
   handleCreateTag,
   handleDeleteTag,
   setView,
   shellProps
 }) {
+  const [newTagName, setNewTagName] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const error = await handleCreateTag(newTagName);
+    if (!error) setNewTagName('');
+  };
   return (
     <PageShell {...shellProps}>
       <div className="page-inner max-w-2xl mx-auto space-y-12 pb-32 pt-4 md:pt-0 px-6">
@@ -42,7 +47,7 @@ export default function TagManagement({
 
           <section className="space-y-6 pt-10">
             <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">Register New Meta-Tag</p>
-            <form onSubmit={handleCreateTag} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
+            <form onSubmit={handleSubmit} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
               <div className="space-y-3">
                 <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Identifier</p>
                 <div className="relative">

@@ -57,27 +57,60 @@ export default function AccountManagement({
   handleDeleteAccount,
   handleUpdateAccount,
   setView,
-  newAccountName,
-  setNewAccountName,
-  newAccountBalance,
-  setNewAccountBalance,
-  newAccountType,
-  setNewAccountType,
-  newAccountExclude,
-  setNewAccountExclude,
-  editingAccount,
-  setEditingAccount,
-  editAcctName,
-  setEditAcctName,
-  editAcctMode,
-  setEditAcctMode,
-  editAcctValue,
-  setEditAcctValue,
-  editAcctExclude,
-  setEditAcctExclude,
-  openEditAccount,
   shellProps
 }) {
+  const [newAccountName, setNewAccountName] = useState('');
+  const [newAccountBalance, setNewAccountBalance] = useState('');
+  const [newAccountType, setNewAccountType] = useState('asset');
+  const [newAccountExclude, setNewAccountExclude] = useState(false);
+
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [editAcctName, setEditAcctName] = useState('');
+  const [editAcctMode, setEditAcctMode] = useState('opening');
+  const [editAcctValue, setEditAcctValue] = useState('');
+  const [editAcctExclude, setEditAcctExclude] = useState(false);
+
+  const openEditAccount = (acc) => {
+    setEditingAccount(acc);
+    setEditAcctName(acc.name);
+    setEditAcctMode('opening');
+    setEditAcctValue(String(parseFloat(acc.initial_balance) || 0));
+    setEditAcctExclude(!!acc.exclude_from_total);
+  };
+
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: newAccountName,
+      initial_balance: parseFloat(newAccountBalance) || 0,
+      type: newAccountType,
+      exclude_from_total: newAccountExclude
+    };
+    const error = await handleCreateAccount(payload);
+    if (!error) {
+      setNewAccountName('');
+      setNewAccountBalance('');
+      setNewAccountType('asset');
+      setNewAccountExclude(false);
+    }
+  };
+
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
+    const newInitial = editAcctMode === 'opening' 
+      ? parseFloat(editAcctValue) || 0 
+      : (parseFloat(editAcctValue) || 0) - txSum;
+
+    const payload = {
+      name: editAcctName,
+      initial_balance: newInitial,
+      exclude_from_total: editAcctExclude
+    };
+    const error = await handleUpdateAccount(editingAccount.id, payload);
+    if (!error) setEditingAccount(null);
+  };
+
   const assetAccts = accounts.filter(a => (a.type || 'asset') === 'asset');
   const liabilityAccts = accounts.filter(a => a.type === 'liability');
   const tempAccts = accounts.filter(a => a.type === 'temp');
@@ -106,7 +139,7 @@ export default function AccountManagement({
           </button>
         </div>
 
-        <form onSubmit={handleUpdateAccount} className="space-y-8">
+        <form onSubmit={handleUpdateSubmit} className="space-y-8">
           <div className="space-y-3">
             <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Identity</p>
             <input 
@@ -200,7 +233,7 @@ export default function AccountManagement({
 
           <section className="space-y-6 pt-10">
             <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">Register New Entity</p>
-            <form onSubmit={handleCreateAccount} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant shadow-2xl space-y-8 relative overflow-hidden">
+            <form onSubmit={handleCreateSubmit} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant shadow-2xl space-y-8 relative overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Entity Name</p>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PageShell } from '../../components/layout';
 import CustomDropdown from '../../components/CustomDropdown';
 
@@ -6,20 +6,48 @@ export default function CategoryManagement({
   categories,
   settingsType,
   setSettingsType,
-  newCatName,
-  setNewCatName,
-  newCatIcon,
-  setNewCatIcon,
-  newCatParent,
-  setNewCatParent,
-  editingCat,
-  setEditingCat,
   handleCreateCategory,
   handleDeleteCategory,
   setView,
   shellProps
 }) {
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('🔖');
+  const [newCatParent, setNewCatParent] = useState('');
+  const [editingCat, setEditingCat] = useState(null);
+
   const parents = categories.filter(c => !c.parent_id && c.type === settingsType);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: newCatName,
+      icon: newCatIcon,
+      parent_id: newCatParent || null,
+      type: settingsType
+    };
+    const error = await handleCreateCategory(payload, editingCat?.id);
+    if (!error) {
+      setNewCatName('');
+      setNewCatIcon('🔖');
+      setNewCatParent('');
+      setEditingCat(null);
+    }
+  };
+
+  const handleEdit = (cat) => {
+    setEditingCat(cat);
+    setNewCatName(cat.name);
+    setNewCatIcon(cat.icon);
+    setNewCatParent(cat.parent_id || '');
+  };
+
+  const handleAbort = () => {
+    setEditingCat(null);
+    setNewCatName('');
+    setNewCatParent('');
+    setNewCatIcon('🔖');
+  };
 
   return (
     <PageShell {...shellProps}>
@@ -65,7 +93,7 @@ export default function CategoryManagement({
                   </div>
                   {!parent.is_system && (
                     <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 text-on-surface-variant hover:text-on-surface transition-colors" onClick={() => { setEditingCat(parent); setNewCatName(parent.name); setNewCatIcon(parent.icon); setNewCatParent(''); }}>
+                      <button className="p-2 text-on-surface-variant hover:text-on-surface transition-colors" onClick={() => handleEdit(parent)}>
                         <span className="material-symbols-outlined text-sm">edit</span>
                       </button>
                       <button className="p-2 text-on-surface-variant hover:text-error transition-colors" onClick={() => handleDeleteCategory(parent.id)}>
@@ -87,7 +115,7 @@ export default function CategoryManagement({
                           </div>
                           {!sub.is_system && (
                             <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button className="p-2 text-on-surface-variant hover:text-on-surface transition-colors" onClick={() => { setEditingCat(sub); setNewCatName(sub.name); setNewCatIcon(sub.icon); setNewCatParent(sub.parent_id || ''); }}>
+                              <button className="p-2 text-on-surface-variant hover:text-on-surface transition-colors" onClick={() => handleEdit(sub)}>
                                 <span className="material-symbols-outlined text-sm">edit</span>
                               </button>
                               <button className="p-2 text-on-surface-variant hover:text-error transition-colors" onClick={() => handleDeleteCategory(sub.id)}>
@@ -107,7 +135,7 @@ export default function CategoryManagement({
 
         <section className="space-y-6 pt-10">
           <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">{editingCat ? 'Modify Taxonomy' : 'Create New Vector'}</p>
-          <form onSubmit={handleCreateCategory} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
+          <form onSubmit={handleSubmit} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-8">
               <div className="space-y-3">
                 <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Symbol</p>
@@ -131,7 +159,7 @@ export default function CategoryManagement({
                 {editingCat ? 'Commit Hierarchy' : 'Initialize Vector'}
               </button>
               {editingCat && (
-                <button type="button" className="px-8 text-on-surface-variant font-black text-[11px] uppercase tracking-[0.2em] hover:text-on-surface transition-colors" onClick={() => { setEditingCat(null); setNewCatName(''); setNewCatParent(''); setNewCatIcon('🔖'); }}>
+                <button type="button" className="px-8 text-on-surface-variant font-black text-[11px] uppercase tracking-[0.2em] hover:text-on-surface transition-colors" onClick={handleAbort}>
                   Abort
                 </button>
               )}

@@ -1,15 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PageShell } from '../../components/layout';
 
 export default function PartyManagement({
   parties,
-  newPartyName,
-  setNewPartyName,
   handleCreateParty,
   handleDeleteParty,
   setView,
   shellProps
 }) {
+  const [newPartyName, setNewPartyName] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const error = await handleCreateParty(newPartyName);
+    if (!error) setNewPartyName('');
+  };
   return (
     <PageShell {...shellProps}>
       <div className="page-inner max-w-2xl mx-auto space-y-12 pb-32 pt-4 md:pt-0 px-6">
@@ -47,7 +52,7 @@ export default function PartyManagement({
 
           <section className="space-y-6 pt-10">
             <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">Register New Node</p>
-            <form onSubmit={handleCreateParty} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
+            <form onSubmit={handleSubmit} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
               <div className="space-y-3">
                 <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Label</p>
                 <input type="text" placeholder="e.g. Amazon, Starbucks" className="w-full bg-surface-lowest border border-outline-variant/10 rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-on-surface/10 transition-all text-sm font-bold outline-none placeholder:text-on-surface-variant/20" value={newPartyName} onChange={(e) => setNewPartyName(e.target.value)} required />
