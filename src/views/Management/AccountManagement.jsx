@@ -21,8 +21,8 @@ const ManagedAcctGroup = ({ title, accts, accountBalances, currencySymbol, onDel
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
                     <p className="text-sm font-bold text-on-surface">{acc.name}</p>
-                    {isDefault && <span className="text-[9px] font-black bg-accent text-surface px-2 py-0.5 rounded-sm uppercase tracking-tighter shadow-sm shadow-accent/20">Default</span>}
-                    {acc.exclude_from_total && <span className="text-[9px] font-black bg-on-surface/[0.05] text-on-surface-variant px-2 py-0.5 rounded-sm uppercase tracking-tighter">Excluded</span>}
+                    {isDefault && <span className="text-[9px] font-black bg-on-surface text-surface px-2 py-0.5 rounded-sm uppercase tracking-tighter">Default</span>}
+                    {acc.exclude_from_total && <span className="text-[9px] font-black bg-on-surface/[0.08] text-on-surface-variant px-2 py-0.5 rounded-sm uppercase tracking-tighter border border-outline-variant/20">Excluded</span>}
                   </div>
                   <p className={`text-sm font-bold font-headline ${bal < 0 ? 'text-error' : 'text-accent'}`}>
                     <span className="text-[10px] opacity-40 mr-0.5 font-medium">{currencySymbol}</span>
@@ -31,7 +31,7 @@ const ManagedAcctGroup = ({ title, accts, accountBalances, currencySymbol, onDel
                 </div>
               </div>
               <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-2 text-on-surface-variant hover:text-primary transition-colors" title="View ledger" onClick={() => onViewLedger(acc.id)}>
+                <button className="p-2 text-on-surface-variant hover:text-primary transition-colors" title="View ledger" onClick={() => onViewLedger?.(acc.id)}>
                   <span className="material-symbols-outlined text-sm">receipt_long</span>
                 </button>
                 <button className="p-2 text-on-surface-variant hover:text-on-surface transition-colors" onClick={() => onEdit(acc)}>
@@ -59,45 +59,71 @@ export default function AccountManagement({
   handleCreateAccount,
   handleDeleteAccount,
   handleUpdateAccount,
-  setView,
-  newAccountName,
-  setNewAccountName,
-  newAccountBalance,
-  setNewAccountBalance,
-  newAccountType,
-  setNewAccountType,
-  newAccountExclude,
-  setNewAccountExclude,
-  editingAccount,
-  setEditingAccount,
-  editAcctName,
-  setEditAcctName,
-  editAcctMode,
-  setEditAcctMode,
-  editAcctValue,
-  setEditAcctValue,
-  editAcctExclude,
-  setEditAcctExclude,
-  openEditAccount,
   navToLedgerByAccount,
+  setView,
   shellProps
 }) {
+  // Create form state
+  const [newAccountName, setNewAccountName] = useState('');
+  const [newAccountBalance, setNewAccountBalance] = useState('');
+  const [newAccountType, setNewAccountType] = useState('asset');
+  const [newAccountExclude, setNewAccountExclude] = useState(false);
+
+  // Edit form state
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [editAcctName, setEditAcctName] = useState('');
+  const [editAcctMode, setEditAcctMode] = useState('opening');
+  const [editAcctValue, setEditAcctValue] = useState('');
+  const [editAcctExclude, setEditAcctExclude] = useState(false);
+
+  const openEditAccount = (acc) => {
+    setEditingAccount(acc);
+    setEditAcctName(acc.name);
+    setEditAcctMode('opening');
+    setEditAcctValue(String(parseFloat(acc.initial_balance) || 0));
+    setEditAcctExclude(acc.exclude_from_total || false);
+  };
+
+  const onCreateSubmit = async (e) => {
+    e.preventDefault();
+    if (!newAccountName.trim()) return;
+    await handleCreateAccount({
+      name: newAccountName.trim(),
+      initial_balance: parseFloat(newAccountBalance) || 0,
+      type: newAccountType,
+      exclude_from_total: newAccountExclude,
+    });
+    setNewAccountName('');
+    setNewAccountBalance('');
+    setNewAccountType('asset');
+    setNewAccountExclude(false);
+  };
+
+  const onUpdateSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingAccount) return;
+    const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
+    const newInitial = editAcctMode === 'opening'
+      ? parseFloat(editAcctValue) || 0
+      : (parseFloat(editAcctValue) || 0) - txSum;
+    await handleUpdateAccount(editingAccount.id, {
+      name: editAcctName.trim(),
+      initial_balance: newInitial,
+      exclude_from_total: editAcctExclude,
+    });
+    setEditingAccount(null);
+  };
+
   const assetAccts = accounts.filter(a => (a.type || 'asset') === 'asset');
   const liabilityAccts = accounts.filter(a => a.type === 'liability');
   const tempAccts = accounts.filter(a => a.type === 'temp');
-  
-  const editAcctCurrentBalance = editingAccount
-    ? (() => {
-      const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
-      return editAcctMode === 'opening' ? txSum + (parseFloat(editAcctValue) || 0) : parseFloat(editAcctValue) || 0;
-    })()
-    : 0;
 
-  const editAcctDerivedOpening = editingAccount && editAcctMode === 'current'
-    ? (() => {
-      const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
-      return (parseFloat(editAcctValue) || 0) - txSum;
-    })()
+  const txSum = editingAccount ? (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0) : 0;
+  const editAcctCurrentBalance = editAcctMode === 'opening'
+    ? txSum + (parseFloat(editAcctValue) || 0)
+    : parseFloat(editAcctValue) || 0;
+  const editAcctDerivedOpening = editAcctMode === 'current'
+    ? (parseFloat(editAcctValue) || 0) - txSum
     : null;
 
   const acctEditModal = editingAccount ? createPortal(
@@ -110,15 +136,15 @@ export default function AccountManagement({
           </button>
         </div>
 
-        <form onSubmit={handleUpdateAccount} className="space-y-8">
+        <form onSubmit={onUpdateSubmit} className="space-y-8">
           <div className="space-y-3">
             <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Identity</p>
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full bg-surface-lowest border border-outline-variant rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-primary/10 transition-all text-sm font-bold outline-none"
-              value={editAcctName} 
-              onChange={e => setEditAcctName(e.target.value)} 
-              required 
+              value={editAcctName}
+              onChange={e => setEditAcctName(e.target.value)}
+              required
             />
           </div>
 
@@ -132,13 +158,13 @@ export default function AccountManagement({
 
           <div className="space-y-3">
             <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">{editAcctMode === 'opening' ? 'Initial Unit Value' : 'Current Unit Value'}</p>
-            <input 
-              type="number" 
-              step="0.01" 
+            <input
+              type="number"
+              step="0.01"
               className="w-full bg-surface-lowest border border-outline-variant rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-primary/10 transition-all text-sm font-bold outline-none"
-              value={editAcctValue} 
-              onChange={e => setEditAcctValue(e.target.value)} 
-              required 
+              value={editAcctValue}
+              onChange={e => setEditAcctValue(e.target.value)}
+              required
             />
           </div>
 
@@ -152,7 +178,7 @@ export default function AccountManagement({
             </p>
           </div>
 
-          <button 
+          <button
             className="flex items-center gap-4 w-full py-2 group cursor-pointer"
             type="button"
             onClick={() => setEditAcctExclude(!editAcctExclude)}
@@ -204,7 +230,7 @@ export default function AccountManagement({
 
           <section className="space-y-6 pt-10">
             <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">Register New Entity</p>
-            <form onSubmit={handleCreateAccount} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant shadow-2xl space-y-8 relative overflow-hidden">
+            <form onSubmit={onCreateSubmit} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant shadow-2xl space-y-8 relative overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Entity Name</p>
@@ -228,7 +254,7 @@ export default function AccountManagement({
                   setNewAccountExclude(v !== 'asset');
                 }}
               />
-              <button 
+              <button
                 className="flex items-center gap-4 py-2 group cursor-pointer"
                 type="button"
                 onClick={() => setNewAccountExclude(!newAccountExclude)}
