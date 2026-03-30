@@ -675,6 +675,12 @@ export function useAppData(session, navigate, pathname) {
     navigate('/ledger');
   }, [resetFilters, updateFilter, navigate]);
 
+  const navToLedgerByAccount = useCallback((accountId) => {
+    resetFilters();
+    updateFilter('accountIds', [accountId]);
+    navigate('/ledger');
+  }, [resetFilters, updateFilter, navigate]);
+
   return {
     transactions, categories, parties, accounts, tags, budgets,
     currencySymbol, setCurrencySymbol, currencyCode, setCurrencyCode, defaultAccountId, setDefaultAccountId,
@@ -693,6 +699,6 @@ export function useAppData(session, navigate, pathname) {
     handleDeleteAccount, handleUpdateAccount, handleSetDefaultAccount,
     handleBulkAssignCategory, handleSaveBudget,
     updateFilter, resetFilters, applyDatePreset,
-    updateAnalyticsFilter, resetAnalyticsFilters, applyAnalyticsPreset, navToLedgerByCategory
+    updateAnalyticsFilter, resetAnalyticsFilters, applyAnalyticsPreset, navToLedgerByCategory, navToLedgerByAccount
   };
 }

@@ -4,7 +4,7 @@ import { PageShell } from '../../components/layout';
 import CustomDropdown from '../../components/CustomDropdown';
 import { CURRENCY_SYMBOLS, ACCT_META } from '../../constants';
 
-const ManagedAcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, defaultAccountId }) => 
+const ManagedAcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, defaultAccountId, onViewLedger }) =>
   accts.length === 0 ? null : (
     <div className="space-y-6">
       <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">{title}</p>
@@ -31,6 +31,9 @@ const ManagedAcctGroup = ({ title, accts, accountBalances, currencySymbol, onDel
                 </div>
               </div>
               <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button className="p-2 text-on-surface-variant hover:text-primary transition-colors" title="View ledger" onClick={() => onViewLedger(acc.id)}>
+                  <span className="material-symbols-outlined text-sm">receipt_long</span>
+                </button>
                 <button className="p-2 text-on-surface-variant hover:text-on-surface transition-colors" onClick={() => onEdit(acc)}>
                   <span className="material-symbols-outlined text-sm">edit</span>
                 </button>
@@ -76,6 +79,7 @@ export default function AccountManagement({
   editAcctExclude,
   setEditAcctExclude,
   openEditAccount,
+  navToLedgerByAccount,
   shellProps
 }) {
   const assetAccts = accounts.filter(a => (a.type || 'asset') === 'asset');
@@ -194,9 +198,9 @@ export default function AccountManagement({
             <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-accent/10 transition-all duration-700"></div>
           </div>
 
-          <ManagedAcctGroup title="Asset Accounts" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
-          <ManagedAcctGroup title="Liability Accounts" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
-          <ManagedAcctGroup title="Transit / Temp" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} />
+          <ManagedAcctGroup title="Asset Accounts" accts={assetAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} onViewLedger={navToLedgerByAccount} />
+          <ManagedAcctGroup title="Liability Accounts" accts={liabilityAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} onViewLedger={navToLedgerByAccount} />
+          <ManagedAcctGroup title="Transit / Temp" accts={tempAccts} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} defaultAccountId={defaultAccountId} onViewLedger={navToLedgerByAccount} />
 
           <section className="space-y-6 pt-10">
             <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">Register New Entity</p>

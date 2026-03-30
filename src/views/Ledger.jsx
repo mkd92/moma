@@ -35,19 +35,27 @@ const Ledger = ({
 }) => {
   // Compute running balance for each transaction (balance after that tx)
   const runningBalanceMap = useMemo(() => {
-    const netWorth = Object.values(accountBalances).reduce((s, v) => s + v, 0);
-    const sorted = [...transactions]
-      .filter(t => !t.transfer_id)
-      .sort((a, b) => (b.transaction_date || '').localeCompare(a.transaction_date || ''));
+    const singleAccountId = filterOptions.accountIds.length === 1 ? filterOptions.accountIds[0] : null;
+    const startingBalance = singleAccountId
+      ? (accountBalances[singleAccountId] || 0)
+      : Object.values(accountBalances).reduce((s, v) => s + v, 0);
+    const sourceTx = singleAccountId
+      ? transactions.filter(t => !t.transfer_id && t.account_id === singleAccountId)
+      : transactions.filter(t => !t.transfer_id);
+    const sorted = [...sourceTx].sort((a, b) => (b.transaction_date || '').localeCompare(a.transaction_date || ''));
     const map = {};
-    let balance = netWorth;
+    let balance = startingBalance;
     sorted.forEach(t => {
       map[t.id] = balance;
       if (t.type === 'income') balance -= parseFloat(t.amount) || 0;
       else balance += parseFloat(t.amount) || 0;
     });
     return map;
-  }, [transactions, accountBalances]);
+  }, [transactions, accountBalances, filterOptions.accountIds]);
+
+  const singleAccount = filterOptions.accountIds.length === 1
+    ? accounts.find(a => a.id === filterOptions.accountIds[0])
+    : null;
   const activeFiltersCount = (filterOptions.type !== 'all' ? 1 : 0) + (filterOptions.dateRange.start ? 1 : 0) + (filterOptions.dateRange.end ? 1 : 0) + filterOptions.categoryIds.length + filterOptions.tagIds.length;
   const allVisibleIds = filteredLedger.filter(t => !t.transfer_id).map(t => t.id);
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedTxIds.has(id));
@@ -75,7 +83,14 @@ const Ledger = ({
         {/* Sticky controls — sticks to top of .page-content scroll container */}
         <div className="bg-surface sticky top-0 z-[40] px-6 py-8 md:py-10 space-y-8 md:space-y-10 border-b border-outline-variant/10">
           <div className="flex justify-between items-center">
-            <h2 className="font-headline text-3xl md:text-4xl font-black tracking-tight text-on-surface uppercase">Vault Stream</h2>
+            <div>
+              <h2 className="font-headline text-3xl md:text-4xl font-black tracking-tight text-on-surface uppercase">Vault Stream</h2>
+              {singleAccount && (
+                <p className="text-[10px] font-black tracking-[0.3em] text-accent uppercase mt-1">
+                  {singleAccount.name} · {currencySymbol}{(accountBalances[singleAccount.id] || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <button
                 className={`flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all border ${bulkSelectMode ? 'bg-on-surface text-surface border-on-surface shadow-xl' : 'bg-surface-low text-on-surface-variant border-outline-variant hover:text-on-surface'}`}
