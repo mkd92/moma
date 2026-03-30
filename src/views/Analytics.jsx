@@ -5,6 +5,79 @@ import EmptyChart from '../components/analytics/EmptyChart';
 import AnalyticsTooltip from '../components/analytics/AnalyticsTooltip';
 import { getCategoryIcon } from '../utils/formatters';
 
+const CategoryRow = ({ name, id, value, subs, totalCatVal, currencySymbol, catBreakdownType, navToLedgerByCategory }) => {
+  const [expanded, setExpanded] = React.useState(false);
+  const pctOfTotal = totalCatVal > 0 ? Math.round((value / totalCatVal) * 100) : 0;
+  const icon = getCategoryIcon(name);
+  const hasSubs = subs && subs.length > 0;
+
+  return (
+    <div className="flex flex-col border-b border-outline-variant/5 last:border-0">
+      <div className="flex items-center gap-4 py-6 group cursor-pointer">
+        {/* Main Category Info - Click to filter */}
+        <div className="flex-1 flex items-center gap-4" onClick={() => navToLedgerByCategory && navToLedgerByCategory(id, catBreakdownType)}>
+          <div className="w-12 h-12 rounded-2xl bg-on-surface/[0.03] flex items-center justify-center transition-all group-hover:bg-on-surface group-hover:text-surface text-on-surface-variant shrink-0">
+            <span className="material-symbols-outlined text-[20px] font-light">{icon}</span>
+          </div>
+          <div className="flex-1 space-y-2 min-width-0">
+            <div className="flex justify-between items-baseline gap-2">
+              <span className="text-xs font-black uppercase tracking-widest text-on-surface truncate">{name}</span>
+              <span className="text-sm font-black font-headline text-on-surface whitespace-nowrap">
+                <span className="text-[10px] font-bold opacity-30 mr-0.5">{currencySymbol}</span>
+                {(value || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-1 bg-on-surface/[0.05] rounded-full overflow-hidden">
+                <div className="h-full bg-on-surface transition-all duration-1000 origin-left" style={{ width: `${pctOfTotal}%`, opacity: 0.3 }}></div>
+              </div>
+              <span className="text-[9px] font-black text-on-surface-variant opacity-40 whitespace-nowrap">{pctOfTotal}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dedicated Expand Toggle on the right */}
+        {hasSubs && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${expanded ? 'bg-on-surface text-surface' : 'text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.05]'}`}
+          >
+            <span className={`material-symbols-outlined text-[20px] transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>expand_more</span>
+          </button>
+        )}
+      </div>
+
+      {/* Expanded Subcategories - Tiered Indentation */}
+      {hasSubs && expanded && (
+        <div className="ml-6 pl-10 border-l border-outline-variant/10 pb-6 space-y-6 fade-in mt-2">
+          {subs.map((sub) => {
+            const subPct = value > 0 ? Math.round((sub.value / value) * 100) : 0;
+            return (
+              <div key={sub.id} className="flex items-center gap-4 group/sub cursor-pointer" onClick={() => navToLedgerByCategory && navToLedgerByCategory(sub.id, catBreakdownType)}>
+                <div className="flex-1 space-y-2 min-width-0">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant truncate">{sub.name}</span>
+                    <span className="text-xs font-black font-headline text-on-surface-variant whitespace-nowrap">
+                      <span className="text-[9px] opacity-20 mr-0.5">{currencySymbol}</span>
+                      {sub.value.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-0.5 bg-on-surface/[0.03] rounded-full overflow-hidden">
+                      <div className="h-full bg-on-surface transition-all duration-700 origin-left" style={{ width: `${subPct}%`, opacity: 0.2 }}></div>
+                    </div>
+                    <span className="text-[8px] font-bold text-on-surface-variant opacity-30">{subPct}%</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Analytics = ({ 
   shellProps, 
   showAnalyticsFilters, 
@@ -88,9 +161,9 @@ const Analytics = ({
           <div className="flex justify-between items-end px-4">
             <div>
               <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase mb-4 opacity-60">Net Flow</p>
-              <h2 className={`font-headline text-6xl md:text-8xl font-black tracking-tight mt-1 ${(analyticsKPIs?.net >= 0) ? 'text-on-surface' : 'text-on-surface'}`}>
-                <span className="opacity-30 text-3xl font-extrabold mr-2">{(analyticsKPIs?.net >= 0) ? '+' : '-'}</span>
-                <span className="opacity-40 text-3xl font-extrabold mr-1">{currencySymbol}</span>
+              <h2 className={`font-headline text-4xl md:text-6xl font-black tracking-tight mt-1 ${(analyticsKPIs?.net >= 0) ? 'text-on-surface' : 'text-on-surface'}`}>
+                <span className="opacity-30 text-xl md:text-2xl font-extrabold mr-2">{(analyticsKPIs?.net >= 0) ? '+' : '-'}</span>
+                <span className="opacity-40 text-xl md:text-2xl font-extrabold mr-1">{currencySymbol}</span>
                 {Math.abs(analyticsKPIs?.net || 0).toLocaleString()}
               </h2>
             </div>
@@ -199,78 +272,16 @@ const Analytics = ({
             </div>
           </div>
           <div className="bg-surface-low p-6 md:p-10 rounded-[3rem] border border-outline-variant shadow-sm space-y-2">
-            {(chartCategorical || []).slice(0, 8).map(({ name, id, value, subs }, i) => {
-              const pctOfTotal = totalCatVal > 0 ? Math.round((value / totalCatVal) * 100) : 0;
-              const icon = getCategoryIcon(name);
-              const [expanded, setExpanded] = React.useState(false);
-              const hasSubs = subs && subs.length > 0;
-
-              return (
-                <div key={id} className="flex flex-col border-b border-outline-variant/5 last:border-0">
-                  <div className="flex items-center gap-4 py-6 group cursor-pointer">
-                    {/* Main Category Info - Click to filter */}
-                    <div className="flex-1 flex items-center gap-4" onClick={() => navToLedgerByCategory && navToLedgerByCategory(id, catBreakdownType)}>
-                      <div className="w-12 h-12 rounded-2xl bg-on-surface/[0.03] flex items-center justify-center transition-all group-hover:bg-on-surface group-hover:text-surface text-on-surface-variant shrink-0">
-                        <span className="material-symbols-outlined text-[20px] font-light">{icon}</span>
-                      </div>
-                      <div className="flex-1 space-y-2 min-width-0">
-                        <div className="flex justify-between items-baseline gap-2">
-                          <span className="text-xs font-black uppercase tracking-widest text-on-surface truncate">{name}</span>
-                          <span className="text-sm font-black font-headline text-on-surface whitespace-nowrap">
-                            <span className="text-[10px] font-bold opacity-30 mr-0.5">{currencySymbol}</span>
-                            {(value || 0).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-1 bg-on-surface/[0.05] rounded-full overflow-hidden">
-                            <div className="h-full bg-on-surface transition-all duration-1000 origin-left" style={{ width: `${pctOfTotal}%`, opacity: 0.3 }}></div>
-                          </div>
-                          <span className="text-[9px] font-black text-on-surface-variant opacity-40 whitespace-nowrap">{pctOfTotal}%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Dedicated Expand Toggle on the right */}
-                    {hasSubs && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${expanded ? 'bg-on-surface text-surface' : 'text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.05]'}`}
-                      >
-                        <span className={`material-symbols-outlined text-[20px] transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>expand_more</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Expanded Subcategories - Tiered Indentation */}
-                  {hasSubs && expanded && (
-                    <div className="ml-6 pl-10 border-l border-outline-variant/10 pb-6 space-y-6 fade-in mt-2">
-                      {subs.map((sub) => {
-                        const subPct = value > 0 ? Math.round((sub.value / value) * 100) : 0;
-                        return (
-                          <div key={sub.id} className="flex items-center gap-4 group/sub cursor-pointer" onClick={() => navToLedgerByCategory && navToLedgerByCategory(sub.id, catBreakdownType)}>
-                            <div className="flex-1 space-y-2 min-width-0">
-                              <div className="flex justify-between items-center gap-2">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant truncate">{sub.name}</span>
-                                <span className="text-xs font-black font-headline text-on-surface-variant whitespace-nowrap">
-                                  <span className="text-[9px] opacity-20 mr-0.5">{currencySymbol}</span>
-                                  {sub.value.toLocaleString()}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 h-0.5 bg-on-surface/[0.03] rounded-full overflow-hidden">
-                                  <div className="h-full bg-on-surface transition-all duration-700 origin-left" style={{ width: `${subPct}%`, opacity: 0.2 }}></div>
-                                </div>
-                                <span className="text-[8px] font-bold text-on-surface-variant opacity-30">{subPct}%</span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {(chartCategorical || []).slice(0, 8).map((cat) => (
+              <CategoryRow 
+                key={cat.id} 
+                {...cat} 
+                totalCatVal={totalCatVal} 
+                currencySymbol={currencySymbol} 
+                catBreakdownType={catBreakdownType} 
+                navToLedgerByCategory={navToLedgerByCategory} 
+              />
+            ))}
           </div>
         </section>
 

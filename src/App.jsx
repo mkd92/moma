@@ -73,9 +73,11 @@ export default function App() {
     handleCreateCategory, handleDeleteCategory, handleCreateParty, handleDeleteParty,
     handleDeleteTransaction, handleCreateTag, handleDeleteTag, handleCreateAccount,
     handleDeleteAccount, handleUpdateAccount, handleSetDefaultAccount, handleSaveBudget,
-    showAdvancedFilters, setShowFilters: setShowAdvancedFilters,
-    showAnalyticsFilters, setShowAnalyticsFilters,
-    settingsType, setSettingsType
+    handleBulkAssignCategory,
+    updateFilter, resetFilters, applyDatePreset,
+    showAdvancedFilters, setShowAdvancedFilters, showAnalyticsFilters, setShowAnalyticsFilters,
+    settingsType, setSettingsType,
+    selectedTxIds, setSelectedTxIds, bulkSelectMode, setBulkSelectMode, bulkCategory, setBulkCategory
   } = appData;
 
   // --- Transaction Form Hook ---
@@ -135,7 +137,12 @@ export default function App() {
       showAdvancedFilters,
       setShowFilters: setShowAdvancedFilters,
       showAnalyticsFilters,
-      setShowAnalyticsFilters
+      setShowAnalyticsFilters,
+      settingsType,
+      setSettingsType,
+      updateFilter,
+      resetFilters,
+      applyDatePreset
     };
 
     switch (view) {

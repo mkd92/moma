@@ -47,6 +47,10 @@ export function useAppData(session, navigate, pathname) {
   const [selectedTxIds, setSelectedTxIds] = useState(new Set());
   const [bulkCategory, setBulkCategory] = useState(null);
 
+  // Advanced Filters Visibility
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showAnalyticsFilters, setShowAnalyticsFilters] = useState(false);
+
   // Fetch functions
   const fetchCategories = useCallback(async () => {
     const { data } = await supabase.from('categories').select('*').order('name');
@@ -611,9 +615,9 @@ export function useAppData(session, navigate, pathname) {
   }, [session]);
 
   const handleBulkAssignCategory = useCallback(async (category_id, txIds) => {
-    if (!session || txIds.size === 0 || !category_id) return;
+    if (!session || !txIds || txIds.size === 0 || !category_id) return;
     await Promise.all([...txIds].map(id =>
-      supabase.from('transactions').update({ category_id }).eq('id', id)
+      supabase.from("transactions").update({ category_id }).eq("id", id)
     ));
     fetchTransactions();
   }, [session, fetchTransactions]);
@@ -682,6 +686,7 @@ export function useAppData(session, navigate, pathname) {
     ledgerSort, setLedgerSort, drillCategory, setDrillCategory, catBreakdownType, setCatBreakdownType,
     settingsType, setSettingsType,
     bulkSelectMode, setBulkSelectMode, selectedTxIds, setSelectedTxIds, bulkCategory, setBulkCategory,
+    showAdvancedFilters, setShowAdvancedFilters, showAnalyticsFilters, setShowAnalyticsFilters,
     accountBalances, dashDateRange, dashTransactions, activeAccountIds, dashActiveTransactions,
     balance, totalIncome, totalExpense, topCategories, topExpenseCat, savingsRate, burnRate,
     portfolioChange, sparklineData, smartInsights, budgetProgress, analyticsTransactions,

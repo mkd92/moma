@@ -55,8 +55,8 @@ const Ledger = ({
     <PageShell {...shellProps}>
       {/* Content wrapper with extra top padding for mobile to fix 'brown bar' / squishing feel */}
       <div className="flex flex-col min-h-full pt-4 md:pt-0">
-        {/* Sticky controls — sticks to top of .page-content scroll container */}
-        <div className="bg-surface sticky top-0 z-[40] px-6 py-8 md:py-10 space-y-8 md:space-y-10 border-b border-outline-variant/10">
+        {/* Controls section — now scrolls with the list */}
+        <div className="bg-surface px-6 py-8 md:py-10 space-y-8 md:space-y-10 border-b border-outline-variant/10">
           <div className="flex justify-between items-center">
             <h2 className="font-headline text-3xl md:text-4xl font-black tracking-tight text-on-surface uppercase">Vault Stream</h2>
             <div className="flex items-center gap-2">
@@ -138,7 +138,7 @@ const Ledger = ({
             {groupedLedger.map(([date, txs]) => (
               <div key={date} className="flex flex-col gap-4">
                 {date !== '__flat__' && (
-                  <div className="flex items-center gap-6 py-6 sticky top-[240px] bg-surface/95 backdrop-blur-sm z-30">
+                  <div className="flex items-center gap-6 py-6 sticky top-0 bg-surface/95 backdrop-blur-sm z-30">
                     <span className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase">{formatGroupDate(date)}</span>
                     <div className="h-px flex-1 bg-gradient-to-r from-outline-variant/30 to-transparent"></div>
                   </div>
@@ -188,7 +188,7 @@ const Ledger = ({
             </div>
             <button
               className={`px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${bulkCategory ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg shadow-[#3fff8b]/20 scale-105' : 'bg-zinc-800 text-zinc-600 opacity-50 cursor-not-allowed'}`}
-              onClick={bulkCategory ? handleBulkAssignCategory : undefined}
+              onClick={bulkCategory ? () => handleBulkAssignCategory(bulkCategory, selectedTxIds) : undefined}
             >
               Process
             </button>
