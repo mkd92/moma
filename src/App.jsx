@@ -142,7 +142,14 @@ export default function App() {
       setSettingsType,
       updateFilter,
       resetFilters,
-      applyDatePreset
+      applyDatePreset,
+      selectedTxIds,
+      setSelectedTxIds,
+      bulkSelectMode,
+      setBulkSelectMode,
+      bulkCategory,
+      setBulkCategory,
+      handleBulkAssignCategory
     };
 
     switch (view) {
