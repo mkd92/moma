@@ -43,11 +43,11 @@ const TransactionItem = ({ t, onClick, onDelete, accounts, categories, currencyS
             <span className="opacity-40 text-sm mr-0.5">{currencySymbol}</span>
             {Math.abs(amt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
-          <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter mt-1 opacity-40">
+          <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter mt-1 opacity-70">
             {t.transaction_date || t.created_at?.split('T')[0]}
           </p>
           {!isTransfer && runningBalance !== undefined && (
-            <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter mt-0.5 opacity-30">
+            <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter mt-0.5 opacity-60">
               Bal {currencySymbol}{runningBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           )}
