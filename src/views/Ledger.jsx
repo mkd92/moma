@@ -32,11 +32,18 @@ const Ledger = ({
   handleBulkAssignCategory 
 }) => {
   const activeFiltersCount = (filterOptions.type !== 'all' ? 1 : 0) + (filterOptions.dateRange.start ? 1 : 0) + (filterOptions.dateRange.end ? 1 : 0) + filterOptions.categoryIds.length + filterOptions.tagIds.length;
+  
+  // Debug log
+  console.log('Ledger selectedTxIds:', selectedTxIds);
+  
+  // Fallback to empty set if undefined
+  const effectiveSelectedIds = selectedTxIds || new Set();
+
   const allVisibleIds = filteredLedger.filter(t => !t.transfer_id).map(t => t.id);
-  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedTxIds.has(id));
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => effectiveSelectedIds.has(id));
   
   const toggleTx = (id) => setSelectedTxIds(prev => { 
-    const next = new Set(prev); 
+    const next = new Set(prev || []); 
     next.has(id) ? next.delete(id) : next.add(id); 
     return next; 
   });
@@ -127,7 +134,7 @@ const Ledger = ({
                 <input type="checkbox" checked={allSelected} onChange={toggleAll} className="hidden" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Select Visible ({allVisibleIds.length})</span>
               </label>
-              {selectedTxIds.size > 0 && <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-surface/10 px-4 py-1.5 rounded-full border border-surface/10">{selectedTxIds.size} Selected</span>}
+              {effectiveSelectedIds.size > 0 && <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-surface/10 px-4 py-1.5 rounded-full border border-surface/10">{effectiveSelectedIds.size} Selected</span>}
             </div>
           )}
         </div>
@@ -153,7 +160,7 @@ const Ledger = ({
                       accounts={accounts} 
                       categories={categories} 
                       currencySymbol={currencySymbol}
-                      isSelected={selectedTxIds.has(t.id)}
+                      isSelected={effectiveSelectedIds.has(t.id)}
                       bulkSelectMode={bulkSelectMode}
                       onToggleSelect={toggleTx}
                     />
@@ -174,7 +181,7 @@ const Ledger = ({
       </div>
 
       {/* Sticky bulk-action bar */}
-      {bulkSelectMode && selectedTxIds.size > 0 && (
+      {bulkSelectMode && effectiveSelectedIds.size > 0 && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xl px-6 fade-in">
           <div className="bg-[#131313] border border-outline-variant/20 rounded-[2.5rem] p-4 flex items-center gap-4 shadow-[0_32px_64px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
             <div className="flex-1">
@@ -188,7 +195,7 @@ const Ledger = ({
             </div>
             <button
               className={`px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${bulkCategory ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg shadow-[#3fff8b]/20 scale-105' : 'bg-zinc-800 text-zinc-600 opacity-50 cursor-not-allowed'}`}
-              onClick={bulkCategory ? () => handleBulkAssignCategory(bulkCategory, selectedTxIds) : undefined}
+              onClick={bulkCategory ? () => handleBulkAssignCategory(bulkCategory, effectiveSelectedIds) : undefined}
             >
               Process
             </button>
