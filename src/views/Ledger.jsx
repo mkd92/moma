@@ -39,16 +39,21 @@ const Ledger = ({
     const startingBalance = singleAccountId
       ? (accountBalances[singleAccountId] || 0)
       : Object.values(accountBalances).reduce((s, v) => s + v, 0);
+    // Single account: include transfers (they move money in/out of that account)
+    // All accounts: include all rows but transfers don't shift net worth
     const sourceTx = singleAccountId
-      ? transactions.filter(t => !t.transfer_id && t.account_id === singleAccountId)
-      : transactions.filter(t => !t.transfer_id);
+      ? transactions.filter(t => t.account_id === singleAccountId)
+      : transactions;
     const sorted = [...sourceTx].sort((a, b) => (b.transaction_date || '').localeCompare(a.transaction_date || ''));
     const map = {};
     let balance = startingBalance;
     sorted.forEach(t => {
       map[t.id] = balance;
-      if (t.type === 'income') balance -= parseFloat(t.amount) || 0;
-      else balance += parseFloat(t.amount) || 0;
+      const shouldAdjust = singleAccountId ? true : !t.transfer_id;
+      if (shouldAdjust) {
+        if (t.type === 'income') balance -= parseFloat(t.amount) || 0;
+        else balance += parseFloat(t.amount) || 0;
+      }
     });
     return map;
   }, [transactions, accountBalances, filterOptions.accountIds]);
