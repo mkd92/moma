@@ -78,14 +78,15 @@ const Settings = ({
     }
 
     md += `\n## All Transactions\n`;
-    md += `| Date | Description | Category | Account | Amount | Type |\n`;
-    md += `|------|-------------|----------|---------|--------|------|\n`;
+    md += `| Date | Description | Category | Account | Amount | Type | Tags |\n`;
+    md += `|------|-------------|----------|---------|--------|------|------|\n`;
     [...regularTx].sort((a, b) => (b.transaction_date || '').localeCompare(a.transaction_date || '')).forEach(t => {
       const desc = t.parties?.name || t.note || '-';
       const cat = t.categories?.name || '-';
       const acct = accounts.find(a => a.id === t.account_id)?.name || '-';
       const sign = t.type === 'income' ? '+' : '-';
-      md += `| ${t.transaction_date} | ${desc} | ${cat} | ${acct} | ${sign}${currencySymbol}${fmt(t.amount)} | ${t.type} |\n`;
+      const tags = t.transaction_tags?.map(tt => tt.tags?.name).filter(Boolean).join(', ') || '-';
+      md += `| ${t.transaction_date} | ${desc} | ${cat} | ${acct} | ${sign}${currencySymbol}${fmt(t.amount)} | ${t.type} | ${tags} |\n`;
     });
 
     if (transferTx.length > 0) {
