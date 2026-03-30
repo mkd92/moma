@@ -51,7 +51,7 @@ export default function CategoryManagement({
             const subs = categories.filter(c => c.parent_id === parent.id);
             const isEditingParent = editingCat?.id === parent.id;
             return (
-              <div key={parent.id} className={`bg-surface-low rounded-[2.5rem] border border-outline-variant/10 overflow-hidden shadow-xl group transition-all ${isEditingParent ? 'ring-2 ring-on-surface/10' : ''}`}>
+              <div key={parent.id} className={`bg-surface-low rounded-[2.5rem] border border-outline-variant/10 overflow-hidden shadow-xl transition-all ${isEditingParent ? 'ring-2 ring-on-surface/10' : ''}`}>
                 {/* Parent row */}
                 <div className={`p-8 flex items-center justify-between transition-colors ${isEditingParent ? 'bg-on-surface/[0.03]' : 'hover:bg-on-surface/[0.01]'}`}>
                   <div className="flex items-center gap-5">
@@ -64,12 +64,12 @@ export default function CategoryManagement({
                     </div>
                   </div>
                   {!parent.is_system && (
-                    <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 text-on-surface-variant hover:text-on-surface transition-colors" onClick={() => { setEditingCat(parent); setNewCatName(parent.name); setNewCatIcon(parent.icon); setNewCatParent(''); }}>
-                        <span className="material-symbols-outlined text-sm">edit</span>
+                    <div className="flex items-center gap-2">
+                      <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.06] transition-all" onClick={() => { setEditingCat(parent); setNewCatName(parent.name); setNewCatIcon(parent.icon); setNewCatParent(''); }}>
+                        <span className="material-symbols-outlined text-[18px]">edit</span>
                       </button>
-                      <button className="p-2 text-on-surface-variant hover:text-error transition-colors" onClick={() => handleDeleteCategory(parent.id)}>
-                        <span className="material-symbols-outlined text-sm">delete</span>
+                      <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/[0.08] transition-all" onClick={() => handleDeleteCategory(parent.id)}>
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
                       </button>
                     </div>
                   )}
@@ -86,12 +86,12 @@ export default function CategoryManagement({
                             <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">{sub.name}</span>
                           </div>
                           {!sub.is_system && (
-                            <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button className="p-2 text-on-surface-variant hover:text-on-surface transition-colors" onClick={() => { setEditingCat(sub); setNewCatName(sub.name); setNewCatIcon(sub.icon); setNewCatParent(sub.parent_id || ''); }}>
-                                <span className="material-symbols-outlined text-sm">edit</span>
+                            <div className="flex items-center gap-2">
+                              <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.06] transition-all" onClick={() => { setEditingCat(sub); setNewCatName(sub.name); setNewCatIcon(sub.icon); setNewCatParent(sub.parent_id || ''); }}>
+                                <span className="material-symbols-outlined text-[18px]">edit</span>
                               </button>
-                              <button className="p-2 text-on-surface-variant hover:text-error transition-colors" onClick={() => handleDeleteCategory(sub.id)}>
-                                <span className="material-symbols-outlined text-sm">delete</span>
+                              <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/[0.08] transition-all" onClick={() => handleDeleteCategory(sub.id)}>
+                                <span className="material-symbols-outlined text-[18px]">delete</span>
                               </button>
                             </div>
                           )}
