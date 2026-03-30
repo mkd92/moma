@@ -195,7 +195,13 @@ const Ledger = ({
             </div>
             <button
               className={`px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${bulkCategory ? 'bg-[#3fff8b] text-[#005d2c] shadow-lg shadow-[#3fff8b]/20 scale-105' : 'bg-zinc-800 text-zinc-600 opacity-50 cursor-not-allowed'}`}
-              onClick={bulkCategory ? () => handleBulkAssignCategory(bulkCategory, effectiveSelectedIds) : undefined}
+              onClick={bulkCategory ? async () => {
+                try {
+                  await handleBulkAssignCategory(bulkCategory, effectiveSelectedIds);
+                } catch (err) {
+                  console.error('Bulk assignment failed:', err);
+                }
+              } : undefined}
             >
               Process
             </button>
