@@ -2,7 +2,7 @@ import React from 'react';
 import { getCategoryIcon } from '../../utils/formatters';
 
 // Transaction item component for consistency
-const TransactionItem = ({ t, onClick, onDelete, accounts, categories, currencySymbol, isSelected, bulkSelectMode, onToggleSelect }) => {
+const TransactionItem = ({ t, onClick, onDelete, accounts, categories, currencySymbol, isSelected, bulkSelectMode, onToggleSelect, runningBalance }) => {
   const cat = categories.find(c => c.id === t.category_id);
   const amt = t.amount || 0;
   const isNeg = t.type === 'expense';
@@ -46,6 +46,11 @@ const TransactionItem = ({ t, onClick, onDelete, accounts, categories, currencyS
           <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter mt-1 opacity-40">
             {t.transaction_date || t.created_at?.split('T')[0]}
           </p>
+          {!isTransfer && runningBalance !== undefined && (
+            <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter mt-0.5 opacity-30">
+              Bal {currencySymbol}{runningBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          )}
         </div>
       </div>
 

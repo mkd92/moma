@@ -1,36 +1,53 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PageShell } from '../components/layout';
 import TransactionItem from '../components/transactions/TransactionItem';
 import FilterPanel from '../components/filters/FilterPanel';
 import CustomDropdown from '../components/CustomDropdown';
 import { formatGroupDate } from '../utils/formatters';
 
-const Ledger = ({ 
-  shellProps, 
-  categories, 
-  tags, 
-  accounts, 
-  filterOptions, 
-  showAdvancedFilters, 
-  setShowFilters, 
-  updateFilter, 
-  resetFilters, 
-  applyDatePreset, 
-  ledgerSort, 
-  setLedgerSort, 
-  bulkSelectMode, 
-  setBulkSelectMode, 
-  selectedTxIds, 
-  setSelectedTxIds, 
-  bulkCategory, 
-  setBulkCategory, 
-  filteredLedger, 
-  groupedLedger, 
-  openEditTransaction, 
-  handleDeleteTransaction, 
-  currencySymbol, 
-  handleBulkAssignCategory 
+const Ledger = ({
+  shellProps,
+  categories,
+  tags,
+  accounts,
+  transactions = [],
+  accountBalances = {},
+  filterOptions,
+  showAdvancedFilters,
+  setShowFilters,
+  updateFilter,
+  resetFilters,
+  applyDatePreset,
+  ledgerSort,
+  setLedgerSort,
+  bulkSelectMode,
+  setBulkSelectMode,
+  selectedTxIds,
+  setSelectedTxIds,
+  bulkCategory,
+  setBulkCategory,
+  filteredLedger,
+  groupedLedger,
+  openEditTransaction,
+  handleDeleteTransaction,
+  currencySymbol,
+  handleBulkAssignCategory
 }) => {
+  // Compute running balance for each transaction (balance after that tx)
+  const runningBalanceMap = useMemo(() => {
+    const netWorth = Object.values(accountBalances).reduce((s, v) => s + v, 0);
+    const sorted = [...transactions]
+      .filter(t => !t.transfer_id)
+      .sort((a, b) => (b.transaction_date || '').localeCompare(a.transaction_date || ''));
+    const map = {};
+    let balance = netWorth;
+    sorted.forEach(t => {
+      map[t.id] = balance;
+      if (t.type === 'income') balance -= parseFloat(t.amount) || 0;
+      else balance += parseFloat(t.amount) || 0;
+    });
+    return map;
+  }, [transactions, accountBalances]);
   const activeFiltersCount = (filterOptions.type !== 'all' ? 1 : 0) + (filterOptions.dateRange.start ? 1 : 0) + (filterOptions.dateRange.end ? 1 : 0) + filterOptions.categoryIds.length + filterOptions.tagIds.length;
   const allVisibleIds = filteredLedger.filter(t => !t.transfer_id).map(t => t.id);
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every(id => selectedTxIds.has(id));
@@ -145,17 +162,18 @@ const Ledger = ({
                 )}
                 <div className="flex flex-col">
                   {txs.map(t => (
-                    <TransactionItem 
-                      key={t.id} 
-                      t={t} 
+                    <TransactionItem
+                      key={t.id}
+                      t={t}
                       onClick={openEditTransaction}
                       onDelete={handleDeleteTransaction}
-                      accounts={accounts} 
-                      categories={categories} 
+                      accounts={accounts}
+                      categories={categories}
                       currencySymbol={currencySymbol}
                       isSelected={selectedTxIds.has(t.id)}
                       bulkSelectMode={bulkSelectMode}
                       onToggleSelect={toggleTx}
+                      runningBalance={runningBalanceMap[t.id]}
                     />
                   ))}
                 </div>
