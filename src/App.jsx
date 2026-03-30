@@ -204,6 +204,53 @@ export default function App() {
   const chartTimeSeriesResult = useMemo(() => { const data = {}; analyticsTransactionsResult.filter(t => !t.transfer_id).forEach(t => { const k = t.transaction_date; if (!data[k]) data[k] = { date: k, income: 0, expense: 0, label: k.slice(5) }; if (t.type === 'income') data[k].income += parseFloat(t.amount); else data[k].expense += parseFloat(t.amount); }); return Object.values(data).sort((a,b) => a.date.localeCompare(b.date)); }, [analyticsTransactionsResult]);
   const chartCategoricalResult = useMemo(() => { const t = {}; analyticsTransactionsResult.filter(tx => tx.type === 'expense' && !tx.transfer_id && tx.categories).forEach(tx => { const n = tx.categories.name; t[n] = (t[n] || 0) + parseFloat(tx.amount); }); return Object.entries(t).map(([name, value]) => ({ name, value })); }, [analyticsTransactionsResult]);
 
+  const generateAIReport = useCallback(() => {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const monthLabel = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    const currentMonth = today.toISOString().slice(0, 7);
+
+    const netWorth = Object.values(accountBalancesResult).reduce((s, v) => s + v, 0);
+
+    const currentMonthTx = transactions.filter(t => t.transaction_date?.startsWith(currentMonth) && !t.transfer_id);
+    const currentIncome = currentMonthTx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
+    const currentExpense = currentMonthTx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
+
+    const catSpend = {};
+    currentMonthTx.filter(t => t.type === 'expense' && t.categories).forEach(t => { const k = t.categories.name; catSpend[k] = (catSpend[k] || 0) + parseFloat(t.amount); });
+    const topCats = Object.entries(catSpend).sort((a, b) => b[1] - a[1]);
+
+    const monthlyTotals = {};
+    transactions.filter(t => !t.transfer_id).forEach(t => { const m = t.transaction_date?.slice(0, 7); if (!m) return; if (!monthlyTotals[m]) monthlyTotals[m] = { income: 0, expense: 0 }; if (t.type === 'income') monthlyTotals[m].income += parseFloat(t.amount); else monthlyTotals[m].expense += parseFloat(t.amount); });
+    const last3Months = Object.entries(monthlyTotals).sort(([a], [b]) => b.localeCompare(a)).slice(0, 3);
+
+    const recentTx = transactions.filter(t => !t.transfer_id).slice(0, 20);
+    const fmt = n => parseFloat(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    let md = `# MOMA Financial Context\n**Generated:** ${dateStr} | **Currency:** ${currencyCode}\n\n---\n\n`;
+    md += `## Financial Snapshot\n- **Net Worth:** ${currencySymbol}${fmt(netWorth)}\n- **This Month (${monthLabel}):** Income ${currencySymbol}${fmt(currentIncome)} | Expenses ${currencySymbol}${fmt(currentExpense)}\n\n`;
+    md += `## Account Balances\n${accounts.map(a => `- ${a.name}: ${currencySymbol}${fmt(accountBalancesResult[a.id] || 0)}`).join('\n')}\n\n`;
+    md += `## Spending by Category (${monthLabel})\n`;
+    if (topCats.length === 0) { md += `No expense transactions this month.\n`; }
+    else { topCats.forEach(([name, amt], i) => { const b = budgetProgressResult.find(b => categories.find(c => c.id === b.category_id)?.name === name); const budgetNote = b ? ` (budget: ${currencySymbol}${fmt(b.limit_amount)} — ${b.status === 'over' ? 'OVER BUDGET' : 'ok'})` : ''; md += `${i + 1}. ${name}: ${currencySymbol}${fmt(amt)}${budgetNote}\n`; }); }
+    md += `\n## Budget Status\n`;
+    if (budgetProgressResult.length === 0) { md += `No budgets configured.\n`; }
+    else { budgetProgressResult.forEach(b => { const cat = categories.find(c => c.id === b.category_id); md += `- ${cat?.name || 'Global'}: ${currencySymbol}${fmt(b.spent)} / ${currencySymbol}${fmt(b.limit_amount)} ${b.status === 'over' ? '[OVER]' : '[ok]'}\n`; }); }
+    md += `\n## Monthly Trends (Last 3 Months)\n`;
+    last3Months.forEach(([month, t]) => { md += `- ${month}: Income ${currencySymbol}${fmt(t.income)} | Expenses ${currencySymbol}${fmt(t.expense)} | Net ${currencySymbol}${fmt(t.income - t.expense)}\n`; });
+    md += `\n## Recent Transactions (Last 20)\n| Date | Description | Category | Amount | Type |\n|------|-------------|----------|--------|------|\n`;
+    recentTx.forEach(t => { const desc = t.parties?.name || t.note || '-'; const cat = t.categories?.name || '-'; const sign = t.type === 'income' ? '+' : '-'; md += `| ${t.transaction_date} | ${desc} | ${cat} | ${sign}${currencySymbol}${fmt(t.amount)} | ${t.type} |\n`; });
+    md += `\n---\n*Paste this report into Claude or Gemini to get AI-powered financial advice.*\n`;
+
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `moma-context-${dateStr}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [transactions, accounts, categories, budgets, accountBalancesResult, budgetProgressResult, currencySymbol, currencyCode]);
+
   const shellProps = { view, onDashboard: navToDashboard, onLedger: navToLedger, onAnalytics: navToAnalytics, onBudgets: navToBudgets, onNewTx: navToNewTx, onSettings: navToSettings, onLogout: handleLogout, session };
 
   if (view === 'landing') return (
@@ -228,7 +275,7 @@ export default function App() {
 
   if (view === 'settings') return (
     <PageShell {...shellProps}>
-      <div className="page-inner fade-in"><h2 className="section-title-editorial">Settings</h2><div className="settings-panel"><div className="settings-section"><p className="label-sm">Currency</p><button className="currency-dropdown-trigger" onClick={() => setCurrencyCode(c => c === 'USD' ? 'EUR' : 'USD')}>{currencyCode}</button></div><div className="settings-section"><p className="label-sm">Manage</p><div className="settings-group"><button className="settings-nav-btn" onClick={() => setView('account_management')}>Accounts ›</button><button className="settings-nav-btn" onClick={() => setView('category_management')}>Categories ›</button></div></div></div></div>
+      <div className="page-inner fade-in"><h2 className="section-title-editorial">Settings</h2><div className="settings-panel"><div className="settings-section"><p className="label-sm">Currency</p><button className="currency-dropdown-trigger" onClick={() => setCurrencyCode(c => c === 'USD' ? 'EUR' : 'USD')}>{currencyCode}</button></div><div className="settings-section"><p className="label-sm">Manage</p><div className="settings-group"><button className="settings-nav-btn" onClick={() => setView('account_management')}>Accounts ›</button><button className="settings-nav-btn" onClick={() => setView('category_management')}>Categories ›</button></div></div><div className="settings-section"><p className="label-sm">AI Integration</p><div className="settings-group"><button className="settings-nav-btn" onClick={generateAIReport}>Export for AI ↓</button></div><p className="label-sm" style={{ marginTop: '0.5rem', opacity: 0.6 }}>Download a financial report to paste into Claude or Gemini</p></div></div></div>
     </PageShell>
   );
 
