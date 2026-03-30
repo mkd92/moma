@@ -42,6 +42,12 @@ export function useAppData(session, navigate, pathname) {
   const [catBreakdownType, setCatBreakdownType] = useState('expense');
   const [settingsType, setSettingsType] = useState('expense');
 
+  // Category form state
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('🔖');
+  const [newCatParent, setNewCatParent] = useState('');
+  const [editingCat, setEditingCat] = useState(null);
+
   // Bulk selection state (ledger)
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [selectedTxIds, setSelectedTxIds] = useState(new Set());
@@ -533,6 +539,23 @@ export function useAppData(session, navigate, pathname) {
     return error;
   }, [session, fetchCategories]);
 
+  const handleCatFormSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: newCatName.trim(),
+      icon: newCatIcon,
+      type: settingsType,
+      parent_id: newCatParent || null,
+    };
+    const error = await handleCreateCategory(payload, editingCat?.id);
+    if (!error) {
+      setNewCatName('');
+      setNewCatIcon('🔖');
+      setNewCatParent('');
+      setEditingCat(null);
+    }
+  }, [newCatName, newCatIcon, newCatParent, settingsType, editingCat, handleCreateCategory]);
+
   const handleDeleteCategory = useCallback(async (id) => {
     if (!session) return;
     await supabase.from('categories').delete().eq('id', id);
@@ -687,6 +710,8 @@ export function useAppData(session, navigate, pathname) {
     dashPeriod, setDashPeriod, analyticsFilters, setAnalyticsFilters, filterOptions, setFilterOptions,
     ledgerSort, setLedgerSort, drillCategory, setDrillCategory, catBreakdownType, setCatBreakdownType,
     settingsType, setSettingsType,
+    newCatName, setNewCatName, newCatIcon, setNewCatIcon, newCatParent, setNewCatParent,
+    editingCat, setEditingCat, handleCatFormSubmit,
     bulkSelectMode, setBulkSelectMode, selectedTxIds, setSelectedTxIds, bulkCategory, setBulkCategory,
     accountBalances, dashDateRange, dashTransactions, activeAccountIds, dashActiveTransactions,
     balance, totalIncome, totalExpense, topCategories, topExpenseCat, savingsRate, burnRate,

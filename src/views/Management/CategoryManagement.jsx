@@ -14,7 +14,7 @@ export default function CategoryManagement({
   setNewCatParent,
   editingCat,
   setEditingCat,
-  handleCreateCategory,
+  handleCatFormSubmit,
   handleDeleteCategory,
   setView,
   shellProps
@@ -107,7 +107,7 @@ export default function CategoryManagement({
 
         <section className="space-y-6 pt-10">
           <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">{editingCat ? 'Modify Taxonomy' : 'Create New Vector'}</p>
-          <form onSubmit={handleCreateCategory} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
+          <form onSubmit={handleCatFormSubmit} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-8">
               <div className="space-y-3">
                 <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Symbol</p>
