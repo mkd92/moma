@@ -73,10 +73,11 @@ export default function App() {
     handleCreateCategory, handleDeleteCategory, handleCreateParty, handleDeleteParty,
     handleDeleteTransaction, handleCreateTag, handleDeleteTag, handleCreateAccount,
     handleDeleteAccount, handleUpdateAccount, handleSetDefaultAccount, handleSaveBudget,
-    showAdvancedFilters, setShowFilters: setShowAdvancedFilters,
-    showAnalyticsFilters, setShowAnalyticsFilters,
     settingsType, setSettingsType
   } = appData;
+
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showAnalyticsFilters, setShowAnalyticsFilters] = useState(false);
 
   // --- Transaction Form Hook ---
   const txForm = useTransactionForm(session, accounts, categories, transactions, defaultAccountId, fetchTransactions, setView);
