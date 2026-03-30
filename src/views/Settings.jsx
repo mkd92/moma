@@ -1,18 +1,71 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { PageShell } from '../components/layout';
 import CustomDropdown from '../components/CustomDropdown';
 import { CURRENCY_SYMBOLS } from '../constants';
 
-const Settings = ({ 
-  shellProps, 
-  currencyCode, 
-  setCurrencyCode, 
-  theme, 
-  toggleTheme, 
-  setView, 
-  session, 
-  handleLogout 
+const Settings = ({
+  shellProps,
+  currencyCode,
+  setCurrencyCode,
+  theme,
+  toggleTheme,
+  setView,
+  session,
+  handleLogout,
+  transactions = [],
+  accounts = [],
+  categories = [],
+  budgets = [],
+  accountBalances = {},
+  budgetProgress = [],
+  currencySymbol = '$',
 }) => {
+  const generateAIReport = useCallback(() => {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const monthLabel = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    const currentMonth = today.toISOString().slice(0, 7);
+    const fmt = n => parseFloat(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const netWorth = Object.values(accountBalances).reduce((s, v) => s + v, 0);
+
+    const currentMonthTx = transactions.filter(t => t.transaction_date?.startsWith(currentMonth) && !t.transfer_id);
+    const currentIncome = currentMonthTx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
+    const currentExpense = currentMonthTx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
+
+    const catSpend = {};
+    currentMonthTx.filter(t => t.type === 'expense' && t.categories).forEach(t => { const k = t.categories.name; catSpend[k] = (catSpend[k] || 0) + parseFloat(t.amount); });
+    const topCats = Object.entries(catSpend).sort((a, b) => b[1] - a[1]);
+
+    const monthlyTotals = {};
+    transactions.filter(t => !t.transfer_id).forEach(t => { const m = t.transaction_date?.slice(0, 7); if (!m) return; if (!monthlyTotals[m]) monthlyTotals[m] = { income: 0, expense: 0 }; if (t.type === 'income') monthlyTotals[m].income += parseFloat(t.amount); else monthlyTotals[m].expense += parseFloat(t.amount); });
+    const last3Months = Object.entries(monthlyTotals).sort(([a], [b]) => b.localeCompare(a)).slice(0, 3);
+
+    const recentTx = transactions.filter(t => !t.transfer_id).slice(0, 20);
+
+    let md = `# MOMA Financial Context\n**Generated:** ${dateStr} | **Currency:** ${currencyCode}\n\n---\n\n`;
+    md += `## Financial Snapshot\n- **Net Worth:** ${currencySymbol}${fmt(netWorth)}\n- **This Month (${monthLabel}):** Income ${currencySymbol}${fmt(currentIncome)} | Expenses ${currencySymbol}${fmt(currentExpense)}\n\n`;
+    md += `## Account Balances\n${accounts.map(a => `- ${a.name}: ${currencySymbol}${fmt(accountBalances[a.id] || 0)}`).join('\n')}\n\n`;
+    md += `## Spending by Category (${monthLabel})\n`;
+    if (topCats.length === 0) { md += `No expense transactions this month.\n`; }
+    else { topCats.forEach(([name, amt], i) => { const b = budgetProgress.find(b => categories.find(c => c.id === b.category_id)?.name === name); const budgetNote = b ? ` (budget: ${currencySymbol}${fmt(b.limit_amount)} — ${b.status === 'over' ? 'OVER BUDGET' : 'ok'})` : ''; md += `${i + 1}. ${name}: ${currencySymbol}${fmt(amt)}${budgetNote}\n`; }); }
+    md += `\n## Budget Status\n`;
+    if (budgetProgress.length === 0) { md += `No budgets configured.\n`; }
+    else { budgetProgress.forEach(b => { const cat = categories.find(c => c.id === b.category_id); md += `- ${cat?.name || 'Global'}: ${currencySymbol}${fmt(b.spent)} / ${currencySymbol}${fmt(b.limit_amount)} ${b.status === 'over' ? '[OVER]' : '[ok]'}\n`; }); }
+    md += `\n## Monthly Trends (Last 3 Months)\n`;
+    last3Months.forEach(([month, t]) => { md += `- ${month}: Income ${currencySymbol}${fmt(t.income)} | Expenses ${currencySymbol}${fmt(t.expense)} | Net ${currencySymbol}${fmt(t.income - t.expense)}\n`; });
+    md += `\n## Recent Transactions (Last 20)\n| Date | Description | Category | Amount | Type |\n|------|-------------|----------|--------|------|\n`;
+    recentTx.forEach(t => { const desc = t.parties?.name || t.note || '-'; const cat = t.categories?.name || '-'; const sign = t.type === 'income' ? '+' : '-'; md += `| ${t.transaction_date} | ${desc} | ${cat} | ${sign}${currencySymbol}${fmt(t.amount)} | ${t.type} |\n`; });
+    md += `\n---\n*Paste this report into Claude or Gemini for AI-powered financial advice.*\n`;
+
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `moma-context-${dateStr}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [transactions, accounts, categories, budgets, accountBalances, budgetProgress, currencySymbol, currencyCode]);
   const currencyOptions = Object.entries(CURRENCY_SYMBOLS).map(([code, sym]) => ({ 
     value: code, 
     label: code + ' (' + sym + ')',
@@ -75,6 +128,28 @@ const Settings = ({
                   <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-all group-hover:translate-x-1 opacity-40">chevron_right</span>
                 </button>
               ))}
+            </div>
+          </section>
+
+          {/* AI Integration Section */}
+          <section className="space-y-6">
+            <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">Intelligence</p>
+            <div className="bg-surface-low rounded-[2.5rem] border border-outline-variant/10 overflow-hidden shadow-2xl">
+              <button
+                className="w-full p-8 flex items-center justify-between group hover:bg-on-surface/[0.02] transition-all text-left"
+                onClick={generateAIReport}
+              >
+                <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-2xl bg-on-surface/[0.03] flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors border border-outline-variant/5">
+                    <span className="material-symbols-outlined text-[22px]">model_training</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">Export for AI</p>
+                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-1 opacity-60">Download report for Claude or Gemini</p>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-all opacity-40">download</span>
+              </button>
             </div>
           </section>
 
