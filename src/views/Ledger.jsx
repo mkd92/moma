@@ -33,9 +33,6 @@ const Ledger = ({
 }) => {
   const activeFiltersCount = (filterOptions.type !== 'all' ? 1 : 0) + (filterOptions.dateRange.start ? 1 : 0) + (filterOptions.dateRange.end ? 1 : 0) + filterOptions.categoryIds.length + filterOptions.tagIds.length;
   
-  // Debug log
-  console.log('Ledger selectedTxIds:', selectedTxIds);
-  
   // Fallback to empty set if undefined
   const effectiveSelectedIds = selectedTxIds || new Set();
 
@@ -198,6 +195,7 @@ const Ledger = ({
               onClick={bulkCategory ? async () => {
                 try {
                   await handleBulkAssignCategory(bulkCategory, effectiveSelectedIds);
+                  exitBulk();
                 } catch (err) {
                   console.error('Bulk assignment failed:', err);
                 }
