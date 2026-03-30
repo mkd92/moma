@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { PageShell } from '../../components/layout';
 import CustomDropdown from '../../components/CustomDropdown';
 
@@ -20,6 +20,21 @@ export default function CategoryManagement({
   shellProps
 }) {
   const parents = categories.filter(c => !c.parent_id && c.type === settingsType);
+  const formRef = useRef(null);
+
+  // Scroll to form whenever an edit is started
+  useEffect(() => {
+    if (editingCat && formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [editingCat]);
+
+  const confirmDelete = (id, name, hasSubs) => {
+    const msg = hasSubs
+      ? `Delete "${name}" and all its sub-categories?`
+      : `Delete "${name}"?`;
+    if (window.confirm(msg)) handleDeleteCategory(id);
+  };
 
   return (
     <PageShell {...shellProps}>
@@ -68,7 +83,7 @@ export default function CategoryManagement({
                       <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.06] transition-all" onClick={() => { setEditingCat(parent); setNewCatName(parent.name); setNewCatIcon(parent.icon); setNewCatParent(''); }}>
                         <span className="material-symbols-outlined text-[18px]">edit</span>
                       </button>
-                      <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/[0.08] transition-all" onClick={() => handleDeleteCategory(parent.id)}>
+                      <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/[0.08] transition-all" onClick={() => confirmDelete(parent.id, parent.name, subs.length > 0)}>
                         <span className="material-symbols-outlined text-[18px]">delete</span>
                       </button>
                     </div>
@@ -90,7 +105,7 @@ export default function CategoryManagement({
                               <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.06] transition-all" onClick={() => { setEditingCat(sub); setNewCatName(sub.name); setNewCatIcon(sub.icon); setNewCatParent(sub.parent_id || ''); }}>
                                 <span className="material-symbols-outlined text-[18px]">edit</span>
                               </button>
-                              <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/[0.08] transition-all" onClick={() => handleDeleteCategory(sub.id)}>
+                              <button className="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/[0.08] transition-all" onClick={() => confirmDelete(sub.id, sub.name, false)}>
                                 <span className="material-symbols-outlined text-[18px]">delete</span>
                               </button>
                             </div>
@@ -105,7 +120,7 @@ export default function CategoryManagement({
           })}
         </div>
 
-        <section className="space-y-6 pt-10">
+        <section ref={formRef} className="space-y-6 pt-10">
           <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">{editingCat ? 'Modify Taxonomy' : 'Create New Vector'}</p>
           <form onSubmit={handleCatFormSubmit} className="bg-surface-low p-10 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-8">

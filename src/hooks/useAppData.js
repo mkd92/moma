@@ -548,7 +548,9 @@ export function useAppData(session, navigate, pathname) {
       parent_id: newCatParent || null,
     };
     const error = await handleCreateCategory(payload, editingCat?.id);
-    if (!error) {
+    if (error) {
+      alert(`Failed to save category: ${error.message}`);
+    } else {
       setNewCatName('');
       setNewCatIcon('🔖');
       setNewCatParent('');
