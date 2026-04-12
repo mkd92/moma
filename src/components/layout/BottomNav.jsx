@@ -8,10 +8,10 @@ const PILL_STYLE = {
   border: '1px solid rgba(210, 233, 205, 0.18)',
 };
 
-const NavBtn = ({ icon, label, isActive, onClick, compact = false }) => (
+const NavBtn = ({ icon, label, isActive, onClick, compact = false, className = '' }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center gap-0.5 rounded-full transition-all duration-200 ${compact ? 'px-3 py-2' : 'px-4 py-2'}`}
+    className={`flex flex-col items-center justify-center gap-0.5 rounded-full transition-all duration-200 ${compact ? 'px-3 py-2' : 'px-2 py-2'} ${className}`}
     style={{
       background: isActive ? 'rgba(210, 233, 205, 0.2)' : 'transparent',
       color: isActive ? '#d2e9cd' : 'rgba(210, 233, 205, 0.6)',
@@ -23,7 +23,7 @@ const NavBtn = ({ icon, label, isActive, onClick, compact = false }) => (
     >
       {icon}
     </span>
-    <span className={`font-semibold tracking-wide ${compact ? 'text-[8px]' : 'text-[9px]'}`}>{label}</span>
+    <span className={`font-bold tracking-tight ${compact ? 'text-[8px]' : 'text-[10px]'}`}>{label}</span>
   </button>
 );
 
@@ -55,15 +55,15 @@ const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNew
 
   return (
     <nav
-      className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-4"
+      className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0px)' }}
     >
       {/* ── Mobile pill: core + Settings ─────────────────────── */}
-      <div className="flex md:hidden items-center justify-around gap-0.5 px-2 py-2 rounded-full w-full" style={PILL_STYLE}>
+      <div className="flex md:hidden items-center justify-between gap-1 px-1 py-1.5 rounded-full w-[92vw] max-w-[400px]" style={PILL_STYLE}>
         {coreItems.map(({ key, label, icon, onClick }) => (
-          <NavBtn key={key} icon={icon} label={label} isActive={view === key} onClick={onClick} />
+          <NavBtn key={key} icon={icon} label={label} isActive={view === key} onClick={onClick} className="flex-1" />
         ))}
-        <NavBtn icon="settings" label="Settings" isActive={isSettingsActive} onClick={onSettings} />
+        <NavBtn icon="settings" label="Settings" isActive={isSettingsActive} onClick={onSettings} className="flex-1" />
       </div>
 
       {/* ── Desktop pill: core | management ──────────────────── */}
