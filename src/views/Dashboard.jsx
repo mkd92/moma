@@ -1,240 +1,323 @@
 import React from 'react';
 import { PageShell } from '../components/layout';
 import TransactionItem from '../components/transactions/TransactionItem';
+import { useAppDataContext } from '../hooks';
 
-const Dashboard = ({ 
-  shellProps, 
-  currencySymbol, 
-  balance, 
-  portfolioChange, 
-  sparklineData, 
-  totalIncome, 
-  totalExpense, 
-  dashTransactions, 
-  openEditTransaction, 
-  accounts, 
-  categories, 
-  navToLedger, 
-  smartInsights, 
-  accountBalances, 
-  setView, 
-  navToAnalytics, 
-  topCategories,
-  dashPeriod,
-  resetFilters,
-  updateFilter
-}) => {
+const ACCT_ICON  = { investment: 'trending_up', liability: 'credit_card', asset: 'account_balance' };
+const ACCT_LABEL = { investment: 'Investment',  liability: 'Liability',    asset: 'Asset' };
+
+const Eyebrow = ({ children, className = '' }) => (
+  <p className={`text-[9px] font-bold uppercase tracking-[0.32em] text-on-surface-variant/50 ${className}`}>{children}</p>
+);
+
+const Dashboard = () => {
+  const {
+    currencySymbol, portfolioChange,
+    totalIncome, totalExpense,
+    dashTransactions, accounts, categories,
+    smartInsights, accountBalances, topCategories,
+    dashPeriod, isLoading,
+    openEditTransaction, navToLedger, setView, navToAnalytics,
+    resetFilters, updateFilter, refreshData,
+  } = useAppDataContext();
+
   const handleNavToFilteredLedger = (type) => {
     resetFilters();
     updateFilter('type', type);
     updateFilter('preset', dashPeriod);
-    
-    // Sync the exact dates to match the dashboard view
     const today = new Date();
     const pad = n => String(n).padStart(2, '0');
     const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     let start = '', end = '';
-    
-    if (dashPeriod === 'today') {
-      start = end = fmt(today);
-    } else if (dashPeriod === 'this_week') {
-      const day = today.getDay() || 7;
-      const mon = new Date(today); mon.setDate(today.getDate() - day + 1);
-      start = fmt(mon); end = fmt(today);
-    } else if (dashPeriod === 'this_month') {
-      start = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
-      end = fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0));
-    } else if (dashPeriod === 'last_month') {
-      start = fmt(new Date(today.getFullYear(), today.getMonth() - 1, 1));
-      end = fmt(new Date(today.getFullYear(), today.getMonth(), 0));
-    } else if (dashPeriod === 'last_3m') {
-      start = fmt(new Date(today.getFullYear(), today.getMonth() - 2, 1));
-      end = fmt(today);
-    } else if (dashPeriod === 'this_year') {
-      start = `${today.getFullYear()}-01-01`;
-      end = `${today.getFullYear()}-12-31`;
-    }
-    
-    if (start && end) {
-      updateFilter('dateRange', { start, end });
-    }
-    
+    if (dashPeriod === 'today') { start = end = fmt(today); }
+    else if (dashPeriod === 'this_week') { const day = today.getDay() || 7; const mon = new Date(today); mon.setDate(today.getDate() - day + 1); start = fmt(mon); end = fmt(today); }
+    else if (dashPeriod === 'this_month') { start = fmt(new Date(today.getFullYear(), today.getMonth(), 1)); end = fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)); }
+    else if (dashPeriod === 'last_3m') { start = fmt(new Date(today.getFullYear(), today.getMonth() - 2, 1)); end = fmt(today); }
+    if (start && end) updateFilter('dateRange', { start, end });
     setView('ledger');
   };
 
+  const fmt = (n) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const includedAccounts  = accounts.filter(a => !a.exclude_from_total);
+  const excludedCount     = accounts.length - includedAccounts.length;
+  const netWorth          = includedAccounts.reduce((s, a) => { const b = accountBalances[a.id] || 0; return a.type === 'liability' ? s - b : s + b; }, 0);
+  const assetTotal        = includedAccounts.filter(a => (a.type || 'asset') === 'asset').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
+  const investTotal       = includedAccounts.filter(a => a.type === 'investment').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
+  const liabTotal         = includedAccounts.filter(a => a.type === 'liability').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
+  const maxBal            = Math.max(...includedAccounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
+  const netPeriod         = totalIncome - totalExpense;
+
+  const kpis = [
+    assetTotal  > 0 && { label: 'Cash & Assets',  value: assetTotal,  color: 'text-on-surface',         prefix: '' },
+    investTotal > 0 && { label: 'Investments',     value: investTotal, color: 'text-primary',             prefix: '' },
+    liabTotal   > 0 && { label: 'Liabilities',     value: liabTotal,   color: 'text-on-surface-variant',  prefix: '−' },
+  ].filter(Boolean);
+
   return (
-    <PageShell {...shellProps}>
-      <div className="page-inner space-y-10 pb-32 max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Main Content Stack */}
-          <div className="lg:col-span-8 space-y-10">
-            {/* Portfolio Hero - Modern Architectural */}
-            <div className="relative overflow-hidden bg-surface-low p-6 md:p-14 rounded-[2.5rem] md:rounded-[3rem] border border-outline-variant/10 shadow-sm">
-              <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-10">
-                <div>
-                  <p className="text-[9px] md:text-[10px] font-bold tracking-[0.3em] md:tracking-[0.4em] text-on-surface-variant uppercase mb-4 md:mb-6 opacity-60">Total Net Worth</p>
-                  <div className="flex items-baseline gap-1 md:gap-2 flex-wrap">
-                    <span className="text-xl md:text-3xl font-extrabold font-headline text-on-surface opacity-40">{currencySymbol}</span>
-                    <h1 className="text-5xl md:text-9xl font-black font-headline text-on-surface tracking-[-0.04em] leading-none">
-                      {Math.floor(balance).toLocaleString()}
-                    </h1>
-                    <span className="text-lg md:text-2xl font-bold text-on-surface-variant opacity-30 font-headline">
-                      .{(balance % 1).toFixed(2).split('.')[1]}
-                    </span>
-                  </div>
+    <PageShell view="dashboard" onRefresh={refreshData} isLoading={isLoading}>
+      <div className="page-inner pb-32 max-w-6xl mx-auto px-4 md:px-8 pt-8 space-y-5">
+
+        {/* ───────────────────────────────────────────────────────────
+            NET WORTH STATEMENT CARD
+        ─────────────────────────────────────────────────────────── */}
+        <div className="bg-surface-lowest rounded-[1.75rem] overflow-hidden" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 8px 40px rgba(77,97,75,0.07)' }}>
+
+          {/* ── Top: headline + actions ── */}
+          <div className="px-8 md:px-10 pt-9 pb-7">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-3">
+                <Eyebrow>Total Net Worth</Eyebrow>
+
+                <div className="flex items-end gap-4 flex-wrap">
+                  <span className="text-[2.6rem] md:text-[3.5rem] font-black tracking-tight leading-none text-on-surface tabular-nums">
+                    {netWorth < 0 ? '−' : ''}{currencySymbol}{fmt(Math.abs(netWorth))}
+                  </span>
+
                   {portfolioChange !== null && (
-                    <div className="inline-flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-on-surface/[0.03] rounded-xl md:rounded-2xl mt-6 md:mt-10 border border-outline-variant/10">
-                      <span className={`material-symbols-outlined text-[12px] md:text-[14px] ${portfolioChange >= 0 ? 'text-accent' : 'text-error'}`}>
-                        {portfolioChange >= 0 ? 'trending_up' : 'trending_down'}
+                    <span className={`inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-bold mb-1 ${
+                      portfolioChange >= 0
+                        ? 'bg-primary/[0.08] text-primary'
+                        : 'bg-error/[0.08] text-error'
+                    }`}>
+                      <span className="material-symbols-outlined text-[14px]">
+                        {portfolioChange >= 0 ? 'arrow_upward' : 'arrow_downward'}
                       </span>
-                      <span className="text-[10px] md:text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">{Math.abs(portfolioChange)}% vs last</span>
-                    </div>
+                      {portfolioChange >= 0 ? '+' : ''}{portfolioChange}%
+                    </span>
                   )}
                 </div>
-                {/* Refined Minimalist Bars - Hidden or smaller on mobile to save space */}
-                <div className="flex items-end gap-1 md:gap-1.5 h-16 md:h-24 pb-1 md:pb-2 opacity-20 overflow-hidden">
-                  {sparklineData.slice(-12).map((v, i) => {
-                    const max = Math.max(...sparklineData, 1);
-                    const h = Math.max(8, (v / max) * 100);
-                    return <div key={i} className="w-1 md:w-1.5 bg-on-surface rounded-full transition-all duration-700" style={{ height: `${h}%` }}></div>;
-                  })}
-                </div>
-              </div>
-            </div>
 
-            {/* Quick Stats Grid - Minimalist */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-              <div 
-                className="bg-surface-low p-6 md:p-10 rounded-[2.5rem] border border-outline-variant transition-all hover:bg-surface-high group cursor-pointer"
-                onClick={() => handleNavToFilteredLedger('income')}
-              >
-                <p className="text-[9px] md:text-[10px] font-bold tracking-[0.3em] text-on-surface-variant uppercase mb-4 md:mb-8 group-hover:text-on-surface transition-colors">Inflow</p>
-                <div className="flex justify-between items-end gap-4">
-                  <h2 className="text-2xl md:text-4xl font-extrabold font-headline text-on-surface tracking-tight break-all">
-                    {currencySymbol}{totalIncome.toLocaleString()}
-                  </h2>
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/5 flex items-center justify-center border border-outline-variant group-hover:bg-primary group-hover:text-on-primary transition-all shrink-0 shadow-sm">
-                    <span className="material-symbols-outlined text-sm">arrow_outward</span>
-                  </div>
-                </div>
+                <p className="text-xs text-on-surface-variant/50 font-medium">
+                  {includedAccounts.length} account{includedAccounts.length !== 1 ? 's' : ''}
+                  {excludedCount > 0 && <span className="opacity-60"> · {excludedCount} excluded</span>}
+                </p>
               </div>
-              <div 
-                className="bg-surface-low p-6 md:p-10 rounded-[2.5rem] border border-outline-variant transition-all hover:bg-surface-high group cursor-pointer"
-                onClick={() => handleNavToFilteredLedger('expense')}
-              >
-                <p className="text-[9px] md:text-[10px] font-bold tracking-[0.3em] text-on-surface-variant uppercase mb-4 md:mb-8 group-hover:text-on-surface transition-colors">Outflow</p>
-                <div className="flex justify-between items-end gap-4">
-                  <h2 className="text-2xl md:text-4xl font-extrabold font-headline text-on-surface tracking-tight break-all">
-                    {currencySymbol}{totalExpense.toLocaleString()}
-                  </h2>
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/5 flex items-center justify-center border border-outline-variant group-hover:bg-primary group-hover:text-on-primary transition-all shrink-0 shadow-sm">
-                    <span className="material-symbols-outlined text-sm">south_east</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Recent Activity */}
-            <section className="space-y-8">
-              <div className="flex justify-between items-center px-4">
-                <h3 className="font-headline text-xs font-black tracking-[0.3em] text-on-surface uppercase">Recent Entries</h3>
-                <button className="text-[9px] font-black text-on-surface-variant hover:text-primary uppercase tracking-[0.2em] transition-all" onClick={navToLedger}>View All</button>
-              </div>
-              <div className="space-y-3">
-                {dashTransactions.filter(t => !t.transfer_id).slice(0, 5).map(t => (
-                  <TransactionItem 
-                    key={t.id} 
-                    t={t} 
-                    onClick={openEditTransaction} 
-                    accounts={accounts} 
-                    categories={categories} 
-                    currencySymbol={currencySymbol} 
-                  />
-                ))}
-                {dashTransactions.filter(t => !t.transfer_id).length === 0 && (
-                  <div className="bg-surface-low/50 rounded-[2.5rem] py-12 text-center border border-dashed border-outline-variant/10">
-                    <p className="text-zinc-600 font-bold uppercase text-[10px] tracking-widest">No entries found</p>
-                  </div>
-                )}
-              </div>
-            </section>
+              <button
+                onClick={() => setView('account_management')}
+                className="mt-1 p-2.5 rounded-xl text-on-surface-variant/30 hover:text-on-surface hover:bg-surface-low transition-all"
+                title="Manage accounts"
+              >
+                <span className="material-symbols-outlined text-[18px]">tune</span>
+              </button>
+            </div>
           </div>
 
-          {/* Sidebar Content Stack */}
-          <div className="lg:col-span-4 space-y-8">
-            {/* AI Insights Card - Simplified */}
-            <section className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant shadow-sm space-y-8">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-primary text-xl">auto_awesome</span>
-                <h3 className="font-headline font-black text-xs text-on-surface uppercase tracking-[0.3em]">Vault Intelligence</h3>
-              </div>
-              <div className="space-y-8">
-                {smartInsights.map((ins, i) => (
-                  <div key={i} className="space-y-2 group">
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">{ins.title}</p>
-                    <p className="text-xs text-on-surface-variant leading-relaxed">
-                      {ins.text}
-                    </p>
+          {/* ── KPI strip ── */}
+          {kpis.length > 0 && (
+            <>
+              <div className="h-px bg-outline-variant/10" />
+              <div className={`grid divide-x divide-outline-variant/10`} style={{ gridTemplateColumns: `repeat(${kpis.length}, 1fr)` }}>
+                {kpis.map(({ label, value, color, prefix }) => (
+                  <div key={label} className="px-7 md:px-10 py-5">
+                    <Eyebrow className="mb-2">{label}</Eyebrow>
+                    <p className={`text-base md:text-lg font-bold tabular-nums ${color}`}>{prefix}{currencySymbol}{fmt(value)}</p>
                   </div>
                 ))}
               </div>
-            </section>
+            </>
+          )}
 
-            {/* Account Distribution - Monochromatic */}
-            <section className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant shadow-sm space-y-10">
-              <div className="flex items-center justify-between px-2">
-                <h3 className="font-headline font-black text-xs text-on-surface uppercase tracking-[0.3em]">Assets</h3>
-                <button className="text-[9px] font-black text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors" onClick={() => setView('account_management')}>Manage</button>
-              </div>
-              <div className="space-y-1">
-                {(() => {
-                  const maxBal = Math.max(...accounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
-                  return accounts.map(a => {
-                    const bal = accountBalances[a.id] || 0;
-                    const pct = Math.min(Math.abs(bal) / maxBal * 100, 100);
-                    return (
-                      <div key={a.id} className="py-6 px-2 group cursor-default">
-                        <div className="flex justify-between items-center mb-4">
-                          <span className="text-xs font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">{a.name}</span>
-                          <span className={`font-headline text-sm font-black ${bal < 0 ? 'text-error' : 'text-on-surface'}`}>
-                            {currencySymbol}{bal.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="h-1 bg-on-surface/[0.03] rounded-full overflow-hidden">
-                          <div className="h-full bg-on-surface transition-all duration-1000 origin-left" style={{ width: `${pct}%`, opacity: 0.15 + (pct/200) }}></div>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </section>
+          {/* ── Account rows ── */}
+          {includedAccounts.length > 0 && (
+            <>
+              <div className="h-px bg-outline-variant/10" />
+              <div>
+                {includedAccounts.map((a, i) => {
+                  const bal     = accountBalances[a.id] || 0;
+                  const barPct  = Math.min(Math.abs(bal) / maxBal * 100, 100);
+                  const allocPct = netWorth !== 0 ? Math.abs(bal / netWorth * 100).toFixed(1) : '0.0';
+                  const isLiab  = a.type === 'liability';
+                  const typeKey = a.type || 'asset';
 
-            {/* Spending Breakdown - Architectural */}
-            <section className="bg-surface-low p-10 rounded-[2.5rem] border border-outline-variant shadow-sm space-y-8">
-              <div className="flex justify-between items-center">
-                <h3 className="font-headline font-black text-xs text-on-surface uppercase tracking-[0.3em]">Distribution</h3>
-                <button className="text-[9px] font-bold text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors" onClick={navToAnalytics}>Details</button>
-              </div>
-              <div className="space-y-8">
-                {topCategories.length > 0 ? topCategories.slice(0, 4).map(({ name, amount }, i) => {
-                  const pct = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
                   return (
-                    <div key={name} className="space-y-3 group">
-                      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-[0.2em]">
-                        <span className="text-on-surface-variant group-hover:text-on-surface transition-colors">{name}</span>
-                        <span className="text-on-surface opacity-40">{pct}%</span>
+                    <div
+                      key={a.id}
+                      className={`flex items-center gap-4 px-8 md:px-10 py-4 hover:bg-surface-low/50 transition-colors ${
+                        i > 0 ? 'border-t border-outline-variant/[0.07]' : ''
+                      }`}
+                    >
+                      {/* icon */}
+                      <div className="w-8 h-8 rounded-lg bg-primary-fixed/50 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-primary text-[15px]">{ACCT_ICON[typeKey]}</span>
                       </div>
-                      <div className="h-1 bg-on-surface/[0.03] rounded-full overflow-hidden">
-                        <div className="h-full bg-on-surface transition-all duration-700" style={{ width: `${pct}%`, opacity: 0.1 + (pct/150) }}></div>
+
+                      {/* body */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-3 mb-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-sm font-semibold text-on-surface truncate">{a.name}</span>
+                            <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/30 shrink-0">
+                              {ACCT_LABEL[typeKey]}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-[10px] font-semibold text-on-surface-variant/30 tabular-nums hidden sm:block">{allocPct}%</span>
+                            <span className={`text-sm font-bold tabular-nums ${isLiab ? 'text-on-surface-variant' : 'text-on-surface'}`}>
+                              {isLiab ? '−' : ''}{currencySymbol}{fmt(Math.abs(bal))}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="h-[2px] bg-surface-low rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${isLiab ? 'bg-outline-variant/50' : 'bg-primary'}`}
+                            style={{ width: `${barPct}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
                   );
-                }) : <p className="text-[10px] text-on-surface-variant font-bold uppercase text-center py-4">No data</p>}
+                })}
               </div>
-            </section>
+            </>
+          )}
+
+          {/* ── Footer ── */}
+          <div className="h-px bg-outline-variant/10" />
+          <div className="flex items-center justify-between px-8 md:px-10 py-3.5 bg-surface-low/20">
+            <p className="text-[9px] text-on-surface-variant/35 font-medium uppercase tracking-widest">Capital Assets</p>
+            <button
+              onClick={() => setView('account_management')}
+              className="flex items-center gap-1 text-[10px] font-semibold text-on-surface-variant/40 hover:text-primary transition-colors"
+            >
+              Manage <span className="material-symbols-outlined text-[11px]">arrow_forward</span>
+            </button>
           </div>
         </div>
+
+        {/* ───────────────────────────────────────────────────────────
+            PERIOD FLOW — single card, 3 columns
+        ─────────────────────────────────────────────────────────── */}
+        <div
+          className="grid grid-cols-3 divide-x divide-outline-variant/10 bg-surface-lowest rounded-[1.5rem] overflow-hidden"
+          style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(77,97,75,0.06)' }}
+        >
+          <button
+            className="text-left px-6 md:px-9 py-6 hover:bg-surface-low/60 transition-colors group"
+            onClick={() => handleNavToFilteredLedger('income')}
+          >
+            <Eyebrow className="mb-3">Inflow</Eyebrow>
+            <p className="text-xl md:text-2xl font-black text-primary tabular-nums tracking-tight">{currencySymbol}{fmt(totalIncome)}</p>
+          </button>
+
+          <button
+            className="text-left px-6 md:px-9 py-6 hover:bg-surface-low/60 transition-colors group"
+            onClick={() => handleNavToFilteredLedger('expense')}
+          >
+            <Eyebrow className="mb-3">Outflow</Eyebrow>
+            <p className="text-xl md:text-2xl font-black text-on-surface tabular-nums tracking-tight">{currencySymbol}{fmt(totalExpense)}</p>
+          </button>
+
+          <div className="text-left px-6 md:px-9 py-6">
+            <Eyebrow className="mb-3">Net</Eyebrow>
+            <p className={`text-xl md:text-2xl font-black tabular-nums tracking-tight ${netPeriod >= 0 ? 'text-primary' : 'text-on-surface-variant'}`}>
+              {netPeriod < 0 ? '−' : '+'}{currencySymbol}{fmt(Math.abs(netPeriod))}
+            </p>
+          </div>
+        </div>
+
+        {/* ───────────────────────────────────────────────────────────
+            MAIN GRID
+        ─────────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+          {/* ── Recent transactions ── */}
+          <section className="lg:col-span-8 space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <Eyebrow>Recent Transactions</Eyebrow>
+              <button className="text-[10px] font-bold text-primary/70 hover:text-primary transition-colors flex items-center gap-1 uppercase tracking-widest" onClick={navToLedger}>
+                All <span className="material-symbols-outlined text-[12px]">arrow_forward</span>
+              </button>
+            </div>
+
+            <div
+              className="bg-surface-lowest rounded-[1.5rem] overflow-hidden"
+              style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(77,97,75,0.06)' }}
+            >
+              {dashTransactions.filter(t => !t.transfer_id).slice(0, 7).map(t => (
+                <TransactionItem
+                  key={t.id}
+                  t={t}
+                  onClick={openEditTransaction}
+                  categories={categories}
+                  accounts={accounts}
+                  currencySymbol={currencySymbol}
+                />
+              ))}
+              {dashTransactions.filter(t => !t.transfer_id).length === 0 && (
+                <div className="py-20 flex flex-col items-center gap-3 text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-surface-low flex items-center justify-center">
+                    <span className="material-symbols-outlined text-on-surface-variant/20 text-2xl">receipt_long</span>
+                  </div>
+                  <Eyebrow>No transactions this period</Eyebrow>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* ── Right column ── */}
+          <div className="lg:col-span-4 space-y-5">
+
+            {/* Spending breakdown */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <Eyebrow>Spending Breakdown</Eyebrow>
+                <button className="text-[10px] font-bold text-primary/70 hover:text-primary transition-colors uppercase tracking-widest" onClick={navToAnalytics}>
+                  Analytics
+                </button>
+              </div>
+
+              <div
+                className="bg-surface-lowest rounded-[1.5rem] overflow-hidden"
+                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(77,97,75,0.06)' }}
+              >
+                {topCategories.length > 0 ? topCategories.slice(0, 5).map(({ name, amount }, i) => {
+                  const pct = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
+                  return (
+                    <div
+                      key={name}
+                      className={`px-6 py-4 ${i > 0 ? 'border-t border-outline-variant/[0.07]' : ''}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-on-surface truncate max-w-[130px]">{name}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] text-on-surface-variant/40 tabular-nums">{currencySymbol}{fmt(amount)}</span>
+                          <span className="text-xs font-bold text-on-surface tabular-nums w-7 text-right">{pct}%</span>
+                        </div>
+                      </div>
+                      <div className="h-1 bg-surface-low rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div className="px-6 py-12 text-center">
+                    <Eyebrow>No spending data</Eyebrow>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Insight */}
+            {smartInsights.length > 0 && (
+              <div
+                className="rounded-[1.5rem] overflow-hidden bg-surface-lowest"
+                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(77,97,75,0.06)' }}
+              >
+                <div className="border-l-[3px] border-primary px-6 py-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined text-primary text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                    <Eyebrow>Insight</Eyebrow>
+                  </div>
+                  <p className="text-sm font-bold text-on-surface mb-1">{smartInsights[0].title}</p>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">{smartInsights[0].text}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </PageShell>
   );

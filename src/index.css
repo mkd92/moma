@@ -3,63 +3,145 @@
 @theme {
   --color-primary: var(--primary);
   --color-on-primary: var(--on-primary);
-  
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+
   --color-surface: var(--surface);
   --color-surface-low: var(--surface-low);
   --color-surface-container: var(--surface-container);
   --color-surface-high: var(--surface-high);
   --color-surface-highest: var(--surface-highest);
   --color-surface-lowest: var(--surface-lowest);
-  
+
   --color-on-surface: var(--on-surface);
   --color-on-surface-variant: var(--on-surface-variant);
-  
-  --color-secondary: #6e9bff;
-  --color-tertiary: #ffe483;
-  --color-error: #ff716c;
-  
-  --font-headline: "Manrope", sans-serif;
-  --font-body: "Inter", sans-serif;
+
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+
+  --color-tertiary: var(--tertiary);
+  --color-error: var(--error);
+
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+
+  --animate-progress-fast: progress-fast 1s linear infinite;
+
+  @keyframes progress-fast {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  --font-headline: "DM Sans", sans-serif;
+  --font-body: "DM Sans", sans-serif;
 }
 
+/* ─── Terra Tide Light (Default) ─────────────────────────────── */
 :root {
-  /* --- Unified High-Contrast Dark Theme --- */
-  --primary: #ffffff;
-  --on-primary: #000000;
-  --accent: #3fff8b;
-  
-  --surface: #000000;           /* Unified Background */
-  --surface-low: #0a0a0a;       /* Cards / Groupings */
-  --surface-container: #000000;  /* Sidebar */
-  --surface-high: #111111;
-  --surface-highest: #1a1a1a;
-  --surface-lowest: #000000;
-  
-  --on-surface: #ffffff;
-  --on-surface-variant: #71717a;
-  --outline-variant: rgba(255, 255, 255, 0.08);
-  
-  --primary-light: rgba(255, 255, 255, 0.05);
+  --primary: #4d614b;
+  --on-primary: #ffffff;
+  --primary-container: #657a63;
+  --on-primary-container: #f7fff1;
+  --primary-fixed: #d2e9cd;
+  --primary-fixed-dim: #b6cdb2;
+  --primary-light: rgba(77, 97, 75, 0.06);
+
+  --secondary: #8b4e39;
+  --secondary-container: #fdae94;
+  --on-secondary-container: #783f2b;
+  --secondary-fixed-dim: #ffb59d;
+
+  --tertiary: #665b3f;
+  --error: #ba1a1a;
+
+  --surface: #fbf9f1;
+  --surface-low: #f5f4ec;
+  --surface-container: #f0eee6;
+  --surface-high: #eae8e0;
+  --surface-highest: #e4e3db;
+  --surface-lowest: #ffffff;
+
+  --on-surface: #1b1c17;
+  --on-surface-variant: #434841;
+  --outline: #747871;
+  --outline-variant: rgba(195, 200, 191, 0.35);
+
+  --accent: #4d614b;
+  --on-accent: #ffffff;
 }
 
 [data-theme="light"] {
-  /* --- Unified High-Contrast Light Theme --- */
-  --primary: #000000;
+  --primary: #4d614b;
   --on-primary: #ffffff;
-  --accent: #00c853;
-  
-  --surface: #ffffff;           /* Unified Background */
-  --surface-low: #fafafa;       /* Cards / Groupings */
-  --surface-container: #ffffff;  /* Sidebar */
-  --surface-high: #f4f4f5;
-  --surface-highest: #e4e4e7;
+  --primary-container: #657a63;
+  --on-primary-container: #f7fff1;
+  --primary-fixed: #d2e9cd;
+  --primary-fixed-dim: #b6cdb2;
+  --primary-light: rgba(77, 97, 75, 0.06);
+
+  --secondary: #8b4e39;
+  --secondary-container: #fdae94;
+  --on-secondary-container: #783f2b;
+  --secondary-fixed-dim: #ffb59d;
+
+  --tertiary: #665b3f;
+  --error: #ba1a1a;
+
+  --surface: #fbf9f1;
+  --surface-low: #f5f4ec;
+  --surface-container: #f0eee6;
+  --surface-high: #eae8e0;
+  --surface-highest: #e4e3db;
   --surface-lowest: #ffffff;
-  
-  --on-surface: #000000;
-  --on-surface-variant: #71717a;
-  --outline-variant: rgba(0, 0, 0, 0.08);
-  
-  --primary-light: rgba(0, 0, 0, 0.03);
+
+  --on-surface: #1b1c17;
+  --on-surface-variant: #434841;
+  --outline: #747871;
+  --outline-variant: rgba(195, 200, 191, 0.35);
+
+  --accent: #4d614b;
+  --on-accent: #ffffff;
+}
+
+[data-theme="dark"] {
+  /* Terra Tide — warm dark */
+  --primary: #b6cdb2;
+  --on-primary: #0e1f0e;
+  --primary-container: #384c37;
+  --on-primary-container: #d2e9cd;
+  --primary-fixed: #0e1f0e;
+  --primary-fixed-dim: #384c37;
+  --primary-light: rgba(182, 205, 178, 0.08);
+
+  --secondary: #ffb59d;
+  --secondary-container: #6f3724;
+  --on-secondary-container: #ffdbd0;
+  --secondary-fixed-dim: #783f2b;
+
+  --tertiary: #d4c5a2;
+  --error: #ffb4ab;
+
+  --surface: #151612;
+  --surface-low: #1b1c17;
+  --surface-container: #20221d;
+  --surface-high: #2b2d27;
+  --surface-highest: #363830;
+  --surface-lowest: #0f100d;
+
+  --on-surface: #e4e3db;
+  --on-surface-variant: #c3c8bf;
+  --outline: #8d9189;
+  --outline-variant: rgba(195, 200, 191, 0.12);
+
+  --accent: #b6cdb2;
+  --on-accent: #0e1f0e;
 }
 
 /* Base styles */
@@ -68,6 +150,10 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+  }
+
+  html {
+    font-size: 17px;
   }
 
   html, body, #root {
@@ -80,9 +166,10 @@
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-optical-sizing: auto;
   }
 }
 
@@ -94,7 +181,7 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
     height: 4px;
@@ -106,11 +193,16 @@
     background: var(--surface-highest);
     border-radius: 10px;
   }
+
+  .glass-nav {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
 }
 
 /* Material Symbols Integration */
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;

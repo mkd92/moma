@@ -1,9 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { cacheClear } from '../cache';
+import { useToast } from './useToast';
 
 export function useAuth() {
+  const { showToast } = useToast();
   const [session, setSession] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const userIdRef = useRef(null);
 
   const [authMode, setAuthMode] = useState('login');
@@ -13,9 +16,11 @@ export function useAuth() {
   const [authError, setAuthError] = useState('');
 
   useEffect(() => {
+    // Check initial session
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       setSession(initialSession);
       if (initialSession) userIdRef.current = initialSession.user.id;
+      setIsLoading(false);
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, currentSession) => {
@@ -25,6 +30,7 @@ export function useAuth() {
       } else {
         userIdRef.current = null;
       }
+      setIsLoading(false);
     });
     return () => authListener.subscription.unsubscribe();
   }, []);
@@ -39,8 +45,12 @@ export function useAuth() {
     
     if (error) {
       setAuthError(error.message);
+      showToast(error.message, 'error');
     } else if (authMode === 'signup') {
+      showToast('Verification email sent!', 'success');
       setAuthError('Check your email to verify your account.');
+    } else {
+      showToast('Welcome back', 'success');
     }
     setAuthLoading(false);
   };
@@ -57,12 +67,18 @@ export function useAuth() {
       cacheClear(userIdRef.current);
       userIdRef.current = null;
     }
-    await supabase.auth.signOut();
-  }, []);
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      showToast('Signed out successfully', 'info');
+    } else {
+      showToast('Sign out failed', 'error');
+    }
+  }, [showToast]);
 
   return {
     session,
     setSession,
+    isLoading,
     userIdRef,
     authMode,
     setAuthMode,

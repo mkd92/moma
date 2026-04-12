@@ -23,10 +23,8 @@
     background-color: var(--surface);
   }
 
-  @media (max-width: 767px) {
-    .page-content {
-      padding-bottom: 90px; /* Space for BottomNav */
-    }
+  .page-content {
+    padding-bottom: 96px; /* Space for floating BottomNav */
   }
 
   /* =========================================
@@ -124,12 +122,12 @@
 }
 
 :root {
-  --date-icon-invert: 1;
-}
-
-[data-theme="light"] {
   --date-icon-invert: 0;
 }
 
-.font-headline { font-family: 'Manrope', sans-serif; }
-.font-body { font-family: 'Inter', sans-serif; }
+[data-theme="dark"] {
+  --date-icon-invert: 1;
+}
+
+.font-headline { font-family: 'DM Sans', sans-serif; }
+.font-body { font-family: 'DM Sans', sans-serif; }

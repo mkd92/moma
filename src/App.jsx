@@ -1,10 +1,14 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 
 // Modular Imports
 import { PATH_VIEWS, VIEW_PATHS } from './constants';
-import { useAuth, useAppData, useTransactionForm } from './hooks';
+import { useAuth, useAppDataOrchestrator as useAppData, useTransactionForm, AppDataProvider } from './hooks';
+import ToastContainer from './components/layout/ToastContainer';
+import Sidebar from './components/layout/Sidebar';
+import TopHeader from './components/layout/TopHeader';
+import BottomNav from './components/layout/BottomNav';
 
 // Lazy-loaded Views
 const Landing = lazy(() => import('./views/Landing'));
@@ -30,14 +34,22 @@ const ViewLoader = () => (
 export default function App() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const view = PATH_VIEWS[pathname] || 'landing';
-  const setView = useCallback((v) => navigate(VIEW_PATHS[v] || '/'), [navigate]);
+  
+  // Stabilize view computation
+  const view = useMemo(() => PATH_VIEWS[pathname] || 'landing', [pathname]);
+  
+  const setView = useCallback((v) => {
+    const path = VIEW_PATHS[v] || '/';
+    if (window.location.pathname !== path) {
+      navigate(path);
+    }
+  }, [navigate]);
 
   // --- Theme Logic ---
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('moma-theme');
     if (stored === 'dark' || stored === 'light') return stored;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'light';
   });
 
   useEffect(() => {
@@ -59,117 +71,129 @@ export default function App() {
   }, []);
 
   // --- Auth Hook ---
-  const { 
-    session, authMode, setAuthMode, email, setEmail, password, setPassword,
-    authLoading, authError, setAuthError, handleAuth, handleGoogleSignIn, handleLogout 
-  } = useAuth(setView);
+  const auth = useAuth();
+  const { session, handleLogout, isLoading: authIsLoading } = auth;
 
   // --- App Data Hook ---
-  const appData = useAppData(session, navigate, pathname);
-  const {
-    transactions, categories, parties, accounts, tags, budgets,
-    currencySymbol, currencyCode, setCurrencyCode, defaultAccountId, setDefaultAccountId,
-    fetchTransactions, fetchAccounts, refreshData,
-    handleCreateCategory, handleDeleteCategory, handleCreateParty, handleDeleteParty,
-    handleDeleteTransaction, handleCreateTag, handleDeleteTag, handleCreateAccount,
-    handleDeleteAccount, handleUpdateAccount, handleSetDefaultAccount, handleSaveBudget,
-    handleBulkAssignCategory,
-    updateFilter, resetFilters, applyDatePreset,
-    showAdvancedFilters, setShowAdvancedFilters, showAnalyticsFilters, setShowAnalyticsFilters,
-    settingsType, setSettingsType,
-    selectedTxIds, setSelectedTxIds, bulkSelectMode, setBulkSelectMode, bulkCategory, setBulkCategory
-  } = appData;
+  const appData = useAppData(session, navigate, pathname, authIsLoading);
 
   // --- Transaction Form Hook ---
-  const txForm = useTransactionForm(session, accounts, categories, transactions, defaultAccountId, fetchTransactions, setView);
-  const {
-    txToEdit, resetForm, openEditTransaction, handleTransaction
-  } = txForm;
+  const txForm = useTransactionForm(session, appData.accounts, appData.categories, appData.transactions, appData.defaultAccountId, appData.fetchTransactions, setView);
 
   // --- Global Navigation Props ---
-  const shellProps = {
+  const shellProps = useMemo(() => ({
     view,
     onDashboard: () => setView('dashboard'),
-    onLedger: () => { resetForm(); setView('ledger'); },
+    onLedger: () => { txForm.resetForm(); setView('ledger'); },
     onAnalytics: () => setView('analytics'),
     onBudgets: () => setView('budgets'),
-    onNewTx: () => { resetForm(); setView('new_transaction'); },
+    onNewTx: () => { txForm.resetForm(); setView('new_transaction'); },
     onSettings: () => setView('settings'),
+    onAccounts: () => setView('account_management'),
+    onCategories: () => setView('category_management'),
+    onPayees: () => setView('party_management'),
+    onTags: () => setView('tag_management'),
     onLogout: handleLogout,
     session,
-    onRefresh: refreshData,
+    onRefresh: appData.refreshData,
     theme,
     onToggleTheme: toggleTheme,
     collapsed,
     setCollapsed: handleSetCollapsed
-  };
+  }), [view, setView, txForm.resetForm, handleLogout, session, appData.refreshData, theme, toggleTheme, collapsed, handleSetCollapsed]);
+
+  // --- Global keyboard shortcuts ---
+  useEffect(() => {
+    const handler = (e) => {
+      // Alt+N → new transaction (skip if typing in an input/textarea)
+      if (e.altKey && e.key === 'n') {
+        const tag = document.activeElement?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
+        txForm.resetForm();
+        setView('new_transaction');
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [txForm.resetForm, setView]);
+
+  // --- Context Value ---
+  const contextValue = useMemo(() => ({
+    ...appData,
+    ...txForm,
+    shellProps,
+    setView,
+    navToLedger: () => { txForm.resetForm(); setView('ledger'); },
+    navToAnalytics: () => setView('analytics'),
+    navToDashboard: () => setView('dashboard'),
+  }), [appData, txForm, shellProps, setView]);
 
   // --- View Selection ---
-  const renderView = () => {
-    if (view === 'landing') {
-      return <Landing session={session} setView={setView} />;
-    }
-
-    if (view === 'auth') {
-      return (
-        <AuthView 
-          authMode={authMode} setAuthMode={setAuthMode}
-          email={email} setEmail={setEmail}
-          password={password} setPassword={setPassword}
-          authLoading={authLoading} authError={authError} setAuthError={setAuthError}
-          handleAuth={handleAuth} handleGoogleSignIn={handleGoogleSignIn}
-          setView={setView}
-        />
-      );
-    }
-
-    // Grouped props for easier passing
-    const viewProps = {
-      shellProps,
-      ...appData,
-      ...txForm,
-      openEditTransaction,
-      onDelete: handleDeleteTransaction,
-      navToLedger: () => { resetForm(); setView('ledger'); },
-      navToAnalytics: () => setView('analytics'),
-      navToDashboard: () => setView('dashboard'),
-      setView,
-      showAdvancedFilters,
-      setShowFilters: setShowAdvancedFilters,
-      showAnalyticsFilters,
-      setShowAnalyticsFilters,
-      settingsType,
-      setSettingsType,
-      updateFilter,
-      resetFilters,
-      applyDatePreset,
-      selectedTxIds,
-      setSelectedTxIds,
-      bulkSelectMode,
-      setBulkSelectMode,
-      bulkCategory,
-      setBulkCategory,
-      handleBulkAssignCategory
-    };
-
+  const renderViewContent = () => {
     switch (view) {
-      case 'dashboard': return <Dashboard {...viewProps} />;
-      case 'ledger': return <Ledger {...viewProps} />;
-      case 'analytics': return <Analytics {...viewProps} />;
-      case 'budgets': return <Budgets {...viewProps} />;
-      case 'new_transaction': return <NewTransaction {...viewProps} />;
-      case 'settings': return <Settings {...viewProps} />;
-      case 'account_management': return <AccountManagement {...viewProps} />;
-      case 'category_management': return <CategoryManagement {...viewProps} />;
-      case 'party_management': return <PartyManagement {...viewProps} />;
-      case 'tag_management': return <TagManagement {...viewProps} />;
+      case 'dashboard': return <Dashboard />;
+      case 'ledger': return <Ledger />;
+      case 'analytics': return <Analytics />;
+      case 'budgets': return <Budgets />;
+      case 'new_transaction': return <NewTransaction />;
+      case 'settings': return <Settings />;
+      case 'account_management': return <AccountManagement />;
+      case 'category_management': return <CategoryManagement />;
+      case 'party_management': return <PartyManagement />;
+      case 'tag_management': return <TagManagement />;
       default: return null;
     }
   };
 
+  if (view === 'landing') {
+    return (
+      <Suspense fallback={<ViewLoader />}>
+        <Landing session={session} setView={setView} />
+      </Suspense>
+    );
+  }
+
+  if (view === 'auth') {
+    return (
+      <Suspense fallback={<ViewLoader />}>
+        <AuthView 
+          authMode={auth.authMode} setAuthMode={auth.setAuthMode}
+          email={auth.email} setEmail={auth.setEmail}
+          password={auth.password} setPassword={auth.setPassword}
+          authLoading={auth.authLoading} authError={auth.authError} setAuthError={auth.setAuthError}
+          handleAuth={auth.handleAuth} handleGoogleSignIn={auth.handleGoogleSignIn}
+          setView={setView}
+        />
+      </Suspense>
+    );
+  }
+
   return (
     <Suspense fallback={<ViewLoader />}>
-      {renderView()}
+      <AppDataProvider value={contextValue}>
+        <div className="app-shell">
+          <div className="page-content">
+            <TopHeader session={session} theme={theme} onToggleTheme={toggleTheme} collapsed={false} />
+            <div className="flex-1 w-full relative">
+              {renderViewContent()}
+            </div>
+          </div>
+          <BottomNav
+            view={view}
+            onDashboard={shellProps.onDashboard}
+            onLedger={shellProps.onLedger}
+            onAnalytics={shellProps.onAnalytics}
+            onSettings={shellProps.onSettings}
+            onNewTx={shellProps.onNewTx}
+            onAccounts={shellProps.onAccounts}
+            onCategories={shellProps.onCategories}
+            onPayees={shellProps.onPayees}
+            onTags={shellProps.onTags}
+          />
+        </div>
+        <ToastContainer />
+      </AppDataProvider>
     </Suspense>
   );
 }

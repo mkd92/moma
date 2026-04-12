@@ -60,13 +60,24 @@ const CustomDropdown = ({
     setSearchTerm('');
   };
 
+  const optionRefs = useRef([]);
+
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setFocusedIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
+      if (!isOpen) { handleToggle(); return; }
+      setFocusedIndex(prev => {
+        const next = prev < filteredOptions.length - 1 ? prev + 1 : prev;
+        optionRefs.current[next]?.scrollIntoView({ block: 'nearest' });
+        return next;
+      });
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setFocusedIndex(prev => (prev > 0 ? prev - 1 : prev));
+      setFocusedIndex(prev => {
+        const next = prev > 0 ? prev - 1 : prev;
+        optionRefs.current[next]?.scrollIntoView({ block: 'nearest' });
+        return next;
+      });
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
@@ -76,6 +87,7 @@ const CustomDropdown = ({
       }
     } else if (e.key === 'Escape') {
       setIsOpen(false);
+      triggerRef.current?.focus();
     }
   };
 
@@ -111,6 +123,7 @@ const CustomDropdown = ({
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setFocusedIndex(-1); }}
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={handleKeyDown}
             />
           </div>
         </div>
@@ -120,13 +133,14 @@ const CustomDropdown = ({
           filteredOptions.map((opt, idx) => (
             <div
               key={opt.value}
-              className={`px-4 py-3 text-xs flex items-center gap-3 cursor-pointer transition-colors ${opt.indent ? 'pl-10' : ''} ${opt.value === value ? 'bg-on-surface text-surface' : 'text-on-surface-variant hover:bg-on-surface/[0.03] hover:text-on-surface'} ${idx === focusedIndex ? 'bg-on-surface/[0.05]' : ''}`}
+              ref={el => optionRefs.current[idx] = el}
+              className={`px-4 py-3 text-xs flex items-center gap-3 cursor-pointer transition-colors ${opt.indent ? 'pl-10' : ''} ${opt.value === value ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'} ${idx === focusedIndex ? 'bg-surface-container text-on-surface' : ''}`}
               onClick={() => handleSelect(opt)}
               role="option"
               aria-selected={opt.value === value}
             >
               {opt.icon && (
-                <span className={`material-symbols-outlined text-sm ${opt.value === value ? 'text-surface' : 'text-on-surface-variant'}`}>
+                <span className={`material-symbols-outlined text-sm ${opt.value === value ? 'text-primary' : 'text-on-surface-variant'}`}>
                   {opt.icon}
                 </span>
               )}
@@ -145,11 +159,11 @@ const CustomDropdown = ({
 
   return (
     <div className="flex flex-col gap-2" onKeyDown={handleKeyDown}>
-      {label && <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">{label}</p>}
+      {label && <p className="text-sm font-semibold text-on-surface-variant ml-1">{label}</p>}
       <button
         ref={triggerRef}
         type="button"
-        className={`w-full bg-on-surface/[0.03] flex items-center justify-between px-5 py-4 rounded-2xl transition-all border border-outline-variant/10 ${isOpen ? 'ring-2 ring-on-surface/10 bg-on-surface/[0.06]' : 'hover:bg-on-surface/[0.06]'}`}
+        className={`w-full bg-surface-low flex items-center justify-between px-5 py-4 rounded-2xl transition-all ${isOpen ? 'ring-2 ring-primary/20 bg-surface-lowest' : 'hover:bg-surface-container'}`}
         onClick={handleToggle}
         aria-haspopup="listbox"
         aria-expanded={isOpen}

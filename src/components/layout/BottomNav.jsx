@@ -1,29 +1,85 @@
 import React from 'react';
 
-// Bottom navigation bar — mobile only
-const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNewTx }) => {
-  const settingsViews = ['settings', 'account_management', 'category_management', 'party_management', 'tag_management'];
+const PILL_STYLE = {
+  background: 'rgba(40, 52, 39, 0.88)',
+  backdropFilter: 'blur(20px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+  boxShadow: '0 4px 28px rgba(40, 52, 39, 0.35), 0 1px 6px rgba(40, 52, 39, 0.2), inset 0 1px 0 rgba(210, 233, 205, 0.14)',
+  border: '1px solid rgba(210, 233, 205, 0.18)',
+};
+
+const NavBtn = ({ icon, label, isActive, onClick, compact = false }) => (
+  <button
+    onClick={onClick}
+    className={`flex flex-col items-center gap-0.5 rounded-full transition-all duration-200 ${compact ? 'px-3 py-2' : 'px-4 py-2'}`}
+    style={{
+      background: isActive ? 'rgba(210, 233, 205, 0.2)' : 'transparent',
+      color: isActive ? '#d2e9cd' : 'rgba(210, 233, 205, 0.6)',
+    }}
+  >
+    <span
+      className={`material-symbols-outlined ${compact ? 'text-[19px]' : 'text-[22px]'}`}
+      style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
+    >
+      {icon}
+    </span>
+    <span className={`font-semibold tracking-wide ${compact ? 'text-[8px]' : 'text-[9px]'}`}>{label}</span>
+  </button>
+);
+
+const Divider = () => (
+  <div
+    className="w-px self-stretch my-2 mx-1 shrink-0"
+    style={{ background: 'rgba(210, 233, 205, 0.18)' }}
+  />
+);
+
+const managementViews = ['settings', 'account_management', 'category_management', 'party_management', 'tag_management'];
+
+const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNewTx, onAccounts, onCategories, onPayees, onTags }) => {
+  const isSettingsActive = managementViews.includes(view);
+
+  const coreItems = [
+    { key: 'dashboard',       label: 'Sanctuary', icon: 'space_dashboard', onClick: onDashboard },
+    { key: 'ledger',          label: 'Journal',   icon: 'auto_stories',    onClick: onLedger },
+    { key: 'new_transaction', label: 'Entry',     icon: 'add_circle',      onClick: onNewTx },
+    { key: 'analytics',       label: 'Analytics', icon: 'monitoring',      onClick: onAnalytics },
+  ];
+
+  const managementItems = [
+    { key: 'account_management',  label: 'Accounts',   icon: 'account_balance', onClick: onAccounts },
+    { key: 'category_management', label: 'Categories', icon: 'category',        onClick: onCategories },
+    { key: 'party_management',    label: 'Payees',     icon: 'storefront',      onClick: onPayees },
+    { key: 'tag_management',      label: 'Tags',       icon: 'label',           onClick: onTags },
+  ];
+
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-5 bg-surface/80 backdrop-blur-xl shadow-2xl">
-      <button className={`flex flex-col items-center justify-center transition-all duration-300 ${view === 'dashboard' ? 'text-primary' : 'text-on-surface-variant'}`} onClick={onDashboard}>
-        <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: view === 'dashboard' ? "'FILL' 1" : "'FILL' 0" }}>home</span>
-        <span className="font-['Inter'] text-[10px] font-bold uppercase tracking-[0.05em] mt-1">Home</span>
-      </button>
-      <button className={`flex flex-col items-center justify-center transition-all duration-300 ${view === 'ledger' ? 'text-primary' : 'text-on-surface-variant'}`} onClick={onLedger}>
-        <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: view === 'ledger' ? "'FILL' 1" : "'FILL' 0" }}>list_alt</span>
-        <span className="font-['Inter'] text-[10px] font-bold uppercase tracking-[0.05em] mt-1">History</span>
-      </button>
-      <button className="flex flex-col items-center justify-center bg-on-surface text-surface w-16 h-16 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] active:scale-90 transition-all -translate-y-6 border-4 border-surface group" onClick={onNewTx}>
-        <span className="material-symbols-outlined transition-transform duration-300 group-hover:rotate-90" style={{ fontSize: '32px', fontVariationSettings: "'wght' 700" }}>add</span>
-      </button>
-      <button className={`flex flex-col items-center justify-center transition-all duration-300 ${view === 'analytics' ? 'text-primary' : 'text-on-surface-variant'}`} onClick={onAnalytics}>
-        <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: view === 'analytics' ? "'FILL' 1" : "'FILL' 0" }}>pie_chart</span>
-        <span className="font-['Inter'] text-[10px] font-bold uppercase tracking-[0.05em] mt-1">Charts</span>
-      </button>
-      <button className={`flex flex-col items-center justify-center transition-all duration-300 ${settingsViews.includes(view) ? 'text-primary' : 'text-on-surface-variant'}`} onClick={onSettings}>
-        <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: settingsViews.includes(view) ? "'FILL' 1" : "'FILL' 0" }}>manage_accounts</span>
-        <span className="font-['Inter'] text-[10px] font-bold uppercase tracking-[0.05em] mt-1">Settings</span>
-      </button>
+    <nav
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      {/* ── Mobile pill: core + Settings ─────────────────────── */}
+      <div className="flex md:hidden items-center gap-0.5 px-2 py-2 rounded-full" style={PILL_STYLE}>
+        {coreItems.map(({ key, label, icon, onClick }) => (
+          <NavBtn key={key} icon={icon} label={label} isActive={view === key} onClick={onClick} />
+        ))}
+        <NavBtn icon="settings" label="Settings" isActive={isSettingsActive} onClick={onSettings} />
+      </div>
+
+      {/* ── Desktop pill: core | management ──────────────────── */}
+      <div className="hidden md:flex items-center gap-0.5 px-2 py-2 rounded-full" style={PILL_STYLE}>
+        {coreItems.map(({ key, label, icon, onClick }) => (
+          <NavBtn key={key} icon={icon} label={label} isActive={view === key} onClick={onClick} />
+        ))}
+
+        <Divider />
+
+        {managementItems.map(({ key, label, icon, onClick }) => (
+          <NavBtn key={key} icon={icon} label={label} isActive={view === key} onClick={onClick} compact />
+        ))}
+
+        <div className="w-2" />
+      </div>
     </nav>
   );
 };

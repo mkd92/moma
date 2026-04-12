@@ -1,7 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
+import { useToast } from './useToast';
 
 export function useTransactionForm(session, accounts, categories, transactions, defaultAccountId, fetchTransactions, setView) {
+  const { showToast } = useToast();
   const [txToEdit, setTxToEdit] = useState(null);
   const [txType, setTxType] = useState('expense');
   const [amount, setAmount] = useState('');
@@ -14,6 +16,7 @@ export function useTransactionForm(session, accounts, categories, transactions, 
   const [selectedTags, setSelectedTags] = useState([]);
   const [transferFromAccount, setTransferFromAccount] = useState(null);
   const [transferToAccount, setTransferToAccount] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = useCallback(() => {
     setTxToEdit(null);
@@ -56,57 +59,70 @@ export function useTransactionForm(session, accounts, categories, transactions, 
     const val = parseFloat(amount);
     if (isNaN(val) || val <= 0 || !session) return;
 
-    if (txType === 'transfer') {
-      if (!transferFromAccount || !transferToAccount || transferFromAccount === transferToAccount) return;
-      const base = { amount: val, note: note.trim() || null, transaction_date: txDate, category_id: null, party_id: null };
-      if (txToEdit?.transfer_id) {
-        await supabase.from('transactions').update({ ...base, account_id: transferFromAccount }).eq('transfer_id', txToEdit.transfer_id).eq('type', 'expense');
-        await supabase.from('transactions').update({ ...base, account_id: transferToAccount }).eq('transfer_id', txToEdit.transfer_id).eq('type', 'income');
-      } else {
-        if (txToEdit?.id && !txToEdit?.transfer_id) {
-          await supabase.from('transaction_tags').delete().eq('transaction_id', txToEdit.id);
-          await supabase.from('transactions').delete().eq('id', txToEdit.id);
+    setIsSubmitting(true);
+    try {
+      if (txType === 'transfer') {
+        if (!transferFromAccount || !transferToAccount || transferFromAccount === transferToAccount) {
+          showToast('Invalid transfer accounts', 'error');
+          setIsSubmitting(false);
+          return;
         }
-        const transferId = crypto.randomUUID();
-        await supabase.from('transactions').insert([
-          { ...base, type: 'expense', account_id: transferFromAccount, user_id: session.user.id, transfer_id: transferId },
-          { ...base, type: 'income', account_id: transferToAccount, user_id: session.user.id, transfer_id: transferId },
-        ]);
-      }
-    } else {
-      const payload = {
-        amount: val,
-        type: txType,
-        category_id: selectedSubcategory || selectedCategory || null,
-        party_id: selectedParty || null,
-        account_id: selectedAccount || (accounts.length > 0 ? accounts[0].id : null),
-        note: note.trim() || null,
-        transaction_date: txDate
-      };
-
-      let transactionId;
-      if (txToEdit && txToEdit.id) {
-        const { error } = await supabase.from('transactions').update(payload).eq('id', txToEdit.id);
-        if (error) { console.error('Update error:', error); return; }
-        transactionId = txToEdit.id;
+        const base = { amount: val, note: note.trim() || null, transaction_date: txDate, category_id: null, party_id: null };
+        if (txToEdit?.transfer_id) {
+          await supabase.from('transactions').update({ ...base, account_id: transferFromAccount }).eq('transfer_id', txToEdit.transfer_id).eq('type', 'expense');
+          await supabase.from('transactions').update({ ...base, account_id: transferToAccount }).eq('transfer_id', txToEdit.transfer_id).eq('type', 'income');
+        } else {
+          if (txToEdit?.id && !txToEdit?.transfer_id) {
+            await supabase.from('transaction_tags').delete().eq('transaction_id', txToEdit.id);
+            await supabase.from('transactions').delete().eq('id', txToEdit.id);
+          }
+          const transferId = crypto.randomUUID();
+          await supabase.from('transactions').insert([
+            { ...base, type: 'expense', account_id: transferFromAccount, user_id: session.user.id, transfer_id: transferId },
+            { ...base, type: 'income', account_id: transferToAccount, user_id: session.user.id, transfer_id: transferId },
+          ]);
+        }
       } else {
-        payload.user_id = session.user.id;
-        const { data, error } = await supabase.from('transactions').insert([payload]).select('id').single();
-        if (error) { console.error('Insert error:', error); return; }
-        transactionId = data.id;
-      }
+        const payload = {
+          amount: val,
+          type: txType,
+          category_id: selectedSubcategory || selectedCategory || null,
+          party_id: selectedParty || null,
+          account_id: selectedAccount || (accounts.length > 0 ? accounts[0].id : null),
+          note: note.trim() || null,
+          transaction_date: txDate
+        };
 
-      if (transactionId) {
-        await supabase.from('transaction_tags').delete().eq('transaction_id', transactionId);
-        if (selectedTags.length > 0) {
-          await supabase.from('transaction_tags').insert(selectedTags.map(tagId => ({ transaction_id: transactionId, tag_id: tagId })));
+        let transactionId;
+        if (txToEdit && txToEdit.id) {
+          const { error } = await supabase.from('transactions').update(payload).eq('id', txToEdit.id);
+          if (error) throw error;
+          transactionId = txToEdit.id;
+        } else {
+          payload.user_id = session.user.id;
+          const { data, error } = await supabase.from('transactions').insert([payload]).select('id').single();
+          if (error) throw error;
+          transactionId = data.id;
+        }
+
+        if (transactionId) {
+          await supabase.from('transaction_tags').delete().eq('transaction_id', transactionId);
+          if (selectedTags.length > 0) {
+            await supabase.from('transaction_tags').insert(selectedTags.map(tagId => ({ transaction_id: transactionId, tag_id: tagId })));
+          }
         }
       }
+      showToast(txToEdit ? 'Entry updated' : 'Entry recorded', 'success');
+      await fetchTransactions();
+      resetForm();
+      setView('ledger');
+    } catch (err) {
+      console.error('Transaction error:', err);
+      showToast(err.message || 'Failed to save entry', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-    fetchTransactions();
-    resetForm();
-    setView('ledger');
-  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm, accounts, fetchTransactions, setView]);
+  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm, accounts, fetchTransactions, setView, showToast]);
 
   const currentParents = useMemo(() => 
     categories.filter(c => !c.parent_id && (txType === 'transfer' ? true : c.type === txType)),
@@ -116,7 +132,7 @@ export function useTransactionForm(session, accounts, categories, transactions, 
     categories.filter(c => c.parent_id),
   [categories]);
 
-  return {
+  return useMemo(() => ({
     txToEdit, setTxToEdit,
     txType, setTxType,
     amount, setAmount,
@@ -129,10 +145,15 @@ export function useTransactionForm(session, accounts, categories, transactions, 
     selectedTags, setSelectedTags,
     transferFromAccount, setTransferFromAccount,
     transferToAccount, setTransferToAccount,
+    isSubmitting,
     resetForm,
     openEditTransaction,
     handleTransaction,
     currentParents,
     applicableSubs
-  };
+  }), [
+    txToEdit, txType, amount, selectedCategory, selectedSubcategory, selectedParty, selectedAccount, 
+    note, txDate, selectedTags, transferFromAccount, transferToAccount, isSubmitting,
+    resetForm, openEditTransaction, handleTransaction, currentParents, applicableSubs
+  ]);
 }

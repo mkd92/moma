@@ -1,6 +1,25 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Minimalist Architectural 'M' using geometric bars -->
-  <rect x="120" y="120" width="60" height="272" rx="30" fill="currentColor"/>
-  <rect x="332" y="120" width="60" height="272" rx="30" fill="currentColor"/>
-  <path d="M180 150L256 290L332 150" stroke="currentColor" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Rounded square background: primary-container -->
+  <rect width="512" height="512" rx="112" fill="#657a63"/>
+
+  <!-- Stem -->
+  <rect x="240" y="308" width="32" height="108" rx="16" fill="#d2e9cd"/>
+
+  <!-- Left leaf -->
+  <path d="M 256 308
+           C 256 308, 165 272, 152 168
+           C 152 168, 248 172, 256 308 Z"
+        fill="#d2e9cd"/>
+
+  <!-- Right leaf -->
+  <path d="M 256 308
+           C 256 308, 347 272, 360 168
+           C 360 168, 264 172, 256 308 Z"
+        fill="#d2e9cd"/>
+
+  <!-- Center top leaf -->
+  <path d="M 256 308
+           C 256 308, 210 210, 256 128
+           C 302 210, 256 308, 256 308 Z"
+        fill="#f7fff1"/>
 </svg>

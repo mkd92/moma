@@ -1,12 +1,9 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import TopHeader from './TopHeader';
-import BottomNav from './BottomNav';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { SUB_VIEWS } from '../../constants';
 
-const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, session, onRefresh, theme, onToggleTheme, collapsed, setCollapsed }) => {
+const PageShell = ({ children, view, onRefresh, isLoading }) => {
   const navigate = useNavigate();
   const { containerRef, pullY, refreshing } = usePullToRefresh(onRefresh || (() => Promise.resolve()));
 
@@ -26,37 +23,29 @@ const PageShell = ({ children, view, onDashboard, onLedger, onAnalytics, onBudge
 
   return (
     <div
-      className="app-shell"
+      className="flex-1 w-full h-full flex flex-col relative"
       onTouchStart={handleSwipeTouchStart}
       onTouchEnd={handleSwipeTouchEnd}
+      ref={containerRef}
     >
-      <Sidebar 
-        view={view} 
-        onDashboard={onDashboard} 
-        onLedger={onLedger} 
-        onAnalytics={onAnalytics} 
-        onBudgets={onBudgets} 
-        onNewTx={onNewTx} 
-        onSettings={onSettings} 
-        onLogout={onLogout}
-        collapsed={collapsed}
-        setCollapsed={setCollapsed}
-      />
-      <div className={`page-content transition-all duration-300 ${collapsed ? 'md:ml-20' : 'md:ml-64'}`} ref={containerRef}>
-        {(pullY > 0 || refreshing) && (
-          <div className="ptr-indicator" style={{ height: refreshing ? 48 : pullY }}>
-            <div
-              className={`ptr-spinner${refreshing ? '' : ' ptr-spinner-static'}`}
-              style={!refreshing ? { transform: `rotate(${(pullY / 72) * 360}deg)` } : {}}
-            />
-          </div>
-        )}
-        <TopHeader session={session} theme={theme} onToggleTheme={onToggleTheme} collapsed={collapsed} />
-        <main className="flex-1 w-full relative">
-          {children}
-        </main>
-      </div>
-      <BottomNav view={view} onDashboard={onDashboard} onLedger={onLedger} onAnalytics={onAnalytics} onSettings={onSettings} onNewTx={onNewTx} />
+      {(pullY > 0 || refreshing) && (
+        <div className="ptr-indicator" style={{ height: refreshing ? 48 : pullY }}>
+          <div
+            className={`ptr-spinner${refreshing ? '' : ' ptr-spinner-static'}`}
+            style={!refreshing ? { transform: `rotate(${(pullY / 72) * 360}deg)` } : {}}
+          />
+        </div>
+      )}
+      
+      {isLoading && (
+        <div className="absolute top-0 left-0 w-full h-0.5 bg-primary/5 z-[70] overflow-hidden">
+          <div className="h-full bg-primary animate-progress-fast w-1/3"></div>
+        </div>
+      )}
+      
+      <main className="flex-1 w-full relative">
+        {children}
+      </main>
     </div>
   );
 };

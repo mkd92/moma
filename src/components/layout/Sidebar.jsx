@@ -1,43 +1,49 @@
 import React from 'react';
-import Logo from './Logo';
 
-// Sidebar — desktop left-rail navigation
 const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx, onSettings, onLogout, collapsed, setCollapsed }) => {
   const NAV_ITEMS = [
-    { key: 'dashboard', label: 'Dashboard', onClick: onDashboard, icon: 'dashboard' },
-    { key: 'ledger', label: 'Transactions', onClick: onLedger, icon: 'receipt_long' },
-    { key: 'analytics', label: 'Analytics', onClick: onAnalytics, icon: 'insights' },
-    { key: 'budgets', label: 'Budgets', onClick: onBudgets, icon: 'account_balance_wallet' },
+    { key: 'dashboard', label: 'Overview', onClick: onDashboard, icon: 'space_dashboard' },
+    { key: 'ledger', label: 'Cash Flow', onClick: onLedger, icon: 'swap_vert' },
+    { key: 'analytics', label: 'Analytics', onClick: onAnalytics, icon: 'monitoring' },
+    { key: 'budgets', label: 'Budgeting', onClick: onBudgets, icon: 'account_balance_wallet' },
   ];
+
   return (
-    <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] bg-surface-container z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
-      {/* Brand area */}
-      <div className="pt-10 pb-10 px-6 flex items-center gap-3">
-        <Logo className={`transition-all duration-500 text-on-surface ${collapsed ? 'w-8 h-8' : 'w-10 h-10'}`} />
+    <aside className={`hidden md:flex flex-col fixed left-0 top-0 h-screen transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] bg-surface-low z-[60] ${collapsed ? 'w-20' : 'w-64'}`}>
+
+      {/* Brand */}
+      <div className={`pt-8 pb-8 flex items-center gap-3 ${collapsed ? 'px-5 justify-center' : 'px-6'}`}>
+        <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined text-on-primary-container text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
+        </div>
         {!collapsed && (
-          <span className="text-on-surface font-headline text-2xl font-black tracking-[-0.05em] fade-in">
-            MOMA
-          </span>
+          <div className="fade-in overflow-hidden">
+            <h1 className="text-xl font-black text-primary tracking-tighter leading-none">MOMA</h1>
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant opacity-60 mt-0.5">Financial Sanctuary</p>
+          </div>
         )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 space-y-2">
+      <nav className={`flex-1 flex flex-col gap-1 ${collapsed ? 'px-3' : 'px-4'}`}>
         {NAV_ITEMS.map(item => {
           const isActive = view === item.key;
           return (
             <button
               key={item.key}
-              className={`group flex items-center w-full h-11 rounded-xl transition-all duration-300 ${isActive ? 'bg-primary text-on-primary shadow-lg shadow-black/10' : 'text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.05]'}`}
+              className={`group flex items-center w-full h-12 rounded-xl transition-all duration-300 ${isActive ? 'bg-surface-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary hover:translate-x-0.5'}`}
               onClick={item.onClick}
             >
-              <div className="w-12 flex items-center justify-center shrink-0">
-                <span className={`material-symbols-outlined text-[22px] transition-transform duration-300 ${isActive ? 'scale-105' : 'group-hover:scale-110'}`} style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
+              <div className={`flex items-center justify-center shrink-0 ${collapsed ? 'w-full' : 'w-12'}`}>
+                <span
+                  className="material-symbols-outlined text-[20px]"
+                  style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
+                >
                   {item.icon}
                 </span>
               </div>
               {!collapsed && (
-                <span className="font-['Inter'] text-[13px] font-bold tracking-tight fade-in">
+                <span className="text-sm font-semibold tracking-wide fade-in">
                   {item.label}
                 </span>
               )}
@@ -46,43 +52,48 @@ const Sidebar = ({ view, onDashboard, onLedger, onAnalytics, onBudgets, onNewTx,
         })}
       </nav>
 
-      {/* Footer Actions */}
-      <div className="px-4 pb-8 space-y-2">
-        <button 
-          className="flex items-center w-full h-11 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.03] transition-all duration-300"
-          onClick={onSettings}
-        >
-          <div className="w-12 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-[22px]">settings</span>
-          </div>
-          {!collapsed && <span className="font-['Inter'] text-[13px] font-bold tracking-tight fade-in">Settings</span>}
-        </button>
-        
-        <button 
-          className="flex items-center w-full h-11 rounded-xl text-on-surface-variant hover:text-error hover:bg-error/[0.05] transition-all duration-300"
-          onClick={onLogout}
-        >
-          <div className="w-12 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-[22px]">logout</span>
-          </div>
-          {!collapsed && <span className="font-['Inter'] text-[13px] font-bold tracking-tight fade-in">Logout</span>}
-        </button>
-
-        {/* Floating New Transaction FAB - More integrated like the image */}
-        <div className="pt-4">
-          <button 
-            className={`flex items-center justify-center gap-2 bg-on-surface text-surface rounded-xl shadow-xl active:scale-95 transition-all duration-300 overflow-hidden ${collapsed ? 'w-11 h-11 mx-auto' : 'w-full h-11'}`}
+      {/* Footer */}
+      <div className={`pb-8 space-y-3 ${collapsed ? 'px-3' : 'px-4'}`}>
+        {!collapsed && (
+          <button
+            className="w-full bg-secondary-container text-on-secondary-container py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:brightness-95 transition-all active:scale-[0.98] shadow-sm"
             onClick={onNewTx}
           >
-            <span className="material-symbols-outlined text-[20px] shrink-0">add</span>
-            {!collapsed && <span className="font-bold text-[12px] uppercase tracking-wider whitespace-nowrap fade-in">New Entry</span>}
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            New Entry
+          </button>
+        )}
+        {collapsed && (
+          <button
+            className="w-full h-12 flex items-center justify-center rounded-xl bg-secondary-container text-on-secondary-container hover:brightness-95 transition-all"
+            onClick={onNewTx}
+          >
+            <span className="material-symbols-outlined text-[20px]">add</span>
+          </button>
+        )}
+
+        <div className="space-y-1 pt-2">
+          <button
+            className={`flex items-center w-full h-11 rounded-xl text-on-surface-variant hover:text-primary transition-all duration-200 ${collapsed ? 'justify-center' : 'px-3 gap-4'}`}
+            onClick={onSettings}
+          >
+            <span className="material-symbols-outlined text-[20px]">settings</span>
+            {!collapsed && <span className="text-sm font-medium fade-in">Settings</span>}
+          </button>
+
+          <button
+            className={`flex items-center w-full h-11 rounded-xl text-on-surface-variant hover:text-error transition-all duration-200 ${collapsed ? 'justify-center' : 'px-3 gap-4'}`}
+            onClick={onLogout}
+          >
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+            {!collapsed && <span className="text-sm font-medium fade-in">Sign Out</span>}
           </button>
         </div>
       </div>
-      
-      {/* Collapse Toggle - Subtly on the divider line if we had one, but keeping it simple */}
-      <button 
-        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-surface-container border border-outline-variant rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all shadow-md z-10"
+
+      {/* Collapse Toggle */}
+      <button
+        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-surface-lowest rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-all shadow-md border border-outline-variant z-10"
         onClick={() => setCollapsed(!collapsed)}
       >
         <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>

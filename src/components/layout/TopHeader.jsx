@@ -1,45 +1,172 @@
-import React from 'react';
-import Logo from './Logo';
+import React, { useState, useRef, useEffect } from 'react';
+import { useAppDataContext } from '../../hooks';
 
-const TopHeader = ({ session, theme, onToggleTheme, collapsed }) => (
-  <nav className={`fixed top-0 right-0 left-0 z-50 flex justify-between items-center px-6 h-16 bg-surface/80 backdrop-blur-xl transition-all duration-300 ${collapsed ? 'md:left-20' : 'md:left-64'}`}>
-    {/* Mobile-only branding (since sidebar is hidden on small screens) */}
-    <div className="flex md:hidden items-center gap-3">
-      <Logo className="w-7 h-7 text-on-surface" />
-      <span className="font-headline font-black text-lg tracking-tight text-on-surface uppercase">MOMA</span>
+const useClickOutside = (ref, handler) => {
+  useEffect(() => {
+    const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler(); };
+    document.addEventListener('mousedown', listener);
+    return () => document.removeEventListener('mousedown', listener);
+  }, [ref, handler]);
+};
+
+const AccountSelector = () => {
+  const { accounts, defaultAccountId, setDefaultAccountId } = useAppDataContext();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useClickOutside(ref, () => setOpen(false));
+
+  const selected = accounts?.find(a => a.id === defaultAccountId) || accounts?.[0];
+  if (!accounts?.length) return null;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-medium transition-all ${open ? 'bg-primary text-on-primary' : 'bg-surface-low text-on-surface hover:bg-surface-high'}`}
+      >
+        <span className="material-symbols-outlined text-[16px]">account_balance</span>
+        <span className="max-w-[120px] truncate">{selected?.name || 'Account'}</span>
+        <span className={`material-symbols-outlined text-[14px] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>expand_more</span>
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-2 left-0 min-w-[180px] bg-surface-lowest rounded-2xl shadow-[0_8px_24px_rgba(77,97,75,0.14)] overflow-hidden z-50 fade-in">
+          {accounts.map(a => {
+            const isActive = a.id === defaultAccountId;
+            return (
+              <button
+                key={a.id}
+                onClick={() => { setDefaultAccountId(a.id); setOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-left transition-colors ${isActive ? 'bg-primary-fixed text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-low hover:text-on-surface'}`}
+              >
+                <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>account_balance</span>
+                <span className="truncate">{a.name}</span>
+                {isActive && <span className="material-symbols-outlined text-[14px] ml-auto text-primary">check</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
+  );
+};
 
-    {/* Spacer for desktop to keep actions on right */}
-    <div className="hidden md:block"></div>
-    
-    <div className="flex items-center gap-4">
-      {/* Refined Theme Switcher */}
-      <div className="flex bg-surface-low rounded-full p-1 border border-outline-variant shadow-inner scale-90 md:scale-100">
-        <button 
-          onClick={() => theme !== 'light' && onToggleTheme()}
-          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${theme === 'light' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
-        >
-          <span className="material-symbols-outlined text-[18px]">light_mode</span>
-        </button>
-        <button 
-          onClick={() => theme !== 'dark' && onToggleTheme()}
-          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${theme === 'dark' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
-        >
-          <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-        </button>
-      </div>
+const AvatarMenu = ({ session, onLogout, onSettings }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useClickOutside(ref, () => setOpen(false));
 
-      <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-low border border-outline-variant flex items-center justify-center">
-        {session?.user?.email ? (
-          <div className="w-full h-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs">
-            {session.user.email.charAt(0).toUpperCase()}
-          </div>
+  const email = session?.user?.email || '';
+  const initial = email.charAt(0).toUpperCase();
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-sm transition-all duration-200 ring-2 ${open ? 'ring-primary' : 'ring-transparent hover:ring-primary/30'}`}
+        style={{ background: open ? 'var(--primary)' : 'var(--primary-fixed)' }}
+      >
+        {email ? (
+          <span className="font-bold text-sm" style={{ color: open ? 'var(--on-primary)' : 'var(--primary)' }}>
+            {initial}
+          </span>
         ) : (
-          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '20px' }}>person</span>
+          <span className="material-symbols-outlined text-base text-primary">person</span>
         )}
-      </div>
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-2 right-0 w-56 bg-surface-lowest rounded-2xl shadow-[0_8px_32px_rgba(77,97,75,0.16)] overflow-hidden z-50 fade-in">
+          {/* User info */}
+          <div className="px-4 py-3.5 border-b border-outline-variant/10">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40 mb-0.5">Signed in as</p>
+            <p className="text-sm font-semibold text-on-surface truncate">{email}</p>
+          </div>
+
+          {/* Settings — mobile only */}
+          <button
+            className="md:hidden w-full flex items-center gap-3 px-4 py-3 text-sm text-on-surface-variant hover:bg-surface-low hover:text-on-surface transition-colors text-left"
+            onClick={() => { onSettings(); setOpen(false); }}
+          >
+            <span className="material-symbols-outlined text-[16px]">settings</span>
+            Settings
+          </button>
+
+          {/* Sign out */}
+          <button
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-error hover:bg-error/[0.06] transition-colors text-left"
+            onClick={() => { onLogout(); setOpen(false); }}
+          >
+            <span className="material-symbols-outlined text-[16px]">logout</span>
+            Sign Out
+          </button>
+        </div>
+      )}
     </div>
-  </nav>
-);
+  );
+};
+
+const TopHeader = ({ session, theme, onToggleTheme }) => {
+  const { shellProps } = useAppDataContext();
+
+  return (
+    <nav className="fixed top-0 right-0 left-0 z-50 flex justify-between items-center px-6 md:px-8 h-16 bg-surface/80 glass-nav">
+
+      {/* Mobile branding */}
+      <div className="flex md:hidden items-center gap-3">
+        <img src="/favicon.svg" alt="MOMA" className="w-8 h-8 rounded-lg" />
+        <span className="font-black text-primary tracking-tighter text-lg">MOMA</span>
+      </div>
+
+      {/* Desktop left: branding + account selector */}
+      <div className="hidden md:flex items-center gap-5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center">
+            <span className="material-symbols-outlined text-on-primary-container text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>spa</span>
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="font-black text-primary tracking-tighter text-base">MOMA</span>
+            <span className="text-[9px] font-semibold text-on-surface-variant/50 uppercase tracking-[0.18em]">Financial Sanctuary</span>
+          </div>
+        </div>
+        <div className="w-px h-5 bg-outline-variant/30" />
+        <AccountSelector />
+      </div>
+
+      {/* Right actions */}
+      <div className="flex items-center gap-3">
+        {/* Account selector — mobile */}
+        <div className="md:hidden">
+          <AccountSelector />
+        </div>
+
+        {/* Theme toggle */}
+        <div className="flex bg-surface-container rounded-full p-1">
+          <button
+            onClick={() => theme !== 'light' && onToggleTheme()}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${theme === 'light' ? 'bg-surface-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+            title="Light mode"
+          >
+            <span className="material-symbols-outlined text-[16px]">light_mode</span>
+          </button>
+          <button
+            onClick={() => theme !== 'dark' && onToggleTheme()}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${theme === 'dark' ? 'bg-surface-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+            title="Dark mode"
+          >
+            <span className="material-symbols-outlined text-[16px]">dark_mode</span>
+          </button>
+        </div>
+
+        {/* Avatar with dropdown */}
+        <AvatarMenu
+          session={session}
+          onLogout={shellProps?.onLogout}
+          onSettings={shellProps?.onSettings}
+        />
+      </div>
+    </nav>
+  );
+};
 
 export default TopHeader;
