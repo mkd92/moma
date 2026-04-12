@@ -93,11 +93,11 @@ const Analytics = () => {
 
   return (
     <PageShell view="analytics" onRefresh={refreshData} isLoading={isLoading}>
-      <div className="page-inner space-y-12 pb-32 pt-4 md:pt-0 px-6 max-w-7xl mx-auto">
+      <div className="page-inner space-y-12 pt-4 md:pt-0 px-6 max-w-7xl mx-auto">
         {/* Header & Filter Engine */}
         <div className="space-y-10">
           <div className="flex justify-between items-center px-2">
-            <h2 className="font-headline text-4xl font-black tracking-tight text-on-surface uppercase">Financial Analytics</h2>
+            <h2 className="font-headline text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-on-surface uppercase">Financial Analytics</h2>
             <button 
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all border ${showAnalyticsFilters ? 'bg-on-surface text-surface border-on-surface shadow-xl' : 'bg-surface-low text-on-surface-variant border-outline-variant hover:text-on-surface'}`}
               onClick={() => setShowAnalyticsFilters(!showAnalyticsFilters)}
@@ -134,8 +134,8 @@ const Analytics = () => {
               <div className="space-y-4">
                 <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase opacity-60">Net Cash Flow</p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-extrabold text-on-surface opacity-30">{currencySymbol}</span>
-                  <h3 className="text-6xl font-black font-headline text-on-surface tracking-tighter">
+                  <span className="text-lg sm:text-xl font-extrabold text-on-surface opacity-30">{currencySymbol}</span>
+                  <h3 className="text-4xl sm:text-5xl md:text-6xl font-black font-headline text-on-surface tracking-tighter">
                     {(analyticsKPIs?.net || 0).toLocaleString()}
                   </h3>
                 </div>

@@ -5,6 +5,7 @@
   .app-shell {
     display: flex;
     width: 100vw;
+    height: 100vh;
     height: 100dvh;
     overflow: hidden;
     background-color: var(--surface);
@@ -12,8 +13,7 @@
 
   .page-content {
     flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -23,8 +23,14 @@
     background-color: var(--surface);
   }
 
-  .page-content {
+  .scrollable-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
     padding-bottom: 96px; /* Space for floating BottomNav */
+    min-height: 0;
   }
 
   /* =========================================

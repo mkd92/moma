@@ -23,7 +23,7 @@ const PageShell = ({ children, view, onRefresh, isLoading }) => {
 
   return (
     <div
-      className="flex-1 w-full h-full flex flex-col relative"
+      className="flex-1 w-full min-h-0 flex flex-col relative scrollable-area"
       onTouchStart={handleSwipeTouchStart}
       onTouchEnd={handleSwipeTouchEnd}
       ref={containerRef}

@@ -55,11 +55,11 @@ const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNew
 
   return (
     <nav
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-fit px-4"
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0px)' }}
     >
       {/* ── Mobile pill: core + Settings ─────────────────────── */}
-      <div className="flex md:hidden items-center gap-0.5 px-2 py-2 rounded-full" style={PILL_STYLE}>
+      <div className="flex md:hidden items-center justify-around gap-0.5 px-2 py-2 rounded-full w-full" style={PILL_STYLE}>
         {coreItems.map(({ key, label, icon, onClick }) => (
           <NavBtn key={key} icon={icon} label={label} isActive={view === key} onClick={onClick} />
         ))}

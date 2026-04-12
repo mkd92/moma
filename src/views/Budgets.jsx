@@ -21,8 +21,8 @@ const Budgets = () => {
 
   return (
     <PageShell view="budgets" onRefresh={refreshData} isLoading={isLoading}>
-      <div className="page-inner space-y-8 pb-32">
-        <div className="flex justify-between items-center">
+      <div className="page-inner space-y-8 px-4 md:px-8 pt-6 max-w-7xl mx-auto">
+        <div className="flex justify-between items-center px-2">
           <h2 className="text-3xl font-extrabold tracking-tight text-primary">Budgets</h2>
           <button
             className="bg-secondary-container text-on-secondary-container px-6 py-2.5 rounded-full font-semibold active:scale-95 transition-transform text-sm"

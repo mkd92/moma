@@ -115,7 +115,6 @@ const TopHeader = ({ session, theme, onToggleTheme }) => {
       {/* Mobile branding */}
       <div className="flex md:hidden items-center gap-3">
         <img src="/favicon.svg" alt="MOMA" className="w-8 h-8 rounded-lg" />
-        <span className="font-black text-primary tracking-tighter text-lg">MOMA</span>
       </div>
 
       {/* Desktop left: branding + account selector */}

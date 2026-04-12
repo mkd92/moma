@@ -66,7 +66,7 @@ const Ledger = () => {
 
   return (
     <PageShell view="ledger" onRefresh={refreshData} isLoading={isLoading}>
-      <div className="flex flex-col min-h-full p-6 md:p-10 lg:p-14 max-w-7xl mx-auto w-full">
+      <div className="flex flex-col min-h-full p-4 sm:p-6 md:p-10 lg:p-14 max-w-7xl mx-auto w-full">
         
         {/* Simplified Professional Header */}
         <section className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -117,32 +117,38 @@ const Ledger = () => {
           </div>
 
           {/* Presets + sort */}
-          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
-            <div className="flex items-center gap-1 bg-surface-lowest rounded-2xl p-1 shadow-[0_2px_8px_rgba(77,97,75,0.06)] shrink-0">
-              {[{ p: 'all', label: 'All' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }].map(({ p, label }) => (
-                <button
-                  key={p}
-                  onClick={() => applyDatePreset(p)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${filterOptions.preset === p ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-                >
-                  {label}
-                </button>
-              ))}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-2">
+            {/* Date Presets Row */}
+            <div className="flex items-center overflow-x-auto hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0 py-1">
+              <div className="flex items-center gap-1 bg-surface-lowest rounded-2xl p-1 shadow-[0_2px_8px_rgba(77,97,75,0.06)] shrink-0">
+                {[{ p: 'all', label: 'All' }, { p: 'today', label: 'Today' }, { p: 'this_week', label: 'Week' }, { p: 'this_month', label: 'Month' }].map(({ p, label }) => (
+                  <button
+                    key={p}
+                    onClick={() => applyDatePreset(p)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${filterOptions.preset === p ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="h-5 w-px bg-outline-variant/30 shrink-0" />
+            <div className="hidden md:block h-5 w-px bg-outline-variant/30 shrink-0" />
 
-            <div className="flex items-center gap-1 bg-surface-lowest rounded-2xl p-1 shadow-[0_2px_8px_rgba(77,97,75,0.06)] shrink-0">
-              {[{ key: 'date_desc', label: 'Recent', icon: 'schedule' }, { key: 'amount_desc', label: 'Amount', icon: 'sort' }].map(s => (
-                <button
-                  key={s.key}
-                  onClick={() => setLedgerSort(s.key)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${ledgerSort === s.key ? 'bg-primary-fixed text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
-                >
-                  <span className="material-symbols-outlined text-[14px]">{s.icon}</span>
-                  {s.label}
-                </button>
-              ))}
+            {/* Sort Options Row */}
+            <div className="flex items-center overflow-x-auto hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0 py-1">
+              <div className="flex items-center gap-1 bg-surface-lowest rounded-2xl p-1 shadow-[0_2px_8px_rgba(77,97,75,0.06)] shrink-0">
+                {[{ key: 'date_desc', label: 'Recent', icon: 'schedule' }, { key: 'amount_desc', label: 'Amount', icon: 'sort' }].map(s => (
+                  <button
+                    key={s.key}
+                    onClick={() => setLedgerSort(s.key)}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${ledgerSort === s.key ? 'bg-primary-fixed text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  >
+                    <span className="material-symbols-outlined text-[14px]">{s.icon}</span>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -178,7 +184,7 @@ const Ledger = () => {
             {groupedLedger.map(([date, txs]) => (
               <React.Fragment key={date}>
                 {date !== '__flat__' && (
-                  <div className="flex items-center gap-6 px-8 py-5 sticky top-0 bg-surface-low/95 backdrop-blur-md z-30">
+                  <div className="flex items-center gap-6 px-8 py-5 sticky top-0 bg-surface-low z-30">
                     <span className="text-[9px] font-black tracking-[0.4em] text-on-surface-variant uppercase opacity-60">{formatGroupDate(date)}</span>
                     <div className="h-px flex-1 bg-gradient-to-r from-outline-variant/20 to-transparent"></div>
                   </div>

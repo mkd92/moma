@@ -9,6 +9,7 @@ import ToastContainer from './components/layout/ToastContainer';
 import Sidebar from './components/layout/Sidebar';
 import TopHeader from './components/layout/TopHeader';
 import BottomNav from './components/layout/BottomNav';
+import { ScrollIndicator } from './components/layout';
 
 // Lazy-loaded Views
 const Landing = lazy(() => import('./views/Landing'));
@@ -175,7 +176,7 @@ export default function App() {
         <div className="app-shell">
           <div className="page-content">
             <TopHeader session={session} theme={theme} onToggleTheme={toggleTheme} collapsed={false} />
-            <div className="flex-1 w-full relative">
+            <div className="flex-1 w-full flex flex-col min-h-0 relative">
               {renderViewContent()}
             </div>
           </div>
@@ -191,6 +192,7 @@ export default function App() {
             onPayees={shellProps.onPayees}
             onTags={shellProps.onTags}
           />
+          <ScrollIndicator />
         </div>
         <ToastContainer />
       </AppDataProvider>

@@ -81,7 +81,7 @@ const NewTransaction = () => {
   return (
     <PageShell view="new_transaction" onRefresh={refreshData} isLoading={isLoading}>
       <div
-        className="page-inner pb-32 px-4 md:px-8 pt-6 max-w-5xl mx-auto"
+        className="page-inner px-4 md:px-8 pt-6 max-w-5xl mx-auto"
         onKeyDown={handleGlobalKeyDown}
       >
         {/* Editorial Header */}
@@ -90,7 +90,7 @@ const NewTransaction = () => {
             <span className="material-symbols-outlined text-sm">spa</span>
             <span className="text-xs uppercase tracking-widest">Entry Creation</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight leading-tight max-w-xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary tracking-tight leading-tight max-w-xl">
             {isEditing ? 'Revise this movement of your funds.' : "Let's record a new movement of your funds."}
           </h1>
           <p className="mt-3 text-on-surface-variant text-base font-normal leading-relaxed">

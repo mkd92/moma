@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MOMA Ledger | Financial Sanctuary</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .editorial-shadow {
+            box-shadow: 0 20px 40px -15px rgba(77, 97, 75, 0.08);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#665b3f",
+                      "primary-container": "#657a63",
+                      "surface-tint": "#50644e",
+                      "outline-variant": "#c3c8bf",
+                      "outline": "#747871",
+                      "on-error-container": "#93000a",
+                      "inverse-on-surface": "#f3f1e9",
+                      "tertiary-container": "#7f7455",
+                      "primary-fixed": "#d2e9cd",
+                      "surface-dim": "#dcdad2",
+                      "on-secondary-fixed-variant": "#6f3724",
+                      "surface-container-highest": "#e4e3db",
+                      "on-tertiary": "#ffffff",
+                      "surface-container": "#f0eee6",
+                      "primary-fixed-dim": "#b6cdb2",
+                      "surface": "#fbf9f1",
+                      "secondary-fixed": "#ffdbd0",
+                      "inverse-primary": "#b6cdb2",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-fixed": "#221b05",
+                      "surface-container-low": "#f5f4ec",
+                      "on-error": "#ffffff",
+                      "secondary": "#8b4e39",
+                      "on-background": "#1b1c17",
+                      "error": "#ba1a1a",
+                      "on-secondary-fixed": "#380d01",
+                      "on-tertiary-fixed-variant": "#50462b",
+                      "on-tertiary-container": "#fffbff",
+                      "inverse-surface": "#30312c",
+                      "primary": "#4d614b",
+                      "on-surface": "#1b1c17",
+                      "surface-variant": "#e4e3db",
+                      "on-surface-variant": "#434841",
+                      "background": "#fbf9f1",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-bright": "#fbf9f1",
+                      "tertiary-fixed": "#f1e1bd",
+                      "secondary-fixed-dim": "#ffb59d",
+                      "secondary-container": "#fdae94",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed-variant": "#384c37",
+                      "on-primary-container": "#f7fff1",
+                      "on-secondary-container": "#783f2b",
+                      "on-primary-fixed": "#0e1f0e",
+                      "error-container": "#ffdad6",
+                      "surface-container-high": "#eae8e0",
+                      "tertiary-fixed-dim": "#d4c5a2"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              }
+            }
+          }
+        }
+      </script>
+</head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- SideNavBar (Shared Component) -->
+<aside class="hidden md:flex h-screen w-72 fixed left-0 top-0 border-r-0 bg-[#f5f4ec] dark:bg-stone-900 flex-col p-6 gap-8 z-40">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" data-icon="spa" style="font-variation-settings: 'FILL' 1;">spa</span>
+</div>
+<div>
+<h1 class="text-xl font-black text-[#4d614b] dark:text-[#d2e9cd] tracking-tighter">MOMA</h1>
+<p class="text-[10px] font-plus-jakarta uppercase tracking-widest text-on-surface-variant">Financial Sanctuary</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<!-- Active Tab: Overview -->
+<a class="flex items-center gap-4 px-4 py-3 bg-[#ffffff] dark:bg-stone-800 text-[#4d614b] dark:text-[#d2e9cd] rounded-xl shadow-sm transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="space_dashboard" style="font-variation-settings: 'FILL' 1;">space_dashboard</span>
+<span class="font-plus-jakarta text-sm uppercase tracking-widest font-semibold">Overview</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#434841] dark:text-stone-500 hover:text-[#4d614b] hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="swap_vert">swap_vert</span>
+<span class="font-plus-jakarta text-sm uppercase tracking-widest">Cash Flow</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#434841] dark:text-stone-500 hover:text-[#4d614b] hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-plus-jakarta text-sm uppercase tracking-widest">Tactical Budgeting</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#434841] dark:text-stone-500 hover:text-[#4d614b] hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-plus-jakarta text-sm uppercase tracking-widest">Wealth &amp; Portfolio</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#434841] dark:text-stone-500 hover:text-[#4d614b] hover:translate-x-1 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="trending_down">trending_down</span>
+<span class="font-plus-jakarta text-sm uppercase tracking-widest">Debt Progress</span>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-2">
+<button class="bg-secondary-container text-on-secondary-container py-3 rounded-xl font-semibold flex items-center justify-center gap-2 scale-95 active:scale-90 transition-transform editorial-shadow">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                New Entry
+            </button>
+<div class="pt-6 flex flex-col gap-2">
+<a class="flex items-center gap-4 px-4 py-2 text-on-surface-variant opacity-70 hover:opacity-100 transition-all text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="help_outline">help_outline</span>
+                    Support
+                </a>
+<a class="flex items-center gap-4 px-4 py-2 text-on-surface-variant opacity-70 hover:opacity-100 transition-all text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="logout">logout</span>
+                    Sign Out
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-72 min-h-screen p-4 md:p-10 transition-all">
+<!-- TopNavBar (Shared Component Inspired) -->
+<header class="fixed top-0 right-0 left-0 md:left-72 z-50 bg-[#fbf9f1]/80 backdrop-blur-xl h-20 px-8 flex justify-between items-center">
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-sm focus:ring-1 focus:ring-primary w-64 transition-all" placeholder="Search flows..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Portrait of a relaxed woman in a sunlit garden, representing financial peace and wellness" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2Vhu-hVGXNF4pak6ywTdqk4AypONV5NQ9LHvbn71VxT8sQKgF2I52O_4WT1HgJda7NWLKp3Zel4bhtffnhamnBan4j0bQ-2O8DSYEiZAiNPLVsXLGYppLOJ80OkWmwHMMmksVMRyTAxRnenuU4-boM5P1nddq--8iX1P6zX9yOVfGgF6GGhQ8D5eWRbyd7ScdHGcJr4SQ4_y2BoVxj9wLcVcwAIF9l2YF5xpO_N-Wc9nSmoyqprSlH4ecLtSkFlNpeWlWwHBkP50"/>
+</div>
+</div>
+</header>
+<!-- Editorial Content Area -->
+<div class="mt-20 max-w-7xl mx-auto space-y-12 pb-20">
+<!-- Hero: Financial Wellness Score -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+<div class="lg:col-span-8 space-y-4">
+<h2 class="text-on-surface-variant font-plus-jakarta text-sm uppercase tracking-[0.2em]">Monthly Wellness Flow</h2>
+<h1 class="text-5xl md:text-7xl font-bold tracking-tighter text-primary leading-tight">Your wealth is breathing.</h1>
+<p class="text-on-surface-variant text-lg max-w-xl leading-relaxed">This month, your financial garden has seen a net growth of 4.2%. Your liquidity remains high, providing a comfortable sanctuary for future goals.</p>
+</div>
+<div class="lg:col-span-4">
+<div class="glass-card rounded-[2.5rem] p-8 editorial-shadow bg-gradient-to-br from-primary to-primary-container text-on-primary">
+<div class="flex justify-between items-start mb-6">
+<span class="text-sm font-plus-jakarta uppercase tracking-widest opacity-80">Wellness Score</span>
+<span class="material-symbols-outlined text-3xl" data-icon="energy_savings_leaf" style="font-variation-settings: 'FILL' 1;">energy_savings_leaf</span>
+</div>
+<div class="text-6xl font-black mb-2 tracking-tighter">84</div>
+<p class="text-sm opacity-90 leading-snug italic">"A harmonious balance of tactical saving and intentional living."</p>
+</div>
+</div>
+</section>
+<!-- Section 1: Cash Flow & Liquidity (Bento Style) -->
+<section class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="text-2xl font-bold tracking-tight">Flow &amp; Liquidity</h3>
+<button class="text-primary text-sm font-semibold flex items-center gap-1">Details <span class="material-symbols-outlined text-xs" data-icon="arrow_forward">arrow_forward</span></button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Income vs Expenses Chart Area -->
+<div class="md:col-span-2 glass-card rounded-3xl p-8 editorial-shadow space-y-8 min-h-[400px] flex flex-col justify-between">
+<div class="flex justify-between items-center">
+<div>
+<h4 class="text-lg font-bold">Income vs. Expenses</h4>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest">Last 6 Months</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2 text-xs font-semibold">
+<span class="w-3 h-3 rounded-full bg-primary"></span> Income
+                                </div>
+<div class="flex items-center gap-2 text-xs font-semibold">
+<span class="w-3 h-3 rounded-full bg-outline-variant"></span> Expenses
+                                </div>
+</div>
+</div>
+<!-- Visual Representation of Bar Chart -->
+<div class="flex items-end justify-between h-48 px-4 gap-4">
+<!-- Column 1 -->
+<div class="flex-1 flex flex-col items-center gap-1 group">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-1/2 bg-primary rounded-t-lg h-[80%] transition-all group-hover:opacity-80"></div>
+<div class="w-1/2 bg-outline-variant rounded-t-lg h-[60%] transition-all group-hover:opacity-80"></div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-bold">JAN</span>
+</div>
+<!-- Column 2 -->
+<div class="flex-1 flex flex-col items-center gap-1 group">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-1/2 bg-primary rounded-t-lg h-[90%] transition-all group-hover:opacity-80"></div>
+<div class="w-1/2 bg-outline-variant rounded-t-lg h-[65%] transition-all group-hover:opacity-80"></div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-bold">FEB</span>
+</div>
+<!-- Column 3 -->
+<div class="flex-1 flex flex-col items-center gap-1 group">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-1/2 bg-primary rounded-t-lg h-[75%] transition-all group-hover:opacity-80"></div>
+<div class="w-1/2 bg-outline-variant rounded-t-lg h-[55%] transition-all group-hover:opacity-80"></div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-bold">MAR</span>
+</div>
+<!-- Column 4 (Active/Current) -->
+<div class="flex-1 flex flex-col items-center gap-1 group">
+<div class="w-full flex items-end gap-1 h-full">
+<div class="w-1/2 bg-primary rounded-t-lg h-[100%] transition-all group-hover:opacity-80 shadow-lg shadow-primary/20"></div>
+<div class="w-1/2 bg-outline-variant rounded-t-lg h-[70%] transition-all group-hover:opacity-80"></div>
+</div>
+<span class="text-[10px] text-primary font-black">APR</span>
+</div>
+</div>
+</div>
+<!-- Runway Gauge -->
+<div class="glass-card rounded-3xl p-8 editorial-shadow bg-[#f5f4ec] flex flex-col justify-between">
+<div class="space-y-1">
+<h4 class="text-lg font-bold">Financial Runway</h4>
+<p class="text-xs text-on-surface-variant">Survival time at current burn</p>
+</div>
+<div class="relative py-10 flex items-center justify-center">
+<!-- Circular Gauge Placeholder -->
+<svg class="w-48 h-48 -rotate-90">
+<circle class="text-surface-container-highest" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" stroke-width="12"></circle>
+<circle class="text-primary" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" stroke-dasharray="502" stroke-dashoffset="150" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-4xl font-black text-primary">14.2</span>
+<span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Months</span>
+</div>
+</div>
+<div class="p-4 bg-white/50 rounded-2xl">
+<div class="flex justify-between items-center text-xs font-bold mb-1">
+<span>Monthly Burn</span>
+<span class="text-secondary">$4,250</span>
+</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden">
+<div class="bg-secondary w-2/3 h-full rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Budget Pacing (Horizontal Layers) -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<div class="glass-card rounded-3xl p-8 editorial-shadow space-y-6">
+<div class="flex justify-between items-end">
+<div class="space-y-1">
+<h3 class="text-2xl font-bold tracking-tight">Spending Breakdown</h3>
+<p class="text-on-surface-variant text-sm italic">"Where your energy flows..."</p>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="donut_large">donut_large</span>
+</div>
+<div class="space-y-4">
+<!-- Spending Item 1 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl group hover:bg-white transition-colors duration-300">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+</div>
+<div>
+<div class="font-bold">Housing &amp; Utilities</div>
+<div class="text-[10px] text-on-surface-variant uppercase tracking-widest">35% of total spend</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-black text-lg">$2,100</div>
+<div class="text-[10px] text-primary uppercase font-bold">+2% month-over-month</div>
+</div>
+</div>
+<!-- Spending Item 2 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl group hover:bg-white transition-colors duration-300">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="restaurant" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<div>
+<div class="font-bold">Food &amp; Dining</div>
+<div class="text-[10px] text-on-surface-variant uppercase tracking-widest">18% of total spend</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-black text-lg">$1,080</div>
+<div class="text-[10px] text-secondary uppercase font-bold">-12% month-over-month</div>
+</div>
+</div>
+</div>
+</div>
+<div class="glass-card rounded-3xl p-8 editorial-shadow space-y-8 bg-surface-container-low">
+<div class="space-y-1">
+<h3 class="text-2xl font-bold tracking-tight">Budget Pacing</h3>
+<p class="text-on-surface-variant text-sm">Harmonizing current spending with goals</p>
+</div>
+<div class="space-y-8 py-4 relative">
+<!-- Vertical Marker for Today -->
+<div class="absolute top-0 bottom-0 left-[68%] w-[1px] border-l-2 border-dashed border-primary/30 z-10 flex flex-col items-center">
+<span class="text-[8px] bg-primary text-white px-1.5 py-0.5 rounded-full uppercase tracking-tighter -mt-2">Apr 21</span>
+</div>
+<!-- Budget Progress Bars -->
+<div class="space-y-2">
+<div class="flex justify-between text-sm font-bold">
+<span>Essential Needs</span>
+<span class="text-primary">62%</span>
+</div>
+<div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[62%]"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-sm font-bold">
+<span>Lifestyle &amp; Leisure</span>
+<span class="text-tertiary">84%</span>
+</div>
+<div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-container rounded-full w-[84%]"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-sm font-bold">
+<span>Digital &amp; Tools</span>
+<span class="text-secondary">92%</span>
+</div>
+<div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full w-[92%]"></div>
+</div>
+</div>
+</div>
+<div class="p-4 rounded-2xl bg-white/40 italic text-sm text-on-surface-variant leading-relaxed">
+                        Tip: Your 'Digital &amp; Tools' budget is pacing fast. Consider reviewing unused subscriptions to restore harmony.
+                    </div>
+</div>
+</section>
+<!-- Section 3: Wealth & Investment (Advanced Visualization) -->
+<section class="space-y-8">
+<div class="flex items-end justify-between">
+<div class="space-y-2">
+<h2 class="text-4xl font-bold tracking-tighter">Wealth &amp; Sanctuary</h2>
+<div class="flex gap-4">
+<div class="px-4 py-1.5 bg-primary/10 rounded-full text-xs font-bold text-primary">Portfolio: +12.4% YTD</div>
+<div class="px-4 py-1.5 bg-secondary/10 rounded-full text-xs font-bold text-secondary">Liabilities: -2.1%</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Total Net Worth</p>
+<h3 class="text-5xl font-black tracking-tighter text-on-surface">$1,248,300</h3>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Net Worth Area Chart -->
+<div class="lg:col-span-7 glass-card rounded-3xl p-8 editorial-shadow min-h-[400px] flex flex-col">
+<div class="flex justify-between items-center mb-10">
+<h4 class="text-xl font-bold">Net Worth Growth</h4>
+<div class="flex bg-surface-container-low rounded-xl p-1">
+<button class="px-4 py-1.5 text-[10px] font-bold rounded-lg bg-white shadow-sm">1Y</button>
+<button class="px-4 py-1.5 text-[10px] font-bold rounded-lg">5Y</button>
+<button class="px-4 py-1.5 text-[10px] font-bold rounded-lg">MAX</button>
+</div>
+</div>
+<div class="relative flex-grow flex items-end">
+<!-- Area Chart Placeholder with SVG -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 400 200">
+<defs>
+<lineargradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:rgba(77, 97, 75, 0.4); stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:rgba(255, 255, 255, 0); stop-opacity:0"></stop>
+</lineargradient>
+</defs>
+<path d="M0 200 L0 180 Q50 160 100 140 T200 100 T300 60 T400 20 L400 200 Z" fill="url(#chartGradient)"></path>
+<path d="M0 180 Q50 160 100 140 T200 100 T300 60 T400 20" fill="none" stroke="#4d614b" stroke-linecap="round" stroke-width="3"></path>
+<!-- Points -->
+<circle cx="100" cy="140" fill="#4d614b" r="4"></circle>
+<circle cx="200" cy="100" fill="#4d614b" r="4"></circle>
+<circle cx="300" cy="60" fill="#4d614b" r="4"></circle>
+<circle cx="400" cy="20" fill="#4d614b" r="6"></circle>
+</svg>
+<!-- Tooltip Placeholder -->
+<div class="absolute top-[10%] right-[5%] bg-primary text-on-primary p-3 rounded-2xl shadow-xl animate-bounce">
+<div class="text-[10px] uppercase font-bold opacity-80">Milestone</div>
+<div class="font-black">$1.2M reached</div>
+</div>
+</div>
+</div>
+<!-- Asset Allocation Treemap -->
+<div class="lg:col-span-5 glass-card rounded-3xl p-8 editorial-shadow bg-surface-container flex flex-col">
+<div class="flex justify-between items-center mb-8">
+<h4 class="text-xl font-bold">Asset Allocation</h4>
+<span class="material-symbols-outlined opacity-40" data-icon="grid_view">grid_view</span>
+</div>
+<div class="grid grid-cols-2 grid-rows-3 gap-3 flex-grow min-h-[300px]">
+<div class="col-span-2 row-span-1 bg-primary rounded-2xl p-4 flex flex-col justify-between text-on-primary">
+<span class="text-xs font-bold uppercase tracking-widest opacity-80">Equities</span>
+<span class="text-2xl font-black">58%</span>
+</div>
+<div class="col-span-1 row-span-2 bg-primary-container rounded-2xl p-4 flex flex-col justify-between text-on-primary-container">
+<span class="text-xs font-bold uppercase tracking-widest opacity-80">Real Estate</span>
+<span class="text-2xl font-black">24%</span>
+</div>
+<div class="col-span-1 row-span-1 bg-tertiary rounded-2xl p-4 flex flex-col justify-between text-on-tertiary">
+<span class="text-[10px] font-bold uppercase tracking-widest opacity-80">Fixed Income</span>
+<span class="text-xl font-black">12%</span>
+</div>
+<div class="col-span-1 row-span-1 bg-secondary rounded-2xl p-4 flex flex-col justify-between text-on-secondary">
+<span class="text-[10px] font-bold uppercase tracking-widest opacity-80">Alt / Crypto</span>
+<span class="text-xl font-black">6%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Dividend Waterfall -->
+<div class="glass-card rounded-3xl p-8 editorial-shadow">
+<h4 class="text-xl font-bold mb-8">Dividend Passive Flow Waterfall</h4>
+<div class="flex flex-col md:flex-row gap-2 items-stretch h-64">
+<div class="flex-grow flex flex-col items-center gap-2">
+<div class="w-full bg-primary/20 rounded-xl h-[20%] mt-auto border-2 border-dashed border-primary/30 flex items-center justify-center font-bold text-primary">$450</div>
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Q1 Yield</span>
+</div>
+<div class="flex-grow flex flex-col items-center gap-2">
+<div class="w-full bg-primary/40 rounded-xl h-[45%] mt-auto flex items-center justify-center font-bold text-primary">$1,200</div>
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Reinvested</span>
+</div>
+<div class="flex-grow flex flex-col items-center gap-2">
+<div class="w-full bg-primary/60 rounded-xl h-[65%] mt-auto flex items-center justify-center font-bold text-primary">$1,850</div>
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Growth Cap</span>
+</div>
+<div class="flex-grow flex flex-col items-center gap-2">
+<div class="w-full bg-primary rounded-xl h-full flex items-center justify-center font-bold text-on-primary">$3,500</div>
+<span class="text-[10px] uppercase font-black text-primary">Annual Total</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Debt & Liabilities -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-2 glass-card rounded-3xl p-8 editorial-shadow bg-surface-container-highest/30">
+<div class="flex justify-between items-start mb-10">
+<div>
+<h3 class="text-2xl font-bold tracking-tight">Debt Paydown Progress</h3>
+<p class="text-on-surface-variant text-sm mt-1">Lightening the load on your journey</p>
+</div>
+<div class="text-right">
+<div class="text-[10px] font-bold text-secondary uppercase tracking-widest">Remaining Balance</div>
+<div class="text-3xl font-black text-on-surface">$142,000</div>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex gap-2 h-16 w-full rounded-2xl overflow-hidden">
+<div class="w-[65%] bg-primary flex items-center px-4 text-on-primary text-xs font-bold">Principal: 65%</div>
+<div class="w-[35%] bg-secondary-container flex items-center px-4 text-on-secondary-container text-xs font-bold">Interest: 35%</div>
+</div>
+<div class="flex justify-between text-xs font-bold text-on-surface-variant px-2">
+<span>$0</span>
+<span>Projected Freedom: Oct 2026</span>
+<span>$250,000 Initial</span>
+</div>
+</div>
+<div class="mt-10 grid grid-cols-3 gap-4">
+<div class="p-4 bg-white/40 rounded-2xl text-center">
+<div class="text-[10px] uppercase font-bold text-on-surface-variant mb-1">Mortgage</div>
+<div class="font-black">2.8% APR</div>
+</div>
+<div class="p-4 bg-white/40 rounded-2xl text-center">
+<div class="text-[10px] uppercase font-bold text-on-surface-variant mb-1">Auto Flow</div>
+<div class="font-black">0% APR</div>
+</div>
+<div class="p-4 bg-white/40 rounded-2xl text-center border-2 border-primary/20">
+<div class="text-[10px] uppercase font-bold text-primary mb-1">Accelerated</div>
+<div class="font-black text-primary">+$500/mo</div>
+</div>
+</div>
+</div>
+<div class="glass-card rounded-3xl p-0 overflow-hidden editorial-shadow flex flex-col min-h-[400px]">
+<div class="h-1/2 relative">
+<img class="w-full h-full object-cover" data-alt="Sunlight filtering through a dense pine forest, representing deep financial roots and growth" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuxFde5HA5Y1XkcJADJvQCc5KrZM_q2BetUYZD6k-SsSd3cWeA_sqbXlR6nzYPGPatJoZvzMA5voDD7QZCzEGcDt1nq50JwoVKs3h2XAU18ZSYDOZK-eBcSg1KqnVf_C18YmK3k6XskNqczKL8t9KhmFxH6ddcSX7_EFr6v-brdMgsBK68bZ0mzGRigTWIPiF-3L0C1JyJPe9MxRapoIKhKT1C_spkVmDIi9al40K682d2_C7U76VhpAMH8k_4rvIP2S9Uttk2MnQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface to-transparent"></div>
+</div>
+<div class="p-8 space-y-4 flex-grow bg-surface">
+<h4 class="text-xl font-bold italic leading-tight">"Wealth is the ability to fully experience life."</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed">Your debt-to-income ratio is in the top 5% of your demographic wellness tier. You are well-positioned for a tranquil transition into full passive residency.</p>
+<button class="w-full py-4 text-primary font-bold border border-primary/20 rounded-2xl hover:bg-primary hover:text-on-primary transition-all duration-300">View Life Plan</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component - Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#fbf9f1]/90 backdrop-blur-xl flex justify-around items-center px-4 z-50 tonal-transition">
+<a class="flex flex-col items-center gap-1 text-[#4d614b] font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="space_dashboard" style="font-variation-settings: 'FILL' 1;">space_dashboard</span>
+<span class="text-[10px]">Overview</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#434841]" href="#">
+<span class="material-symbols-outlined" data-icon="swap_vert">swap_vert</span>
+<span class="text-[10px]">Flow</span>
+</a>
+<button class="w-12 h-12 -mt-10 bg-primary text-white rounded-full shadow-lg flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+<a class="flex flex-col items-center gap-1 text-[#434841]" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="text-[10px]">Wealth</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#434841]" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-[10px]">Settings</span>
+</a>
+</nav>
+</body></html>

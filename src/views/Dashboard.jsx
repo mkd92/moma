@@ -56,7 +56,7 @@ const Dashboard = () => {
 
   return (
     <PageShell view="dashboard" onRefresh={refreshData} isLoading={isLoading}>
-      <div className="page-inner pb-32 max-w-6xl mx-auto px-4 md:px-8 pt-8 space-y-5">
+      <div className="page-inner max-w-6xl mx-auto px-4 md:px-8 pt-8 space-y-5">
 
         {/* ───────────────────────────────────────────────────────────
             NET WORTH STATEMENT CARD
@@ -69,8 +69,8 @@ const Dashboard = () => {
               <div className="space-y-3">
                 <Eyebrow>Total Net Worth</Eyebrow>
 
-                <div className="flex items-end gap-4 flex-wrap">
-                  <span className="text-[2.6rem] md:text-[3.5rem] font-black tracking-tight leading-none text-on-surface tabular-nums">
+                <div className="flex items-end gap-3 flex-wrap">
+                  <span className="text-[2.2rem] sm:text-[2.6rem] md:text-[3.5rem] font-black tracking-tight leading-none text-on-surface tabular-nums">
                     {netWorth < 0 ? '−' : ''}{currencySymbol}{fmt(Math.abs(netWorth))}
                   </span>
 
@@ -194,24 +194,24 @@ const Dashboard = () => {
           style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(77,97,75,0.06)' }}
         >
           <button
-            className="text-left px-6 md:px-9 py-6 hover:bg-surface-low/60 transition-colors group"
+            className="text-left px-4 md:px-9 py-6 hover:bg-surface-low/60 transition-colors group"
             onClick={() => handleNavToFilteredLedger('income')}
           >
-            <Eyebrow className="mb-3">Inflow</Eyebrow>
-            <p className="text-xl md:text-2xl font-black text-primary tabular-nums tracking-tight">{currencySymbol}{fmt(totalIncome)}</p>
+            <Eyebrow className="mb-2">Inflow</Eyebrow>
+            <p className="text-lg md:text-2xl font-black text-primary tabular-nums tracking-tight">{currencySymbol}{fmt(totalIncome)}</p>
           </button>
 
           <button
-            className="text-left px-6 md:px-9 py-6 hover:bg-surface-low/60 transition-colors group"
+            className="text-left px-4 md:px-9 py-6 hover:bg-surface-low/60 transition-colors group"
             onClick={() => handleNavToFilteredLedger('expense')}
           >
-            <Eyebrow className="mb-3">Outflow</Eyebrow>
-            <p className="text-xl md:text-2xl font-black text-on-surface tabular-nums tracking-tight">{currencySymbol}{fmt(totalExpense)}</p>
+            <Eyebrow className="mb-2">Outflow</Eyebrow>
+            <p className="text-lg md:text-2xl font-black text-on-surface tabular-nums tracking-tight">{currencySymbol}{fmt(totalExpense)}</p>
           </button>
 
-          <div className="text-left px-6 md:px-9 py-6">
-            <Eyebrow className="mb-3">Net</Eyebrow>
-            <p className={`text-xl md:text-2xl font-black tabular-nums tracking-tight ${netPeriod >= 0 ? 'text-primary' : 'text-on-surface-variant'}`}>
+          <div className="text-left px-4 md:px-9 py-6">
+            <Eyebrow className="mb-2">Net</Eyebrow>
+            <p className={`text-lg md:text-2xl font-black tabular-nums tracking-tight ${netPeriod >= 0 ? 'text-primary' : 'text-on-surface-variant'}`}>
               {netPeriod < 0 ? '−' : '+'}{currencySymbol}{fmt(Math.abs(netPeriod))}
             </p>
           </div>

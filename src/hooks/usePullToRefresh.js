@@ -12,20 +12,22 @@ export const usePullToRefresh = (onRefresh) => {
     const el = containerRef.current;
     if (!el) return;
     const onTouchStart = (e) => {
-      if (el.scrollTop === 0) {
+      if (el.scrollTop <= 1) {
         state.current.startY = e.touches[0].clientY;
         state.current.active = true;
+      } else {
+        state.current.active = false;
       }
     };
     const onTouchMove = (e) => {
       if (!state.current.active) return;
       const dy = e.touches[0].clientY - state.current.startY;
-      if (dy > 0 && el.scrollTop === 0) {
-        e.preventDefault();
-        const clamped = Math.min(dy * 0.5, THRESHOLD + 20);
+      if (dy > 0 && el.scrollTop <= 1) {
+        if (e.cancelable) e.preventDefault();
+        const clamped = Math.min(dy * 0.4, THRESHOLD + 20); // slightly more resistance
         state.current.pullY = clamped;
         setPullY(clamped);
-      } else if (dy <= 0) {
+      } else if (dy < 0) {
         state.current.active = false;
         state.current.pullY = 0;
         setPullY(0);
