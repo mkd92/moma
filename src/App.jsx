@@ -107,7 +107,7 @@ export default function App() {
   useEffect(() => {
     const handler = (e) => {
       // Alt+N → new transaction (skip if typing in an input/textarea)
-      if (e.altKey && e.key === 'n') {
+      if (e.altKey && (e.key === 'n' || e.code === 'KeyN')) {
         const tag = document.activeElement?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
         e.preventDefault();

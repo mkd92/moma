@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PageShell } from '../components/layout';
 import CustomDropdown from '../components/CustomDropdown';
 import { getCategoryIcon } from '../utils/formatters';
@@ -58,31 +58,34 @@ const NewTransaction = () => {
 
   const TX_TYPES = ['expense', 'income', 'transfer'];
 
-  const handleGlobalKeyDown = (e) => {
-    // Cmd/Ctrl+S or Alt+Enter → save
-    if ((e.key === 's' && (e.ctrlKey || e.metaKey)) || (e.altKey && e.key === 'Enter')) {
-      e.preventDefault();
-      handleTransaction();
-      return;
-    }
-    // Alt+← / Alt+→ → cycle transaction type
-    if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-      e.preventDefault();
-      const idx = TX_TYPES.indexOf(txType);
-      const next = e.key === 'ArrowRight'
-        ? (idx + 1) % TX_TYPES.length
-        : (idx + TX_TYPES.length - 1) % TX_TYPES.length;
-      setTxType(TX_TYPES[next]);
-      setSelectedCategory(null);
-      setSelectedSubcategory(null);
-    }
-  };
+  useEffect(() => {
+    const handler = (e) => {
+      // Cmd/Ctrl+S or Alt+Enter → save
+      if ((e.key === 's' && (e.ctrlKey || e.metaKey)) || (e.altKey && e.key === 'Enter')) {
+        e.preventDefault();
+        handleTransaction();
+        return;
+      }
+      // Alt+← / Alt+→ → cycle transaction type
+      if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+        const idx = TX_TYPES.indexOf(txType);
+        const next = e.key === 'ArrowRight'
+          ? (idx + 1) % TX_TYPES.length
+          : (idx + TX_TYPES.length - 1) % TX_TYPES.length;
+        setTxType(TX_TYPES[next]);
+        setSelectedCategory(null);
+        setSelectedSubcategory(null);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [handleTransaction, txType, setTxType, setSelectedCategory, setSelectedSubcategory]);
 
   return (
     <PageShell view="new_transaction" onRefresh={refreshData} isLoading={isLoading}>
       <div
         className="page-inner px-4 md:px-8 pt-6 max-w-5xl mx-auto"
-        onKeyDown={handleGlobalKeyDown}
       >
         {/* Editorial Header */}
         <header className="mb-10">
