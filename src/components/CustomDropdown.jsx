@@ -123,7 +123,6 @@ const CustomDropdown = ({
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setFocusedIndex(-1); }}
               onClick={(e) => e.stopPropagation()}
-              onKeyDown={handleKeyDown}
             />
           </div>
         </div>
