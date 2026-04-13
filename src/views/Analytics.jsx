@@ -210,23 +210,23 @@ const Analytics = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-4">
-                  <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Deployable Capital</p>
-                    <p className="text-2xl font-black text-on-surface">{savRate !== null ? `${savRate}%` : '--'}</p>
-                    <p className="text-[10px] font-medium text-on-surface-variant/60 mt-1">Efficiency rate for current parameters</p>
+                <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+                  <div className="bg-primary/5 rounded-3xl p-4 sm:p-6 border border-primary/10">
+                    <p className="text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1 sm:mb-2">Capital</p>
+                    <p className="text-xl sm:text-2xl font-black text-on-surface">{savRate !== null ? `${savRate}%` : '--'}</p>
+                    <p className="hidden sm:block text-[10px] font-medium text-on-surface-variant/60 mt-1">Efficiency rate</p>
                   </div>
                   
-                  <div className="bg-surface-high/40 rounded-3xl p-6 border border-outline-variant/10">
-                    <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-2 opacity-60">Entry Density</p>
-                    <p className="text-2xl font-black text-on-surface">{(analyticsKPIs?.txCount || 0).toLocaleString()}</p>
-                    <p className="text-[10px] font-medium text-on-surface-variant/60 mt-1">Total movements recorded</p>
+                  <div className="bg-surface-high/40 rounded-3xl p-4 sm:p-6 border border-outline-variant/10">
+                    <p className="text-[9px] sm:text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 sm:mb-2 opacity-60">Density</p>
+                    <p className="text-xl sm:text-2xl font-black text-on-surface">{(analyticsKPIs?.txCount || 0).toLocaleString()}</p>
+                    <p className="hidden sm:block text-[10px] font-medium text-on-surface-variant/60 mt-1">Total movements</p>
                   </div>
                 </div>
               </div>
               
               {/* Dual-Axis Trend Chart */}
-              <div className="flex-1 min-h-[260px] sm:min-h-[400px] -mx-4 md:mx-0">
+              <div className={`flex-1 ${composedData && composedData.length > 0 ? 'min-h-[260px] sm:min-h-[400px]' : 'min-h-[180px]'} -mx-4 md:mx-0`}>
                 <ResponsiveContainer width="100%" height="100%">
                   {composedData && composedData.length > 0 ? (
                     <ComposedChart data={composedData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -252,7 +252,7 @@ const Analytics = () => {
                       <Line yAxisId="right" type="monotone" dataKey="net" stroke="var(--primary)" strokeWidth={4} dot={false} animationDuration={1500} />
                     </ComposedChart>
                   ) : (
-                    <div className="h-full flex items-center justify-center"><EmptyChart /></div>
+                    <EmptyChart h={180} />
                   )}
                 </ResponsiveContainer>
               </div>
