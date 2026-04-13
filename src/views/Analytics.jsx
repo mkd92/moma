@@ -146,6 +146,10 @@ const Analytics = () => {
   
   const netPct = pct(analyticsKPIs?.net || 0, prevPeriodKPIs?.net || 0);
 
+  const hasChartData = React.useMemo(() => 
+    composedData && composedData.some(d => d.income !== 0 || d.expense !== 0 || d.net !== 0),
+  [composedData]);
+
   return (
     <PageShell view="analytics" onRefresh={refreshData} isLoading={isLoading}>
       <div className="page-inner space-y-12 pt-4 md:pt-0 px-6 max-w-7xl mx-auto">
@@ -179,11 +183,11 @@ const Analytics = () => {
 
         {/* Net Cash Flow - Hero */}
         <section className="space-y-10">
-          <div className="bg-surface-low p-6 md:p-12 rounded-[3rem] border border-outline-variant shadow-sm overflow-hidden relative group">
-            <div className="flex flex-col lg:flex-row gap-10 lg:gap-12 relative z-10">
+          <div className="bg-surface-low p-6 md:p-12 rounded-[3rem] border border-outline-variant shadow-sm overflow-hidden relative group h-fit">
+            <div className="flex flex-col lg:flex-row gap-10 lg:gap-12 relative z-10 h-fit">
               
               {/* Trend & Variance Sidebar */}
-              <div className="flex flex-col gap-8 lg:justify-between lg:min-w-[240px]">
+              <div className="flex flex-col gap-6 lg:gap-8 lg:justify-between lg:min-w-[240px] h-fit">
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase opacity-60">Net Surplus</p>
@@ -193,7 +197,7 @@ const Analytics = () => {
                   </div>
                   
                   {/* MoM Variance Table / Widget Group */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6 pt-2">
                     <VarianceWidget 
                       label="Cash Inflow" 
                       current={analyticsKPIs?.totalIncome || 0} 
@@ -226,7 +230,7 @@ const Analytics = () => {
               </div>
               
               {/* Dual-Axis Trend Chart */}
-              {(composedData && composedData.length > 0) ? (
+              {hasChartData ? (
                 <div className="flex-1 min-h-[260px] sm:min-h-[400px] -mx-4 md:mx-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={composedData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
