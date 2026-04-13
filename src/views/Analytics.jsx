@@ -183,7 +183,7 @@ const Analytics = () => {
             <div className="flex flex-col lg:flex-row gap-10 lg:gap-12 relative z-10">
               
               {/* Trend & Variance Sidebar */}
-              <div className="flex flex-col justify-between space-y-8 lg:space-y-10 lg:min-w-[240px]">
+              <div className="flex flex-col gap-8 lg:justify-between lg:min-w-[240px]">
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase opacity-60">Net Surplus</p>
@@ -226,7 +226,7 @@ const Analytics = () => {
               </div>
               
               {/* Dual-Axis Trend Chart */}
-              <div className="flex-1 min-h-[400px] -mx-4 md:mx-0">
+              <div className="flex-1 min-h-[260px] sm:min-h-[400px] -mx-4 md:mx-0">
                 <ResponsiveContainer width="100%" height="100%">
                   {composedData && composedData.length > 0 ? (
                     <ComposedChart data={composedData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
