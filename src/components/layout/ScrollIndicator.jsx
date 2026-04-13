@@ -68,9 +68,9 @@ const ScrollIndicator = () => {
           />
         </svg>
         
-        {/* Center Icon */}
-        <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center">
-          <span className="material-symbols-outlined text-[16px] text-primary animate-bounce">
+        {/* Center Icon Wrapper */}
+        <div className="absolute inset-0 m-auto w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center z-10">
+          <span className="material-symbols-outlined text-[18px] text-primary leading-none mt-0.5 animate-pulse">
             arrow_downward
           </span>
         </div>
