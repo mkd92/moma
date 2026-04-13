@@ -230,9 +230,9 @@ const Analytics = () => {
               </div>
               
               {/* Dual-Axis Trend Chart */}
-              {hasChartData ? (
-                <div className="flex-1 min-h-[260px] sm:min-h-[400px] -mx-4 md:mx-0">
-                  <ResponsiveContainer width="100%" height="100%">
+              <div className={`flex-1 ${hasChartData ? 'min-h-[260px] sm:min-h-[400px]' : 'min-h-[140px] sm:min-h-[400px]'} -mx-4 md:mx-0 transition-all duration-500`}>
+                <ResponsiveContainer width="100%" height="100%">
+                  {hasChartData ? (
                     <ComposedChart data={composedData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                       <defs>
                         <linearGradient id="netGradient" x1="0" y1="0" x2="0" y2="1">
@@ -255,13 +255,11 @@ const Analytics = () => {
                       <Area yAxisId="right" type="monotone" dataKey="net" stroke="transparent" fill="url(#netGradient)" />
                       <Line yAxisId="right" type="monotone" dataKey="net" stroke="var(--primary)" strokeWidth={4} dot={false} animationDuration={1500} />
                     </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="hidden lg:flex flex-1 min-h-[400px] items-center justify-center">
-                  <EmptyChart h={200} />
-                </div>
-              )}
+                  ) : (
+                    <EmptyChart h={140} />
+                  )}
+                </ResponsiveContainer>
+              </div>
             </div>
             <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-transparent to-on-surface/[0.02] pointer-events-none"></div>
           </div>
