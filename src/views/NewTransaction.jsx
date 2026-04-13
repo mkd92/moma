@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { PageShell } from '../components/layout';
 import CustomDropdown from '../components/CustomDropdown';
 import { getCategoryIcon } from '../utils/formatters';
@@ -47,6 +47,15 @@ const NewTransaction = () => {
   } = useAppDataContext();
 
   const isEditing = !!txToEdit;
+  const noteInputRef = useRef(null);
+
+  // Auto-focus the note field when opening a new (not edit) transaction
+  useEffect(() => {
+    if (!isEditing) {
+      const t = setTimeout(() => noteInputRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [isEditing]);
 
   const confirmDelete = () => {
     if (window.confirm("Are you sure you want to permanently delete this entry?")) {
@@ -124,6 +133,7 @@ const NewTransaction = () => {
               <div>
                 <label className="block text-sm font-semibold text-on-surface-variant mb-2 px-1">Where did this flow to?</label>
                 <input
+                  ref={noteInputRef}
                   type="text"
                   placeholder="e.g. Organic Market"
                   value={note}
