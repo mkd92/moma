@@ -20,7 +20,7 @@ const Chip = ({ active, onClick, children }) => (
   </button>
 );
 
-const FilterPanel = ({ categories, tags, accounts, filterOptions, onUpdateFilter, onResetFilters }) => {
+const FilterPanel = ({ categories, tags, accounts, filterOptions, onUpdateFilter, onResetFilters, onApplyPreset }) => {
   const toggleCategory = (id) =>
     onUpdateFilter('categoryIds', filterOptions.categoryIds.includes(id)
       ? filterOptions.categoryIds.filter(x => x !== id)
@@ -39,6 +39,14 @@ const FilterPanel = ({ categories, tags, accounts, filterOptions, onUpdateFilter
   const expenseCategories = categories.filter(c => c.type === 'expense');
   const incomeCategories = categories.filter(c => c.type === 'income');
   const hasActiveFilters = filterOptions.categoryIds.length > 0 || filterOptions.tagIds.length > 0 || filterOptions.accountIds.length > 0 || filterOptions.dateRange.start || filterOptions.dateRange.end;
+
+  const datePresets = [
+    { id: 'this_month', label: 'This Month' },
+    { id: 'last_month', label: 'Last Month' },
+    { id: 'last_3m', label: 'Last 3m' },
+    { id: 'this_year', label: 'Last Year' }, // In useFilters it's named this_year but label requested is last year or similar
+    { id: 'custom', label: 'Custom' }
+  ];
 
   return (
     <div className="space-y-7 fade-in">
@@ -64,20 +72,40 @@ const FilterPanel = ({ categories, tags, accounts, filterOptions, onUpdateFilter
         </Section>
 
         <Section label="Date range">
-          <div className="flex items-center gap-3">
-            <input
-              type="date"
-              className="flex-1 min-w-0 bg-surface-low border-none rounded-2xl px-4 py-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface-lowest transition-all"
-              value={filterOptions.dateRange.start || ''}
-              onChange={e => onUpdateFilter('dateRange', { ...filterOptions.dateRange, start: e.target.value })}
-            />
-            <span className="text-on-surface-variant/40 text-sm shrink-0">→</span>
-            <input
-              type="date"
-              className="flex-1 min-w-0 bg-surface-low border-none rounded-2xl px-4 py-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface-lowest transition-all"
-              value={filterOptions.dateRange.end || ''}
-              onChange={e => onUpdateFilter('dateRange', { ...filterOptions.dateRange, end: e.target.value })}
-            />
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap bg-surface-low rounded-2xl p-1 gap-1">
+              {datePresets.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => onApplyPreset ? onApplyPreset(p.id) : onUpdateFilter('preset', p.id)}
+                  className={`flex-1 py-2 px-2 rounded-xl text-[10px] font-bold whitespace-nowrap transition-all ${
+                    filterOptions.preset === p.id
+                      ? 'bg-surface-lowest text-primary shadow-sm'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            
+            {filterOptions.preset === 'custom' && (
+              <div className="flex items-center gap-3 fade-in pt-1">
+                <input
+                  type="date"
+                  className="flex-1 min-w-0 bg-surface-low border-none rounded-2xl px-4 py-2.5 text-xs text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface-lowest transition-all"
+                  value={filterOptions.dateRange.start || ''}
+                  onChange={e => onUpdateFilter('dateRange', { ...filterOptions.dateRange, start: e.target.value })}
+                />
+                <span className="text-on-surface-variant/40 text-sm shrink-0">→</span>
+                <input
+                  type="date"
+                  className="flex-1 min-w-0 bg-surface-low border-none rounded-2xl px-4 py-2.5 text-xs text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface-lowest transition-all"
+                  value={filterOptions.dateRange.end || ''}
+                  onChange={e => onUpdateFilter('dateRange', { ...filterOptions.dateRange, end: e.target.value })}
+                />
+              </div>
+            )}
           </div>
         </Section>
       </div>

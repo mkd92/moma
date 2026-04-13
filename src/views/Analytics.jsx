@@ -171,6 +171,7 @@ const Analytics = () => {
                 filterOptions={analyticsFilters}
                 onUpdateFilter={updateAnalyticsFilter}
                 onResetFilters={resetAnalyticsFilters}
+                onApplyPreset={applyAnalyticsPreset}
               />
             </div>
           )}

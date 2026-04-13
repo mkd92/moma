@@ -155,9 +155,18 @@ const Ledger = () => {
           {/* Advanced filters */}
           {showAdvancedFilters && (
             <div className="bg-surface-lowest rounded-[1.75rem] p-6 shadow-[0_4px_16px_rgba(77,97,75,0.08)] fade-in">
-              <FilterPanel categories={categories} tags={tags} accounts={accounts} filterOptions={filterOptions} onUpdateFilter={updateFilter} onResetFilters={resetFilters} />
+              <FilterPanel 
+                categories={categories} 
+                tags={tags} 
+                accounts={accounts} 
+                filterOptions={filterOptions} 
+                onUpdateFilter={updateFilter} 
+                onResetFilters={resetFilters}
+                onApplyPreset={applyDatePreset}
+              />
             </div>
           )}
+
 
           {/* Bulk select bar */}
           {bulkSelectMode && (

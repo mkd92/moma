@@ -56,6 +56,11 @@ export function useFilters() {
     if (preset === 'today') { start = end = fmt(today); }
     else if (preset === 'this_week') { const day = today.getDay() || 7; const mon = new Date(today); mon.setDate(today.getDate() - day + 1); start = fmt(mon); end = fmt(today); }
     else if (preset === 'this_month') { start = fmt(new Date(today.getFullYear(), today.getMonth(), 1)); end = fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)); }
+    else if (preset === 'last_month') { 
+      const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const last = new Date(today.getFullYear(), today.getMonth(), 0);
+      start = fmt(first); end = fmt(last); 
+    }
     else if (preset === 'last_3m') { start = fmt(new Date(today.getFullYear(), today.getMonth() - 2, 1)); end = fmt(today); }
     setFilterOptions(prev => ({ ...prev, preset, dateRange: { start, end } }));
   }, []);
@@ -79,6 +84,11 @@ export function useFilters() {
     if (preset === 'today') { start = end = fmt(today); }
     else if (preset === 'this_week') { const day = today.getDay() || 7; const mon = new Date(today); mon.setDate(today.getDate() - day + 1); start = fmt(mon); end = fmt(today); }
     else if (preset === 'this_month') { start = fmt(new Date(today.getFullYear(), today.getMonth(), 1)); end = fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0)); }
+    else if (preset === 'last_month') { 
+      const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const last = new Date(today.getFullYear(), today.getMonth(), 0);
+      start = fmt(first); end = fmt(last); 
+    }
     else if (preset === 'last_3m') { start = fmt(new Date(today.getFullYear(), today.getMonth() - 2, 1)); end = fmt(today); }
     else if (preset === 'this_year') { start = `${today.getFullYear()}-01-01`; end = `${today.getFullYear()}-12-31`; }
     setAnalyticsFilters(prev => ({ ...prev, preset, dateRange: { start, end } }));
