@@ -12,7 +12,7 @@ export function useTransactionForm(session, accounts, categories, transactions, 
   const [selectedParty, setSelectedParty] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [note, setNote] = useState('');
-  const [txDate, setTxDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [txDate, setTxDate] = useState(() => localStorage.getItem('moma_last_tx_date') || new Date().toISOString().split('T')[0]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [transferFromAccount, setTransferFromAccount] = useState(null);
   const [transferToAccount, setTransferToAccount] = useState(null);
@@ -26,7 +26,7 @@ export function useTransactionForm(session, accounts, categories, transactions, 
     setSelectedParty(null);
     setSelectedAccount(defaultAccountId || (accounts.length > 0 ? accounts[0].id : null));
     setNote('');
-    setTxDate(new Date().toISOString().split('T')[0]);
+    setTxDate(localStorage.getItem('moma_last_tx_date') || new Date().toISOString().split('T')[0]);
     setSelectedTags([]);
     setTransferFromAccount(null);
     setTransferToAccount(null);
@@ -113,6 +113,7 @@ export function useTransactionForm(session, accounts, categories, transactions, 
         }
       }
       showToast(txToEdit ? 'Entry updated' : 'Entry recorded', 'success');
+      localStorage.setItem('moma_last_tx_date', txDate);
       await fetchTransactions();
       if (!txToEdit) resetFilters?.();
       resetForm();
