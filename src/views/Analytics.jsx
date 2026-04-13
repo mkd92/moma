@@ -1,6 +1,6 @@
 import React from 'react';
 import { PageShell } from '../components/layout';
-import { ComposedChart, Bar, XAxis, YAxis, Tooltip, Line, ResponsiveContainer, CartesianGrid, ReferenceLine, Area } from 'recharts';
+import { ComposedChart, Bar, XAxis, YAxis, Tooltip, Line, ResponsiveContainer, CartesianGrid, ReferenceLine, Area, AreaChart } from 'recharts';
 import EmptyChart from '../components/analytics/EmptyChart';
 import AnalyticsTooltip from '../components/analytics/AnalyticsTooltip';
 import FilterPanel from '../components/filters/FilterPanel';
@@ -115,24 +115,25 @@ const CategoryRow = ({ name, id, value, subs, totalCatVal, currencySymbol, catBr
 };
 
 const Analytics = () => {
-  const { 
-    analyticsKPIs, 
-    prevPeriodKPIs, 
-    currencySymbol, 
-    chartTimeSeries: composedData, 
-    savingsRate: savRate, 
-    chartCategorical, 
-    totalCatVal, 
+  const {
+    analyticsKPIs,
+    prevPeriodKPIs,
+    currencySymbol,
+    chartTimeSeries: composedData,
+    chartNetWorth,
+    savingsRate: savRate,
+    chartCategorical,
+    totalCatVal,
     isLoading,
-    showAnalyticsFilters, 
-    setShowAnalyticsFilters, 
-    analyticsFilters, 
-    applyAnalyticsPreset, 
-    updateAnalyticsFilter, 
-    resetAnalyticsFilters, 
-    catBreakdownType, 
-    setCatBreakdownType, 
-    navToLedgerByCategory, 
+    showAnalyticsFilters,
+    setShowAnalyticsFilters,
+    analyticsFilters,
+    applyAnalyticsPreset,
+    updateAnalyticsFilter,
+    resetAnalyticsFilters,
+    catBreakdownType,
+    setCatBreakdownType,
+    navToLedgerByCategory,
     topPayees,
     refreshData
   } = useAppDataContext();
@@ -146,9 +147,20 @@ const Analytics = () => {
   
   const netPct = pct(analyticsKPIs?.net || 0, prevPeriodKPIs?.net || 0);
 
-  const hasChartData = React.useMemo(() => 
+  const hasChartData = React.useMemo(() =>
     composedData && composedData.some(d => d.income !== 0 || d.expense !== 0 || d.net !== 0),
   [composedData]);
+
+  const netWorthStats = React.useMemo(() => {
+    if (!chartNetWorth?.length) return null;
+    const first = chartNetWorth[0].netWorth;
+    const last = chartNetWorth[chartNetWorth.length - 1].netWorth;
+    const min = Math.min(...chartNetWorth.map(d => d.netWorth));
+    const max = Math.max(...chartNetWorth.map(d => d.netWorth));
+    const change = last - first;
+    const changePct = first !== 0 ? (change / Math.abs(first)) * 100 : 0;
+    return { first, last, min, max, change, changePct };
+  }, [chartNetWorth]);
 
   return (
     <PageShell view="analytics" onRefresh={refreshData} isLoading={isLoading}>
@@ -264,6 +276,89 @@ const Analytics = () => {
               </div>
             </div>
             <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-transparent to-on-surface/[0.02] pointer-events-none"></div>
+          </div>
+        </section>
+
+        {/* Portfolio Balance (Net Worth Over Time) */}
+        <section className="space-y-10">
+          <h3 className="font-headline text-xs font-black tracking-[0.4em] text-on-surface uppercase opacity-60 px-2">Portfolio Balance</h3>
+          <div className="bg-surface-low p-6 md:p-10 rounded-[3rem] border border-outline-variant shadow-sm overflow-hidden">
+            {/* KPI row */}
+            <div className="flex flex-wrap gap-6 md:gap-10 mb-8">
+              <div>
+                <p className="text-[9px] font-black tracking-[0.3em] text-on-surface-variant uppercase opacity-40 mb-1">End of Period</p>
+                <p className={`text-3xl md:text-4xl font-black font-headline tracking-tighter ${netWorthStats && netWorthStats.last < 0 ? 'text-error' : 'text-on-surface'}`}>
+                  {netWorthStats ? `${currencySymbol}${netWorthStats.last.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                </p>
+              </div>
+              {netWorthStats && (
+                <>
+                  <div className="flex flex-col justify-end pb-0.5">
+                    <p className="text-[9px] font-black tracking-[0.3em] text-on-surface-variant uppercase opacity-40 mb-1">Period Change</p>
+                    <div className={`flex items-center gap-1.5 text-sm font-black ${netWorthStats.change >= 0 ? 'text-primary' : 'text-error'}`}>
+                      <span className="material-symbols-outlined text-[16px]">{netWorthStats.change >= 0 ? 'trending_up' : 'trending_down'}</span>
+                      {netWorthStats.change >= 0 ? '+' : ''}{currencySymbol}{Math.abs(netWorthStats.change).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-[10px] opacity-60">({netWorthStats.changePct >= 0 ? '+' : ''}{netWorthStats.changePct.toFixed(1)}%)</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-end pb-0.5">
+                    <p className="text-[9px] font-black tracking-[0.3em] text-on-surface-variant uppercase opacity-40 mb-1">Range</p>
+                    <p className="text-sm font-bold text-on-surface-variant">
+                      <span className="text-error">{currencySymbol}{netWorthStats.min.toLocaleString()}</span>
+                      <span className="opacity-30 mx-1.5">→</span>
+                      <span className="text-primary">{currencySymbol}{netWorthStats.max.toLocaleString()}</span>
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Chart */}
+            <div className={`${chartNetWorth?.length ? 'h-[220px] sm:h-[280px]' : 'h-[140px]'} -mx-4 md:mx-0`}>
+              {chartNetWorth?.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartNetWorth} margin={{ top: 10, right: 16, bottom: 10, left: 16 }}>
+                    <defs>
+                      <linearGradient id="nwGradientPos" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="nwGradientNeg" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--error)" stopOpacity={0.1} />
+                        <stop offset="100%" stopColor="var(--error)" stopOpacity={0.25} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--on-surface)" vertical={false} opacity={0.03} />
+                    <XAxis
+                      dataKey="label"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 9, fontWeight: 800, fill: 'var(--on-surface-variant)', opacity: 0.4 }}
+                      dy={8}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis hide domain={['auto', 'auto']} />
+                    <Tooltip content={<AnalyticsTooltip currencySymbol={currencySymbol} />} cursor={{ stroke: 'var(--outline-variant)', strokeWidth: 1 }} />
+                    {netWorthStats && <ReferenceLine y={netWorthStats.first} stroke="var(--outline-variant)" strokeDasharray="4 4" opacity={0.5} />}
+                    <ReferenceLine y={0} stroke="var(--outline-variant)" opacity={0.4} />
+                    <Area
+                      type="monotone"
+                      dataKey="netWorth"
+                      name="Net Worth"
+                      stroke={netWorthStats && netWorthStats.last >= netWorthStats.first ? 'var(--primary)' : 'var(--error)'}
+                      strokeWidth={3}
+                      fill={netWorthStats && netWorthStats.last >= netWorthStats.first ? 'url(#nwGradientPos)' : 'url(#nwGradientNeg)'}
+                      dot={false}
+                      animationDuration={1200}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <EmptyChart h={120} />
+                </div>
+              )}
+            </div>
           </div>
         </section>
 

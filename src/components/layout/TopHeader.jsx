@@ -5,18 +5,28 @@ const useClickOutside = (ref, handler) => {
   useEffect(() => {
     const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler(); };
     document.addEventListener('mousedown', listener);
-    return () => document.removeEventListener('mousedown', listener);
+    document.addEventListener('touchstart', listener, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', listener);
+      document.removeEventListener('touchstart', listener);
+    };
   }, [ref, handler]);
 };
 
-const AccountSelector = () => {
-  const { accounts, defaultAccountId, setDefaultAccountId } = useAppDataContext();
+const AccountSelector = ({ align = 'left' }) => {
+  const { accounts, defaultAccountId, setDefaultAccountId, handleSetDefaultAccount } = useAppDataContext();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useClickOutside(ref, () => setOpen(false));
 
   const selected = accounts?.find(a => a.id === defaultAccountId) || accounts?.[0];
   if (!accounts?.length) return null;
+
+  const handleSelect = (id) => {
+    setDefaultAccountId(id);          // optimistic UI update
+    handleSetDefaultAccount(id);      // persist to Supabase
+    setOpen(false);
+  };
 
   return (
     <div className="relative" ref={ref}>
@@ -30,13 +40,13 @@ const AccountSelector = () => {
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 left-0 min-w-[180px] bg-surface-lowest rounded-2xl shadow-[0_8px_24px_rgba(77,97,75,0.14)] overflow-hidden z-50 fade-in">
+        <div className={`absolute top-full mt-2 min-w-[180px] bg-surface-lowest rounded-2xl shadow-[0_8px_24px_rgba(77,97,75,0.14)] overflow-hidden z-50 fade-in ${align === 'right' ? 'right-0' : 'left-0'}`}>
           {accounts.map(a => {
             const isActive = a.id === defaultAccountId;
             return (
               <button
                 key={a.id}
-                onClick={() => { setDefaultAccountId(a.id); setOpen(false); }}
+                onPointerDown={(e) => { e.stopPropagation(); handleSelect(a.id); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-left transition-colors ${isActive ? 'bg-primary-fixed text-primary font-semibold' : 'text-on-surface-variant hover:bg-surface-low hover:text-on-surface'}`}
               >
                 <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>account_balance</span>
@@ -136,7 +146,7 @@ const TopHeader = ({ session, theme, onToggleTheme }) => {
       <div className="flex items-center gap-3">
         {/* Account selector — mobile */}
         <div className="md:hidden">
-          <AccountSelector />
+          <AccountSelector align="right" />
         </div>
 
         {/* Theme toggle */}

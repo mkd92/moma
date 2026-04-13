@@ -333,11 +333,84 @@ export function useAnalyticsData({
     return Object.entries(groups).sort(([a], [b]) => dir * a.localeCompare(b));
   }, [filteredLedger, ledgerSort]);
 
+  // Net worth over the selected date range, per day (or per month for long ranges).
+  // Uses the same formula as the dashboard: liability account balances are SUBTRACTED
+  // from net worth (assets + investments − liabilities).
+  const chartNetWorth = useMemo(() => {
+    const { start, end } = analyticsFilters.dateRange;
+    if (!start || !accounts.length) return [];
+
+    const pad = n => String(n).padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const startD = new Date(start + 'T00:00:00');
+    const endD = end ? new Date(end + 'T00:00:00') : new Date();
+    const dayCount = Math.ceil((endD - startD) / 86400000) + 1;
+    const endStr = end || fmt(new Date());
+
+    // Non-excluded accounts only; liability accounts contribute negatively to net worth
+    const acctMap = {};
+    accounts.forEach(a => { if (!a.exclude_from_total) acctMap[a.id] = a; });
+    const nwSign = (a) => a.type === 'liability' ? -1 : 1;
+
+    // Net worth at the day BEFORE start:
+    //   seed each account's running balance from initial_balance, then apply all
+    //   prior transactions (including transfers, which cancel across accounts).
+    const baseDateStr = fmt(new Date(startD.getTime() - 86400000));
+    const runningBal = {};
+    Object.values(acctMap).forEach(a => { runningBal[a.id] = parseFloat(a.initial_balance) || 0; });
+    transactions.forEach(t => {
+      if (!t.account_id || !acctMap[t.account_id]) return;
+      if (t.transaction_date <= baseDateStr) {
+        runningBal[t.account_id] += (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * (parseFloat(t.amount) || 0);
+      }
+    });
+    let baseNW = Object.entries(runningBal).reduce((s, [id, bal]) => s + nwSign(acctMap[id]) * bal, 0);
+
+    const useMonthly = dayCount > 180;
+
+    // Build net-worth delta map (daily or monthly).
+    // Apply nwSign so liability transactions flip sign, matching the dashboard formula.
+    // Include transfers: they cancel across accounts when both sides are non-excluded.
+    const deltas = {};
+    transactions.forEach(t => {
+      if (!t.account_id || !acctMap[t.account_id]) return;
+      if (t.transaction_date < start || t.transaction_date > endStr) return;
+      const key = useMonthly ? t.transaction_date.slice(0, 7) : t.transaction_date;
+      const txDelta = (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * (parseFloat(t.amount) || 0);
+      deltas[key] = (deltas[key] || 0) + nwSign(acctMap[t.account_id]) * txDelta;
+    });
+
+    if (!useMonthly) {
+      const result = [];
+      let nw = baseNW;
+      for (let i = 0; i < dayCount; i++) {
+        const d = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate() + i);
+        const key = fmt(d);
+        nw += deltas[key] || 0;
+        result.push({ date: key, label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), netWorth: Math.round(nw * 100) / 100 });
+      }
+      return result;
+    } else {
+      const monthKeys = new Set();
+      for (let i = 0; i < dayCount; i++) {
+        const d = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate() + i);
+        monthKeys.add(`${d.getFullYear()}-${pad(d.getMonth() + 1)}`);
+      }
+      const result = [];
+      let nw = baseNW;
+      [...monthKeys].sort().forEach(key => {
+        nw += deltas[key] || 0;
+        result.push({ date: key, label: new Date(key + '-01T12:00:00').toLocaleDateString(undefined, { month: 'short', year: '2-digit' }), netWorth: Math.round(nw * 100) / 100 });
+      });
+      return result;
+    }
+  }, [accounts, transactions, analyticsFilters.dateRange]);
+
   return {
     accountBalances, dashDateRange, dashTransactions, activeAccountIds, dashActiveTransactions,
     balance, totalIncome, totalExpense, topCategories, topExpenseCat, savingsRate, burnRate,
     portfolioChange, sparklineData, smartInsights, analyticsTransactions,
     prevAnalyticsTransactions, prevPeriodKPIs, chartTimeSeries, chartCategorical, chartTags,
-    analyticsKPIs, filteredLedger, groupedLedger, totalCatVal, topPayees
+    analyticsKPIs, filteredLedger, groupedLedger, totalCatVal, topPayees, chartNetWorth
   };
 }

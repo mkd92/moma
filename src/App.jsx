@@ -79,7 +79,7 @@ export default function App() {
   const appData = useAppData(session, navigate, pathname, authIsLoading);
 
   // --- Transaction Form Hook ---
-  const txForm = useTransactionForm(session, appData.accounts, appData.categories, appData.transactions, appData.defaultAccountId, appData.fetchTransactions, setView);
+  const txForm = useTransactionForm(session, appData.accounts, appData.categories, appData.transactions, appData.defaultAccountId, appData.fetchTransactions, setView, appData.resetFilters);
 
   // --- Global Navigation Props ---
   const shellProps = useMemo(() => ({

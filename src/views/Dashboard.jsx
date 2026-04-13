@@ -3,8 +3,8 @@ import { PageShell } from '../components/layout';
 import TransactionItem from '../components/transactions/TransactionItem';
 import { useAppDataContext } from '../hooks';
 
-const ACCT_ICON  = { investment: 'trending_up', liability: 'credit_card', asset: 'account_balance' };
-const ACCT_LABEL = { investment: 'Investment',  liability: 'Liability',    asset: 'Asset' };
+const ACCT_ICON  = { investment: 'trending_up', temp: 'trending_up', liability: 'credit_card', asset: 'account_balance' };
+const ACCT_LABEL = { investment: 'Investment',  temp: 'Temporary',   liability: 'Liability',   asset: 'Asset' };
 
 const Eyebrow = ({ children, className = '' }) => (
   <p className={`text-[9px] font-bold uppercase tracking-[0.32em] text-on-surface-variant/50 ${className}`}>{children}</p>
@@ -43,7 +43,7 @@ const Dashboard = () => {
   const excludedCount     = accounts.length - includedAccounts.length;
   const netWorth          = includedAccounts.reduce((s, a) => { const b = accountBalances[a.id] || 0; return a.type === 'liability' ? s - b : s + b; }, 0);
   const assetTotal        = includedAccounts.filter(a => (a.type || 'asset') === 'asset').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
-  const investTotal       = includedAccounts.filter(a => a.type === 'investment').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
+  const investTotal       = includedAccounts.filter(a => a.type === 'investment' || a.type === 'temp').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
   const liabTotal         = includedAccounts.filter(a => a.type === 'liability').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
   const maxBal            = Math.max(...includedAccounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
   const netPeriod         = totalIncome - totalExpense;

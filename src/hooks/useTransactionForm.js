@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToast } from './useToast';
 
-export function useTransactionForm(session, accounts, categories, transactions, defaultAccountId, fetchTransactions, setView) {
+export function useTransactionForm(session, accounts, categories, transactions, defaultAccountId, fetchTransactions, setView, resetFilters) {
   const { showToast } = useToast();
   const [txToEdit, setTxToEdit] = useState(null);
   const [txType, setTxType] = useState('expense');
@@ -114,6 +114,7 @@ export function useTransactionForm(session, accounts, categories, transactions, 
       }
       showToast(txToEdit ? 'Entry updated' : 'Entry recorded', 'success');
       await fetchTransactions();
+      if (!txToEdit) resetFilters?.();
       resetForm();
       setView('ledger');
     } catch (err) {
@@ -122,7 +123,7 @@ export function useTransactionForm(session, accounts, categories, transactions, 
     } finally {
       setIsSubmitting(false);
     }
-  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm, accounts, fetchTransactions, setView, showToast]);
+  }, [amount, selectedSubcategory, selectedCategory, txType, selectedParty, selectedAccount, note, txDate, session, txToEdit, selectedTags, transferFromAccount, transferToAccount, resetForm, accounts, fetchTransactions, setView, resetFilters, showToast]);
 
   const currentParents = useMemo(() => 
     categories.filter(c => !c.parent_id && (txType === 'transfer' ? true : c.type === txType)),

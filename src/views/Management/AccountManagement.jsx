@@ -5,9 +5,10 @@ import { PageShell } from '../../components/layout';
 import { useAppDataContext } from '../../hooks';
 
 const ACCT_META = {
-  asset: { label: 'Asset', icon: 'account_balance' },
-  liability: { label: 'Liability', icon: 'credit_card' },
-  investment: { label: 'Investment', icon: 'trending_up' }
+  asset:      { label: 'Asset',      icon: 'account_balance' },
+  liability:  { label: 'Liability',  icon: 'credit_card' },
+  investment: { label: 'Investment', icon: 'trending_up' },
+  temp:       { label: 'Temporary',  icon: 'trending_up' },
 };
 
 const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, onSetDefault, defaultAccountId }) => accts.length === 0 ? null : (
@@ -172,7 +173,7 @@ export default function AccountManagement() {
         <div className="space-y-12 fade-in">
           <AcctGroup title="Cash & Bank" accts={accounts.filter(a => (a.type || 'asset') === 'asset')} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
           <AcctGroup title="Liabilities" accts={accounts.filter(a => a.type === 'liability')} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
-          <AcctGroup title="Investments" accts={accounts.filter(a => a.type === 'investment')} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
+          <AcctGroup title="Temporary" accts={accounts.filter(a => a.type === 'investment' || a.type === 'temp')} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
           
           <section className="space-y-6 pt-10">
             <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">Provision New Account</p>
@@ -191,7 +192,7 @@ export default function AccountManagement() {
                   <select className="w-full bg-on-surface/[0.03] border border-outline-variant rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-on-surface/10 transition-all font-bold outline-none appearance-none cursor-pointer" value={newAccountType} onChange={e => setNewAccountType(e.target.value)}>
                     <option value="asset">Cash / Asset</option>
                     <option value="liability">Liability / Debt</option>
-                    <option value="investment">Investment</option>
+                    <option value="temp">Temporary</option>
                   </select>
                 </div>
               </div>

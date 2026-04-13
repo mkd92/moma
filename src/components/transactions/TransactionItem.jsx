@@ -1,7 +1,7 @@
 import React from 'react';
 import { getCategoryIcon } from '../../utils/formatters';
 
-const TransactionItem = ({ t, onClick, categories, accounts, currencySymbol, isSelected, bulkSelectMode, onToggleSelect }) => {
+const TransactionItem = ({ t, onClick, categories, accounts, currencySymbol, isSelected, bulkSelectMode, onToggleSelect, runningBalance }) => {
   const cat = categories.find(c => c.id === t.category_id);
   const account = accounts?.find(a => a.id === t.account_id);
   const amt = t.amount || 0;
@@ -52,6 +52,12 @@ const TransactionItem = ({ t, onClick, categories, accounts, currencySymbol, isS
               <span className="text-xs font-normal opacity-50 mr-0.5">{currencySymbol}</span>
               {Math.abs(amt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
+            {runningBalance != null && (
+              <p className={`text-[10px] font-semibold mt-0.5 ${runningBalance < 0 ? 'text-error' : 'text-on-surface-variant'}`}>
+                <span className="opacity-50 mr-0.5">{currencySymbol}</span>
+                {runningBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            )}
           </div>
         </div>
       </div>

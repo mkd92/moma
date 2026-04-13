@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PageShell } from '../components/layout';
 import TransactionItem from '../components/transactions/TransactionItem';
 import FilterPanel from '../components/filters/FilterPanel';
@@ -8,32 +8,63 @@ import { formatGroupDate } from '../utils/formatters';
 import { useAppDataContext } from '../hooks';
 
 const Ledger = () => {
-  const { 
-    categories, 
-    tags, 
-    accounts, 
-    filterOptions, 
-    ledgerSort, 
-    selectedTxIds, 
-    bulkCategory, 
-    filteredLedger, 
-    groupedLedger, 
-    currencySymbol, 
+  const {
+    categories,
+    tags,
+    accounts,
+    transactions,
+    filterOptions,
+    ledgerSort,
+    selectedTxIds,
+    bulkCategory,
+    filteredLedger,
+    groupedLedger,
+    currencySymbol,
     isLoading,
     setShowAdvancedFilters,
-    updateFilter, 
-    resetFilters, 
-    applyDatePreset, 
-    setLedgerSort, 
-    setBulkSelectMode, 
-    setSelectedTxIds, 
-    setBulkCategory, 
-    openEditTransaction, 
+    updateFilter,
+    resetFilters,
+    applyDatePreset,
+    setLedgerSort,
+    setBulkSelectMode,
+    setSelectedTxIds,
+    setBulkCategory,
+    openEditTransaction,
     handleBulkAssignCategory,
     refreshData,
     showAdvancedFilters,
     bulkSelectMode
   } = useAppDataContext();
+
+  // Compute per-account running balances using ALL transactions (not just filtered)
+  const runningBalances = useMemo(() => {
+    const accountTxs = {};
+    transactions.forEach(t => {
+      if (!t.account_id) return;
+      if (!accountTxs[t.account_id]) accountTxs[t.account_id] = [];
+      accountTxs[t.account_id].push(t);
+    });
+
+    const balanceMap = {};
+    Object.entries(accountTxs).forEach(([accountId, txs]) => {
+      const account = accounts.find(a => a.id === accountId);
+      let balance = parseFloat(account?.initial_balance) || 0;
+
+      // Sort oldest-first so we can accumulate forward
+      const sorted = [...txs].sort((a, b) => {
+        const d = (a.transaction_date || '').localeCompare(b.transaction_date || '');
+        return d !== 0 ? d : (a.created_at || '').localeCompare(b.created_at || '');
+      });
+
+      sorted.forEach(t => {
+        if (t.type === 'income') balance += parseFloat(t.amount) || 0;
+        else if (t.type === 'expense') balance -= parseFloat(t.amount) || 0;
+        balanceMap[t.id] = balance;
+      });
+    });
+
+    return balanceMap;
+  }, [transactions, accounts]);
 
   const setShowFilters = setShowAdvancedFilters;
 
@@ -210,6 +241,7 @@ const Ledger = () => {
                       isSelected={effectiveSelectedIds.has(t.id)}
                       bulkSelectMode={bulkSelectMode}
                       onToggleSelect={toggleTx}
+                      runningBalance={runningBalances[t.id]}
                     />
                   ))}
                 </div>
