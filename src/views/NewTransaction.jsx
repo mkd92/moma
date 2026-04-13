@@ -131,11 +131,13 @@ const NewTransaction = () => {
 
               {/* Party / Note */}
               <div>
-                <label className="block text-sm font-semibold text-on-surface-variant mb-2 px-1">Where did this flow to?</label>
+                <label className="block text-sm font-semibold text-on-surface-variant mb-2 px-1">
+                  {txType === 'income' ? 'Where did this flow from?' : txType === 'transfer' ? 'Transfer note' : 'Where did this flow to?'}
+                </label>
                 <input
                   ref={noteInputRef}
                   type="text"
-                  placeholder="e.g. Organic Market"
+                  placeholder={txType === 'income' ? 'e.g. Client Payment' : txType === 'transfer' ? 'e.g. Monthly rebalance' : 'e.g. Organic Market'}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   className="w-full bg-surface-low border-none rounded-2xl py-4 px-5 text-on-surface text-base placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary/20 focus:bg-surface-lowest outline-none transition-all"
