@@ -78,6 +78,10 @@ const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNew
           <NavBtn key={key} icon={icon} label={label} isActive={view === key} onClick={onClick} compact />
         ))}
 
+        <Divider />
+
+        <NavBtn icon="settings" label="Settings" isActive={view === 'settings'} onClick={onSettings} compact />
+
         <div className="w-2" />
       </div>
     </nav>
