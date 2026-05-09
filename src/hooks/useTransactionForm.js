@@ -115,7 +115,6 @@ export function useTransactionForm(session, accounts, categories, transactions, 
       showToast(txToEdit ? 'Entry updated' : 'Entry recorded', 'success');
       localStorage.setItem('moma_last_tx_date', txDate);
       await fetchTransactions();
-      if (!txToEdit) resetFilters?.();
       resetForm();
       setView('ledger');
     } catch (err) {
