@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 export function useAnalyticsData({
   transactions, categories, accounts,
   dashPeriod, dashDateRange,
-  analyticsFilters,
   catBreakdownType, drillCategory,
   filterOptions, ledgerSort,
   currencySymbol
@@ -137,7 +136,7 @@ export function useAnalyticsData({
   const analyticsTransactions = useMemo(() => {
     return transactions.filter(t => {
       if (!t.transfer_id && t.account_id && !activeAccountIds.has(t.account_id)) return false;
-      const { type, dateRange, categoryIds, tagIds, accountIds, searchTerm } = analyticsFilters;
+      const { type, dateRange, categoryIds, tagIds, accountIds, searchTerm } = filterOptions;
       if (type !== 'all') {
         const isTx = !!t.transfer_id;
         if (type === 'transfer' && !isTx) return false;
@@ -154,10 +153,10 @@ export function useAnalyticsData({
       if (searchTerm) { const s = searchTerm.toLowerCase(); if (!(t.note || '').toLowerCase().includes(s) && !(t.parties?.name || '').toLowerCase().includes(s) && !(t.categories?.name || '').toLowerCase().includes(s)) return false; }
       return true;
     });
-  }, [transactions, analyticsFilters, categories, activeAccountIds]);
+  }, [transactions, filterOptions, categories, activeAccountIds]);
 
   const prevAnalyticsTransactions = useMemo(() => {
-    const { start, end } = analyticsFilters.dateRange;
+    const { start, end } = filterOptions.dateRange;
     if (!start || !end) return [];
     const duration = new Date(end) - new Date(start);
     const prevEnd = new Date(new Date(start).getTime() - 86400000);
@@ -169,7 +168,7 @@ export function useAnalyticsData({
       t.transaction_date >= ps && t.transaction_date <= pe &&
       (!t.account_id || t.transfer_id || activeAccountIds.has(t.account_id))
     );
-  }, [transactions, analyticsFilters.dateRange, activeAccountIds]);
+  }, [transactions, filterOptions.dateRange, activeAccountIds]);
 
   const prevPeriodKPIs = useMemo(() => {
     let income = 0, expense = 0;
@@ -181,7 +180,7 @@ export function useAnalyticsData({
   }, [prevAnalyticsTransactions]);
 
   const chartTimeSeries = useMemo(() => {
-    const { start, end } = analyticsFilters.dateRange;
+    const { start, end } = filterOptions.dateRange;
     if (!start) return [];
     const pad = n => String(n).padStart(2, '0');
     const startD = new Date(start + 'T00:00:00');
@@ -217,7 +216,7 @@ export function useAnalyticsData({
         return { ...d, net: d.income - d.expense, expenseMA: sum / window.length };
       });
     }
-  }, [analyticsTransactions, analyticsFilters.dateRange, drillCategory, categories]);
+  }, [analyticsTransactions, filterOptions.dateRange, drillCategory, categories]);
 
   const chartCategorical = useMemo(() => {
     const parentMap = {};
@@ -258,7 +257,7 @@ export function useAnalyticsData({
   }, [analyticsTransactions, drillCategory, categories]);
 
   const analyticsKPIs = useMemo(() => {
-    const { start, end } = analyticsFilters.dateRange;
+    const { start, end } = filterOptions.dateRange;
     const ms = start && end ? new Date(end) - new Date(start) + 86400000 : 30 * 86400000;
     const days = Math.max(1, Math.round(ms / 86400000));
     let totalExpense = 0, totalIncome = 0;
@@ -267,7 +266,7 @@ export function useAnalyticsData({
       if (t.type === 'income') totalIncome += parseFloat(t.amount);
     });
     return { totalExpense, totalIncome, dailyBurn: totalExpense / days, net: totalIncome - totalExpense, txCount: analyticsTransactions.filter(t => !t.transfer_id).length };
-  }, [analyticsTransactions, analyticsFilters.dateRange]);
+  }, [analyticsTransactions, filterOptions.dateRange]);
 
   const topPayees = useMemo(() => {
     const totals = {};
@@ -337,7 +336,7 @@ export function useAnalyticsData({
   // Uses the same formula as the dashboard: liability account balances are SUBTRACTED
   // from net worth (assets + investments − liabilities).
   const chartNetWorth = useMemo(() => {
-    const { start, end } = analyticsFilters.dateRange;
+    const { start, end } = filterOptions.dateRange;
     if (!start || !accounts.length) return [];
 
     const pad = n => String(n).padStart(2, '0');
@@ -404,7 +403,7 @@ export function useAnalyticsData({
       });
       return result;
     }
-  }, [accounts, transactions, analyticsFilters.dateRange]);
+  }, [accounts, transactions, filterOptions.dateRange]);
 
   return {
     accountBalances, dashDateRange, dashTransactions, activeAccountIds, dashActiveTransactions,

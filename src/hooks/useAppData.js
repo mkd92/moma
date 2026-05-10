@@ -24,7 +24,6 @@ export function useAppData(session, navigate, pathname, authIsLoading) {
     accounts: baseData.accounts,
     dashPeriod: filters.dashPeriod,
     dashDateRange: filters.dashDateRange,
-    analyticsFilters: filters.analyticsFilters,
     catBreakdownType: filters.catBreakdownType,
     drillCategory: filters.drillCategory,
     filterOptions: filters.filterOptions,
@@ -42,7 +41,7 @@ export function useAppData(session, navigate, pathname, authIsLoading) {
   const { fetchAllBaseData, setCategories, setParties, setTags, setAccounts } = baseData;
   const { fetchTransactions, setTransactions } = transactionsData;
   const { fetchBudgets, setBudgets } = budgetsData;
-  const { resetFilters, resetAnalyticsFilters } = filters;
+  const { resetFilters } = filters;
 
   const clearAppData = useCallback(() => {
     setCategories([]);
@@ -52,14 +51,13 @@ export function useAppData(session, navigate, pathname, authIsLoading) {
     setTransactions([]);
     setBudgets([]);
     resetFilters();
-    resetAnalyticsFilters();
     setCurrencyCode('USD');
     setCurrencySymbol('$');
     setDefaultAccountId(null);
     setBulkSelectMode(false);
     setSelectedTxIds(new Set());
     setBulkCategory(null);
-  }, [setCategories, setParties, setTags, setAccounts, setTransactions, setBudgets, resetFilters, resetAnalyticsFilters, setCurrencyCode, setCurrencySymbol, setDefaultAccountId]);
+  }, [setCategories, setParties, setTags, setAccounts, setTransactions, setBudgets, resetFilters, setCurrencyCode, setCurrencySymbol, setDefaultAccountId]);
 
   const fetchInitialData = useCallback(async (activeSession) => {
     const uid = activeSession?.user?.id;
@@ -145,8 +143,6 @@ export function useAppData(session, navigate, pathname, authIsLoading) {
     
     dashPeriod: filters.dashPeriod,
     setDashPeriod: filters.setDashPeriod,
-    analyticsFilters: filters.analyticsFilters,
-    setAnalyticsFilters: filters.setAnalyticsFilters,
     filterOptions: filters.filterOptions,
     setFilterOptions: filters.setFilterOptions,
     ledgerSort: filters.ledgerSort,
@@ -200,9 +196,6 @@ export function useAppData(session, navigate, pathname, authIsLoading) {
     updateFilter: filters.updateFilter,
     resetFilters: filters.resetFilters,
     applyDatePreset: filters.applyDatePreset,
-    updateAnalyticsFilter: filters.updateAnalyticsFilter,
-    resetAnalyticsFilters: filters.resetAnalyticsFilters,
-    applyAnalyticsPreset: filters.applyAnalyticsPreset,
     navToLedgerByCategory
   }), [
     session, isLoading, bulkSelectMode, selectedTxIds, bulkCategory, fetchInitialData, refreshData, navToLedgerByCategory, clearAppData,

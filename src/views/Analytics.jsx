@@ -127,10 +127,10 @@ const Analytics = () => {
     isLoading,
     showAnalyticsFilters,
     setShowAnalyticsFilters,
-    analyticsFilters,
-    applyAnalyticsPreset,
-    updateAnalyticsFilter,
-    resetAnalyticsFilters,
+    filterOptions,
+    applyDatePreset,
+    updateFilter,
+    resetFilters,
     catBreakdownType,
     setCatBreakdownType,
     navToLedgerByCategory,
@@ -180,14 +180,14 @@ const Analytics = () => {
 
           {showAnalyticsFilters && (
             <div className="bg-surface-low p-8 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-10 fade-in">
-              <FilterPanel 
+              <FilterPanel
                 categories={useAppDataContext().categories}
                 tags={useAppDataContext().tags}
                 accounts={useAppDataContext().accounts}
-                filterOptions={analyticsFilters}
-                onUpdateFilter={updateAnalyticsFilter}
-                onResetFilters={resetAnalyticsFilters}
-                onApplyPreset={applyAnalyticsPreset}
+                filterOptions={filterOptions}
+                onUpdateFilter={updateFilter}
+                onResetFilters={resetFilters}
+                onApplyPreset={applyDatePreset}
               />
             </div>
           )}
