@@ -180,9 +180,15 @@ export function useAnalyticsData({
   }, [prevAnalyticsTransactions]);
 
   const chartTimeSeries = useMemo(() => {
-    const { start, end } = filterOptions.dateRange;
-    if (!start) return [];
+    let { start, end } = filterOptions.dateRange;
     const pad = n => String(n).padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    if (!start) {
+      const dates = analyticsTransactions.map(t => t.transaction_date).filter(Boolean).sort();
+      if (!dates.length) return [];
+      start = dates[0];
+      end = end || fmt(new Date());
+    }
     const startD = new Date(start + 'T00:00:00');
     const endD = end ? new Date(end + 'T00:00:00') : new Date();
     const dayCount = Math.ceil((endD - startD) / 86400000) + 1;
@@ -336,11 +342,17 @@ export function useAnalyticsData({
   // Uses the same formula as the dashboard: liability account balances are SUBTRACTED
   // from net worth (assets + investments − liabilities).
   const chartNetWorth = useMemo(() => {
-    const { start, end } = filterOptions.dateRange;
-    if (!start || !accounts.length) return [];
+    let { start, end } = filterOptions.dateRange;
+    if (!accounts.length) return [];
 
     const pad = n => String(n).padStart(2, '0');
     const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    if (!start) {
+      const dates = transactions.map(t => t.transaction_date).filter(Boolean).sort();
+      if (!dates.length) return [];
+      start = dates[0];
+      end = end || fmt(new Date());
+    }
     const startD = new Date(start + 'T00:00:00');
     const endD = end ? new Date(end + 'T00:00:00') : new Date();
     const dayCount = Math.ceil((endD - startD) / 86400000) + 1;
