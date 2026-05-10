@@ -338,11 +338,12 @@ export function useAnalyticsData({
     return Object.entries(groups).sort(([a], [b]) => dir * a.localeCompare(b));
   }, [filteredLedger, ledgerSort]);
 
-  // Net worth over the selected date range, per day (or per month for long ranges).
-  // Uses the same formula as the dashboard: liability account balances are SUBTRACTED
-  // from net worth (assets + investments − liabilities).
+  // Balance over the selected date range, per day (or per month for long ranges).
+  // Tracks per-account running balances so the tooltip can show a breakdown.
+  // Respects accountIds filter; liability balances subtract from net worth.
   const chartNetWorth = useMemo(() => {
     let { start, end } = filterOptions.dateRange;
+    const { accountIds } = filterOptions;
     if (!accounts.length) return [];
 
     const pad = n => String(n).padStart(2, '0');
@@ -358,47 +359,60 @@ export function useAnalyticsData({
     const dayCount = Math.ceil((endD - startD) / 86400000) + 1;
     const endStr = end || fmt(new Date());
 
-    // Non-excluded accounts only; liability accounts contribute negatively to net worth
+    // Respect accountIds filter; exclude liability accounts that are excluded from total
     const acctMap = {};
-    accounts.forEach(a => { if (!a.exclude_from_total) acctMap[a.id] = a; });
+    accounts.forEach(a => {
+      if (a.exclude_from_total) return;
+      if (accountIds.length > 0 && !accountIds.includes(a.id)) return;
+      acctMap[a.id] = a;
+    });
     const nwSign = (a) => a.type === 'liability' ? -1 : 1;
 
-    // Net worth at the day BEFORE start:
-    //   seed each account's running balance from initial_balance, then apply all
-    //   prior transactions (including transfers, which cancel across accounts).
+    // Seed each account's running balance from initial_balance,
+    // then apply all transactions up to the day before start.
     const baseDateStr = fmt(new Date(startD.getTime() - 86400000));
-    const runningBal = {};
-    Object.values(acctMap).forEach(a => { runningBal[a.id] = parseFloat(a.initial_balance) || 0; });
+    const perAcctBal = {};
+    Object.values(acctMap).forEach(a => { perAcctBal[a.id] = parseFloat(a.initial_balance) || 0; });
     transactions.forEach(t => {
       if (!t.account_id || !acctMap[t.account_id]) return;
       if (t.transaction_date <= baseDateStr) {
-        runningBal[t.account_id] += (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * (parseFloat(t.amount) || 0);
+        perAcctBal[t.account_id] += (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * (parseFloat(t.amount) || 0);
       }
     });
-    let baseNW = Object.entries(runningBal).reduce((s, [id, bal]) => s + nwSign(acctMap[id]) * bal, 0);
 
     const useMonthly = dayCount > 180;
 
-    // Build net-worth delta map (daily or monthly).
-    // Apply nwSign so liability transactions flip sign, matching the dashboard formula.
-    // Include transfers: they cancel across accounts when both sides are non-excluded.
-    const deltas = {};
+    // Build per-account delta map keyed by day or month
+    const acctDeltas = {};
+    Object.keys(acctMap).forEach(id => { acctDeltas[id] = {}; });
     transactions.forEach(t => {
       if (!t.account_id || !acctMap[t.account_id]) return;
       if (t.transaction_date < start || t.transaction_date > endStr) return;
       const key = useMonthly ? t.transaction_date.slice(0, 7) : t.transaction_date;
-      const txDelta = (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * (parseFloat(t.amount) || 0);
-      deltas[key] = (deltas[key] || 0) + nwSign(acctMap[t.account_id]) * txDelta;
+      const delta = (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * (parseFloat(t.amount) || 0);
+      acctDeltas[t.account_id][key] = (acctDeltas[t.account_id][key] || 0) + delta;
     });
+
+    // Build result — mutate perAcctBal sequentially as we walk through periods
+    const makePoint = (key, label) => {
+      Object.keys(acctMap).forEach(id => {
+        perAcctBal[id] += acctDeltas[id][key] || 0;
+      });
+      const accountBreakdown = {};
+      let nw = 0;
+      Object.entries(acctMap).forEach(([id, a]) => {
+        const bal = Math.round(perAcctBal[id] * 100) / 100;
+        accountBreakdown[a.name] = bal;
+        nw += nwSign(a) * bal;
+      });
+      return { date: key, label, netWorth: Math.round(nw * 100) / 100, accounts: accountBreakdown };
+    };
 
     if (!useMonthly) {
       const result = [];
-      let nw = baseNW;
       for (let i = 0; i < dayCount; i++) {
         const d = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate() + i);
-        const key = fmt(d);
-        nw += deltas[key] || 0;
-        result.push({ date: key, label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), netWorth: Math.round(nw * 100) / 100 });
+        result.push(makePoint(fmt(d), d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })));
       }
       return result;
     } else {
@@ -407,15 +421,11 @@ export function useAnalyticsData({
         const d = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate() + i);
         monthKeys.add(`${d.getFullYear()}-${pad(d.getMonth() + 1)}`);
       }
-      const result = [];
-      let nw = baseNW;
-      [...monthKeys].sort().forEach(key => {
-        nw += deltas[key] || 0;
-        result.push({ date: key, label: new Date(key + '-01T12:00:00').toLocaleDateString(undefined, { month: 'short', year: '2-digit' }), netWorth: Math.round(nw * 100) / 100 });
-      });
-      return result;
+      return [...monthKeys].sort().map(key =>
+        makePoint(key, new Date(key + '-01T12:00:00').toLocaleDateString(undefined, { month: 'short', year: '2-digit' }))
+      );
     }
-  }, [accounts, transactions, filterOptions.dateRange]);
+  }, [accounts, transactions, filterOptions.dateRange, filterOptions.accountIds]);
 
   return {
     accountBalances, dashDateRange, dashTransactions, activeAccountIds, dashActiveTransactions,
