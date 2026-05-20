@@ -1,10 +1,15 @@
 const V = 1;
 const key = (uid, name) => `moma_v${V}_${uid}_${name}`;
 
+const TTL_MS = 24 * 60 * 60 * 1000;
+
 export const cacheGet = (uid, name) => {
   try {
     const raw = localStorage.getItem(key(uid, name));
-    return raw ? JSON.parse(raw).data : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.ts && Date.now() - parsed.ts > TTL_MS) return null;
+    return parsed.data;
   } catch {
     return null;
   }

@@ -1,23 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PageShell } from '../components/layout';
 import CustomDropdown from '../components/CustomDropdown';
 import { getCategoryIcon } from '../utils/formatters';
 
 import { useAppDataContext } from '../hooks';
 
+const EMPTY_FORM = { id: null, category_id: '', amount_limit: '', period: 'monthly' };
+
 const Budgets = () => {
-  const { 
-    showBudgetModal, 
-    budgetForm, 
-    categories, 
-    budgetProgress, 
+  const {
+    categories,
+    budgetProgress,
     currencySymbol,
     isLoading,
-    setBudgetForm, 
-    setShowBudgetModal, 
     handleSaveBudget,
     refreshData
   } = useAppDataContext();
+
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [budgetForm, setBudgetForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+
+  const openModal = (form = EMPTY_FORM) => { setBudgetForm(form); setShowBudgetModal(true); };
+  const closeModal = () => { setShowBudgetModal(false); setBudgetForm(EMPTY_FORM); };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (saving) return;
+    setSaving(true);
+    const payload = { category_id: budgetForm.category_id || null, limit_amount: parseFloat(budgetForm.amount_limit), period: budgetForm.period };
+    const err = await handleSaveBudget(payload, budgetForm.id);
+    setSaving(false);
+    if (!err) closeModal();
+  };
 
   return (
     <PageShell view="budgets" onRefresh={refreshData} isLoading={isLoading}>
@@ -26,17 +41,17 @@ const Budgets = () => {
           <h2 className="text-3xl font-extrabold tracking-tight text-primary">Budgets</h2>
           <button
             className="bg-secondary-container text-on-secondary-container px-6 py-2.5 rounded-full font-semibold active:scale-95 transition-transform text-sm"
-            onClick={() => { setBudgetForm({ id: null, category_id: '', amount_limit: '', period: 'monthly' }); setShowBudgetModal(true); }}
+            onClick={() => openModal()}
           >
             Add New
           </button>
         </div>
 
         {showBudgetModal && (
-          <div className="modal-overlay" onClick={() => setShowBudgetModal(false)}>
+          <div className="modal-overlay" onClick={closeModal}>
             <div className="bg-surface-high p-8 rounded-[2rem] border border-outline-variant/10 w-full max-w-md slide-up" onClick={e => e.stopPropagation()}>
               <h3 className="font-headline text-2xl font-bold text-on-surface mb-6">Manage Budget</h3>
-              <form onSubmit={handleSaveBudget} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <CustomDropdown 
                     label="Category" 
@@ -65,8 +80,8 @@ const Budgets = () => {
                   />
                 </div>
                 <div className="flex gap-4 pt-4">
-                  <button type="submit" className="flex-1 bg-primary text-on-primary py-4 rounded-xl font-bold active:scale-95 transition-transform">Save Budget</button>
-                  <button type="button" className="px-6 text-zinc-500 font-bold" onClick={() => setShowBudgetModal(false)}>Cancel</button>
+                  <button type="submit" disabled={saving} className="flex-1 bg-primary text-on-primary py-4 rounded-xl font-bold active:scale-95 transition-transform disabled:opacity-60">{saving ? 'Saving…' : 'Save Budget'}</button>
+                  <button type="button" className="px-6 text-zinc-500 font-bold" onClick={closeModal}>Cancel</button>
                 </div>
               </form>
             </div>
@@ -93,7 +108,7 @@ const Budgets = () => {
                   </div>
                   <button 
                     className="p-2 text-zinc-600 hover:text-primary transition-colors"
-                    onClick={() => { setBudgetForm({ id: b.id, category_id: b.category_id || '', amount_limit: b.limit_amount.toString(), period: b.period }); setShowBudgetModal(true); }}
+                    onClick={() => openModal({ id: b.id, category_id: b.category_id || '', amount_limit: b.limit_amount.toString(), period: b.period })}
                   >
                     <span className="material-symbols-outlined text-sm">edit</span>
                   </button>
@@ -145,7 +160,7 @@ const Budgets = () => {
               <p className="text-zinc-500 font-bold">No budgets set yet.</p>
               <button 
                 className="mt-4 text-primary text-sm font-bold uppercase tracking-widest"
-                onClick={() => setShowBudgetModal(true)}
+                onClick={() => openModal()}
               >
                 Create your first budget
               </button>

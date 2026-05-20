@@ -166,7 +166,7 @@ export function useAnalyticsData({
     const ps = fmt(prevStart), pe = fmt(prevEnd);
     return transactions.filter(t =>
       t.transaction_date >= ps && t.transaction_date <= pe &&
-      (!t.account_id || t.transfer_id || activeAccountIds.has(t.account_id))
+      (t.transfer_id || (t.account_id && activeAccountIds.has(t.account_id)))
     );
   }, [transactions, filterOptions.dateRange, activeAccountIds]);
 
@@ -402,7 +402,7 @@ export function useAnalyticsData({
       let nw = 0;
       Object.entries(acctMap).forEach(([id, a]) => {
         const bal = Math.round(perAcctBal[id] * 100) / 100;
-        accountBreakdown[a.name] = bal;
+        accountBreakdown[a.name] = nwSign(a) * bal;
         nw += nwSign(a) * bal;
       });
       return { date: key, label, netWorth: Math.round(nw * 100) / 100, accounts: accountBreakdown };
