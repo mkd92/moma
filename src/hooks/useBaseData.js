@@ -157,6 +157,7 @@ export function useBaseData() {
     } else {
       showToast('Failed to remove account', 'error');
     }
+    return error;
   }, [fetchAccounts, showToast]);
 
   const handleUpdateAccount = useCallback(async (session, id, payload) => {

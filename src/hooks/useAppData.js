@@ -186,7 +186,7 @@ export function useAppData(session, navigate, pathname, authIsLoading) {
     handleCreateTag: (n) => baseData.handleCreateTag(session, n),
     handleDeleteTag: (id) => baseData.handleDeleteTag(session, id),
     handleCreateAccount: (p) => baseData.handleCreateAccount(session, p),
-    handleDeleteAccount: (id) => baseData.handleDeleteAccount(session, id),
+    handleDeleteAccount: async (id) => { const err = await baseData.handleDeleteAccount(session, id); if (!err) transactionsData.fetchTransactions(userIdRef.current); return err; },
     handleUpdateAccount: (id, p) => baseData.handleUpdateAccount(session, id, p),
     handleSetDefaultAccount: (id) => profile.handleSetDefaultAccount(session, id),
     handleBulkAssignCategory: (cid, ids) => transactionsData.handleBulkAssignCategory(session, cid, ids, refreshData),

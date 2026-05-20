@@ -133,8 +133,8 @@ export default function AccountManagement() {
             <div className="flex items-center justify-between px-1">
               <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase opacity-60">Balance Logic</p>
               <div className="flex bg-on-surface/[0.03] p-1 rounded-xl gap-1">
-                <button type="button" className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${editAcctMode === 'opening' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'}`} onClick={() => setEditAcctMode('opening')}>Opening</button>
-                <button type="button" className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${editAcctMode === 'current' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'}`} onClick={() => setEditAcctMode('current')}>Current</button>
+                <button type="button" className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${editAcctMode === 'opening' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'}`} onClick={() => { setEditAcctMode('opening'); setEditAcctValue(String(parseFloat(editingAccount.initial_balance) || 0)); }}>Opening</button>
+                <button type="button" className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${editAcctMode === 'current' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'}`} onClick={() => { setEditAcctMode('current'); setEditAcctValue(String(((accountBalances[editingAccount.id] || 0)).toFixed(2))); }}>Current</button>
               </div>
             </div>
             <input type="number" step="0.01" className="w-full bg-on-surface/[0.03] border border-outline-variant rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-on-surface/10 transition-all font-bold outline-none" value={editAcctValue} onChange={e => setEditAcctValue(e.target.value)} required />
