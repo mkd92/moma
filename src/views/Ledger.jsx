@@ -62,25 +62,13 @@ const Ledger = () => {
   
   const allCatOptions = categories.filter(c => !c.is_system || c.type).map(c => ({ value: c.id, label: c.name, icon: c.icon }));
 
-  // Use global accountBalances for the header to ensure consistency with Dashboard
-  const totalBalance = useMemo(() => {
-    // If an account filter is active, show the sum of those specific accounts
-    if (filterOptions.accountIds.length > 0) {
-      return filterOptions.accountIds.reduce((s, id) => {
-        const a = accounts.find(acc => acc.id === id);
-        if (!a) return s;
-        const bal = accountBalances[id] || 0;
-        // Dashboard displays liability net worth as negative, we match that here
-        return a.type === 'liability' ? s - bal : s + bal;
-      }, 0);
-    }
-    
-    // Default: Show Net Worth (sum of all non-excluded accounts)
-    return accounts.filter(a => !a.exclude_from_total).reduce((s, a) => {
+  // Always show Net Worth — matches the cumulative net-worth running balance on each transaction
+  const totalBalance = useMemo(() => (
+    accounts.filter(a => !a.exclude_from_total).reduce((s, a) => {
       const bal = accountBalances[a.id] || 0;
       return a.type === 'liability' ? s - bal : s + bal;
-    }, 0);
-  }, [accountBalances, accounts, filterOptions.accountIds]);
+    }, 0)
+  ), [accountBalances, accounts]);
 
   return (
     <PageShell view="ledger" onRefresh={refreshData} isLoading={isLoading}>

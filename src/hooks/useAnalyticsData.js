@@ -61,41 +61,30 @@ export function useAnalyticsData({
       if (t.type === 'expense') exp += parseFloat(t.amount) || 0;
     });
 
-    const accountTxs = {};
-    transactions.forEach(t => {
-      if (!t.account_id) return;
-      if (!accountTxs[t.account_id]) accountTxs[t.account_id] = [];
-      accountTxs[t.account_id].push(t);
+    // Running balance = cumulative net worth over time so it always matches the header.
+    // Only transactions on non-excluded accounts affect net worth.
+    const runBalMap = {};
+    const includedAccountIds = new Set(accounts.filter(a => !a.exclude_from_total).map(a => a.id));
+
+    let runningNW = accounts.reduce((s, a) => {
+      if (a.exclude_from_total) return s;
+      const initBal = parseFloat(a.initial_balance) || 0;
+      return a.type === 'liability' ? s - initBal : s + initBal;
+    }, 0);
+
+    const allSorted = [...transactions].sort((a, b) => {
+      const d1 = a.transaction_date || '';
+      const d2 = b.transaction_date || '';
+      if (d1 !== d2) return d1.localeCompare(d2);
+      return (a.created_at || '').localeCompare(b.created_at || '');
     });
 
-    const runBalMap = {};
-    const typeMap = {};
-    accounts.forEach(a => { typeMap[a.id] = a.type || 'asset'; });
-
-    Object.entries(accountTxs).forEach(([aid, txs]) => {
-      const account = accounts.find(a => a.id === aid);
-      const isLiab = typeMap[aid] === 'liability';
-      let bal = parseFloat(account?.initial_balance) || 0;
-
-      const sorted = [...txs].sort((a, b) => {
-        const d1 = a.transaction_date || '';
-        const d2 = b.transaction_date || '';
-        if (d1 !== d2) return d1.localeCompare(d2);
-        return (a.created_at || '').localeCompare(b.created_at || '');
-      });
-
-      sorted.forEach(t => {
-        const amt = parseFloat(t.amount) || 0;
-        if (isLiab) {
-          if (t.type === 'income') bal -= amt;
-          else if (t.type === 'expense') bal += amt;
-        } else {
-          if (t.type === 'income') bal += amt;
-          else if (t.type === 'expense') bal -= amt;
-        }
-        // Store with net-worth sign: liabilities are negative (matching Ledger header convention)
-        runBalMap[t.id] = isLiab ? -bal : bal;
-      });
+    allSorted.forEach(t => {
+      if (!t.account_id || !includedAccountIds.has(t.account_id)) return;
+      const amt = parseFloat(t.amount) || 0;
+      if (t.type === 'income') runningNW += amt;
+      else if (t.type === 'expense') runningNW -= amt;
+      runBalMap[t.id] = Math.round(runningNW * 100) / 100;
     });
 
     // Net Worth = sum(Assets) - sum(Liabilities)
@@ -384,14 +373,32 @@ export function useAnalyticsData({
       const sorted = [...filteredLedger].sort((a, b) => dir * (amtOf(a) - amtOf(b)));
       return sorted.length ? [['__flat__', sorted]] : [];
     }
+
+    // Group by transaction_date
     const groups = {};
     filteredLedger.forEach(t => {
       const d = t.transaction_date || t.created_at?.split('T')[0] || 'Unknown';
       if (!groups[d]) groups[d] = [];
       groups[d].push(t);
     });
-    const dir = ledgerSort === 'date_asc' ? 1 : -1;
-    return Object.entries(groups).sort(([a], [b]) => dir * a.localeCompare(b));
+
+    // Within each date group: most recently CREATED transaction first
+    Object.values(groups).forEach(txs =>
+      txs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+    );
+
+    if (ledgerSort === 'date_asc') {
+      // Ascending: sort groups by date
+      return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+    }
+
+    // Default date_desc: sort groups so the group containing the most recently
+    // added transaction appears first — last added entry always at the top
+    return Object.entries(groups).sort(([, txsA], [, txsB]) => {
+      const latestA = txsA[0]?.created_at || '';
+      const latestB = txsB[0]?.created_at || '';
+      return latestB.localeCompare(latestA);
+    });
   }, [filteredLedger, ledgerSort]);
 
   // Balance over the selected date range, per day (or per month for long ranges).
