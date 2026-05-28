@@ -20,6 +20,7 @@ const Ledger = () => {
     filteredLedger,
     groupedLedger,
     currencySymbol,
+    accountBalances,
     isLoading,
     setShowAdvancedFilters,
     updateFilter,
