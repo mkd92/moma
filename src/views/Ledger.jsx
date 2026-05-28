@@ -72,11 +72,12 @@ const Ledger = () => {
         const amt = parseFloat(t.amount) || 0;
         if (isLiability) {
           // Debt increases with expense, decreases with income
-          // We show it as negative to match the Dashboard's net worth perspective
+          // We show the debt itself as a positive balance (e.g. 10,000 debt)
           if (t.type === 'income') balance -= amt;
           else if (t.type === 'expense') balance += amt;
-          balanceMap[t.id] = -balance;
+          balanceMap[t.id] = balance;
         } else {
+          // Wealth increases with income, decreases with expense
           if (t.type === 'income') balance += amt;
           else if (t.type === 'expense') balance -= amt;
           balanceMap[t.id] = balance;
