@@ -70,13 +70,16 @@ const Ledger = () => {
       sorted.forEach(t => {
         const amt = parseFloat(t.amount) || 0;
         if (isLiability) {
+          // Debt increases with expense, decreases with income
+          // We show it as negative to match the Dashboard's net worth perspective
           if (t.type === 'income') balance -= amt;
           else if (t.type === 'expense') balance += amt;
+          balanceMap[t.id] = -balance;
         } else {
           if (t.type === 'income') balance += amt;
           else if (t.type === 'expense') balance -= amt;
+          balanceMap[t.id] = balance;
         }
-        balanceMap[t.id] = balance;
       });
     });
 
