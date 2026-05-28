@@ -61,30 +61,43 @@ export function useAnalyticsData({
       if (t.type === 'expense') exp += parseFloat(t.amount) || 0;
     });
 
-    // Running balance = cumulative net worth over time so it always matches the header.
-    // Only transactions on non-excluded accounts affect net worth.
+    // Running balance = per-account balance at each point in time (includes initial_balance).
+    // Sorted chronologically within each account so each entry shows the real account balance
+    // after that transaction.
     const runBalMap = {};
-    const includedAccountIds = new Set(accounts.filter(a => !a.exclude_from_total).map(a => a.id));
-
-    let runningNW = accounts.reduce((s, a) => {
-      if (a.exclude_from_total) return s;
-      const initBal = parseFloat(a.initial_balance) || 0;
-      return a.type === 'liability' ? s - initBal : s + initBal;
-    }, 0);
-
-    const allSorted = [...transactions].sort((a, b) => {
-      const d1 = a.transaction_date || '';
-      const d2 = b.transaction_date || '';
-      if (d1 !== d2) return d1.localeCompare(d2);
-      return (a.created_at || '').localeCompare(b.created_at || '');
+    const accountTxs = {};
+    transactions.forEach(t => {
+      if (!t.account_id) return;
+      if (!accountTxs[t.account_id]) accountTxs[t.account_id] = [];
+      accountTxs[t.account_id].push(t);
     });
 
-    allSorted.forEach(t => {
-      if (!t.account_id || !includedAccountIds.has(t.account_id)) return;
-      const amt = parseFloat(t.amount) || 0;
-      if (t.type === 'income') runningNW += amt;
-      else if (t.type === 'expense') runningNW -= amt;
-      runBalMap[t.id] = Math.round(runningNW * 100) / 100;
+    const acctTypeMap = {};
+    accounts.forEach(a => { acctTypeMap[a.id] = a.type || 'asset'; });
+
+    Object.entries(accountTxs).forEach(([aid, txs]) => {
+      const account = accounts.find(a => a.id === aid);
+      const isLiab = acctTypeMap[aid] === 'liability';
+      let bal = parseFloat(account?.initial_balance) || 0;
+
+      [...txs]
+        .sort((a, b) => {
+          const d1 = a.transaction_date || '';
+          const d2 = b.transaction_date || '';
+          if (d1 !== d2) return d1.localeCompare(d2);
+          return (a.created_at || '').localeCompare(b.created_at || '');
+        })
+        .forEach(t => {
+          const amt = parseFloat(t.amount) || 0;
+          if (isLiab) {
+            if (t.type === 'income') bal -= amt;
+            else if (t.type === 'expense') bal += amt;
+          } else {
+            if (t.type === 'income') bal += amt;
+            else if (t.type === 'expense') bal -= amt;
+          }
+          runBalMap[t.id] = Math.round(bal * 100) / 100;
+        });
     });
 
     // Net Worth = sum(Assets) - sum(Liabilities)

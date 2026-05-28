@@ -62,13 +62,22 @@ const Ledger = () => {
   
   const allCatOptions = categories.filter(c => !c.is_system || c.type).map(c => ({ value: c.id, label: c.name, icon: c.icon }));
 
-  // Always show Net Worth — matches the cumulative net-worth running balance on each transaction
-  const totalBalance = useMemo(() => (
-    accounts.filter(a => !a.exclude_from_total).reduce((s, a) => {
+  // When an account filter is active show that account's balance (matches the per-account
+  // running balance column). Otherwise show Net Worth across all non-excluded accounts.
+  const totalBalance = useMemo(() => {
+    if (filterOptions.accountIds.length > 0) {
+      return filterOptions.accountIds.reduce((s, id) => {
+        const a = accounts.find(acc => acc.id === id);
+        if (!a) return s;
+        const bal = accountBalances[id] || 0;
+        return a.type === 'liability' ? s - bal : s + bal;
+      }, 0);
+    }
+    return accounts.filter(a => !a.exclude_from_total).reduce((s, a) => {
       const bal = accountBalances[a.id] || 0;
       return a.type === 'liability' ? s - bal : s + bal;
-    }, 0)
-  ), [accountBalances, accounts]);
+    }, 0);
+  }, [accountBalances, accounts, filterOptions.accountIds]);
 
   return (
     <PageShell view="ledger" onRefresh={refreshData} isLoading={isLoading}>
