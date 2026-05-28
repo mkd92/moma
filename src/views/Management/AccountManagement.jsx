@@ -11,7 +11,7 @@ const ACCT_META = {
   temp:       { label: 'Temporary',  icon: 'trending_up' },
 };
 
-const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, onEdit, onSetDefault, defaultAccountId }) => accts.length === 0 ? null : (
+const AcctGroup = ({ title, accts, accountBalances, currencySymbol, currencyCode, transactions, onDelete, onEdit, onSetDefault, defaultAccountId }) => accts.length === 0 ? null : (
     <div className="space-y-6">
       <h3 className="font-headline text-xs font-black tracking-[0.4em] text-on-surface uppercase opacity-60 px-4">{title}</h3>
       <div className="bg-surface-low rounded-[2rem] border border-outline-variant/10 overflow-hidden divide-y divide-outline-variant/5 shadow-xl">
@@ -38,6 +38,13 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
                 {!isDefault && (
                   <button className="text-[10px] font-bold text-zinc-500 hover:text-primary uppercase tracking-widest transition-colors mr-2" onClick={() => onSetDefault(acc.id)}>Set Default</button>
                 )}
+                <button
+                  className="p-2 text-zinc-500 hover:text-primary transition-colors"
+                  title="Export transactions as CSV"
+                  onClick={() => exportAccountCSV(acc, transactions, currencyCode)}
+                >
+                  <span className="material-symbols-outlined text-sm">download</span>
+                </button>
                 <button className="p-2 text-zinc-500 hover:text-primary transition-colors" onClick={() => onEdit(acc)}>
                   <span className="material-symbols-outlined text-sm">edit</span>
                 </button>
@@ -54,16 +61,66 @@ const AcctGroup = ({ title, accts, accountBalances, currencySymbol, onDelete, on
     </div>
   );
 
+const exportAccountCSV = (acc, transactions, currencyCode) => {
+  const isLiab = acc.type === 'liability';
+  const acctTxs = [...transactions.filter(t => t.account_id === acc.id)]
+    .sort((a, b) => {
+      const d1 = a.transaction_date || '';
+      const d2 = b.transaction_date || '';
+      if (d1 !== d2) return d1.localeCompare(d2);
+      return (a.created_at || '').localeCompare(b.created_at || '');
+    });
+
+  let bal = parseFloat(acc.initial_balance) || 0;
+
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const headers = ['Date', 'Description', 'Category', 'Party', 'Type', `Amount (${currencyCode})`, `Balance (${currencyCode})`];
+
+  const rows = acctTxs.map(t => {
+    const amt = parseFloat(t.amount) || 0;
+    if (isLiab) {
+      if (t.type === 'income') bal -= amt;
+      else if (t.type === 'expense') bal += amt;
+    } else {
+      if (t.type === 'income') bal += amt;
+      else if (t.type === 'expense') bal -= amt;
+    }
+    const signedAmt = t.transfer_id ? 0 : (t.type === 'income' ? amt : -amt);
+    return [
+      t.transaction_date || '',
+      esc(t.note || ''),
+      esc(t.categories?.name || ''),
+      esc(t.parties?.name || ''),
+      t.transfer_id ? 'transfer' : t.type,
+      signedAmt.toFixed(2),
+      bal.toFixed(2),
+    ].join(',');
+  });
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['﻿' + csv, ''], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${acc.name.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_')}_transactions.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 export default function AccountManagement() {
-  const { 
-    accounts, 
-    accountBalances, 
-    currencySymbol, 
+  const {
+    accounts,
+    transactions,
+    accountBalances,
+    currencySymbol,
+    currencyCode,
     defaultAccountId,
     isLoading,
-    handleDeleteAccount, 
-    handleCreateAccount, 
-    handleUpdateAccount, 
+    handleDeleteAccount,
+    handleCreateAccount,
+    handleUpdateAccount,
     handleSetDefaultAccount,
     setView,
     refreshData
@@ -171,9 +228,9 @@ export default function AccountManagement() {
         </div>
 
         <div className="space-y-12 fade-in">
-          <AcctGroup title="Cash & Bank" accts={accounts.filter(a => (a.type || 'asset') === 'asset')} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
-          <AcctGroup title="Liabilities" accts={accounts.filter(a => a.type === 'liability')} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
-          <AcctGroup title="Temporary" accts={accounts.filter(a => a.type === 'investment' || a.type === 'temp')} accountBalances={accountBalances} currencySymbol={currencySymbol} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
+          <AcctGroup title="Cash & Bank" accts={accounts.filter(a => (a.type || 'asset') === 'asset')} accountBalances={accountBalances} currencySymbol={currencySymbol} currencyCode={currencyCode} transactions={transactions} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
+          <AcctGroup title="Liabilities" accts={accounts.filter(a => a.type === 'liability')} accountBalances={accountBalances} currencySymbol={currencySymbol} currencyCode={currencyCode} transactions={transactions} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
+          <AcctGroup title="Temporary" accts={accounts.filter(a => a.type === 'investment' || a.type === 'temp')} accountBalances={accountBalances} currencySymbol={currencySymbol} currencyCode={currencyCode} transactions={transactions} onDelete={handleDeleteAccount} onEdit={openEditAccount} onSetDefault={handleSetDefaultAccount} defaultAccountId={defaultAccountId} />
           
           <section className="space-y-6 pt-10">
             <p className="text-[10px] font-black tracking-[0.4em] text-on-surface-variant uppercase px-4 opacity-60">Provision New Account</p>
