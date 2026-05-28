@@ -46,25 +46,31 @@ const Ledger = () => {
     });
 
     const balanceMap = {};
+    const typeMap = {};
+    accounts.forEach(a => { typeMap[a.id] = a.type || 'asset'; });
+
     Object.entries(accountTxs).forEach(([accountId, txs]) => {
       const account = accounts.find(a => a.id === accountId);
-      const isLiability = account?.type === 'liability';
+      const isLiability = typeMap[accountId] === 'liability';
       let balance = parseFloat(account?.initial_balance) || 0;
 
       // Sort oldest-first so we can accumulate forward
       const sorted = [...txs].sort((a, b) => {
-        const d = (a.transaction_date || '').localeCompare(b.transaction_date || '');
-        return d !== 0 ? d : (a.created_at || '').localeCompare(b.created_at || '');
+        const d1 = a.transaction_date || '';
+        const d2 = b.transaction_date || '';
+        if (d1 !== d2) return d1.localeCompare(d2);
+        
+        const c1 = a.created_at || '';
+        const c2 = b.created_at || '';
+        return c1.localeCompare(c2);
       });
 
       sorted.forEach(t => {
         const amt = parseFloat(t.amount) || 0;
         if (isLiability) {
-          // Debt increases with expense, decreases with income
           if (t.type === 'income') balance -= amt;
           else if (t.type === 'expense') balance += amt;
         } else {
-          // Wealth increases with income, decreases with expense
           if (t.type === 'income') balance += amt;
           else if (t.type === 'expense') balance -= amt;
         }
@@ -99,10 +105,39 @@ const Ledger = () => {
   
   const allCatOptions = categories.filter(c => !c.is_system || c.type).map(c => ({ value: c.id, label: c.name, icon: c.icon }));
 
-  const totalBalance = filteredLedger.reduce((acc, t) => {
-    const amt = t.amount || 0;
-    return t.type === 'expense' ? acc - amt : acc + amt;
-  }, 0);
+  // Total Balance for the CURRENT FILTERED VIEW
+  // If viewing a single account, this should ideally match the last running balance
+  // If viewing all, it shows the net movement + initial balances of involved accounts
+  const totalBalance = useMemo(() => {
+    const relevantAccountIds = new Set(filteredLedger.map(t => t.account_id).filter(Boolean));
+    const typeMap = {};
+    accounts.forEach(a => { typeMap[a.id] = a.type || 'asset'; });
+
+    // Sum of initial balances for all accounts that have at least one transaction in the current view
+    // (Or all accounts if no account filter is applied)
+    const initialSum = accounts.filter(a => {
+      if (filterOptions.accountIds.length > 0) return filterOptions.accountIds.includes(a.id);
+      return relevantAccountIds.has(a.id);
+    }).reduce((s, a) => {
+      const b = parseFloat(a.initial_balance) || 0;
+      return a.type === 'liability' ? s - b : s + b;
+    }, 0);
+
+    const movement = filteredLedger.reduce((acc, t) => {
+      const amt = parseFloat(t.amount) || 0;
+      const isLiab = typeMap[t.account_id] === 'liability';
+      
+      if (isLiab) {
+        // Debt increases with expense (- net worth), decreases with income (+ net worth)
+        return t.type === 'income' ? acc + amt : acc - amt;
+      } else {
+        // Assets increase with income (+), decrease with expense (-)
+        return t.type === 'income' ? acc + amt : acc - amt;
+      }
+    }, 0);
+
+    return initialSum + movement;
+  }, [filteredLedger, accounts, filterOptions.accountIds]);
 
   return (
     <PageShell view="ledger" onRefresh={refreshData} isLoading={isLoading}>
