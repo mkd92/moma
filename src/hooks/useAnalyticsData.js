@@ -9,20 +9,28 @@ export function useAnalyticsData({
 }) {
   const accountBalances = useMemo(() => {
     const balances = {};
-    accounts.forEach(a => { balances[a.id] = parseFloat(a.initial_balance) || 0; });
+    const typeMap = {};
+    
+    // Seed balances and build a quick lookup map for account types
+    accounts.forEach(a => { 
+      balances[a.id] = parseFloat(a.initial_balance) || 0; 
+      typeMap[a.id] = a.type || 'asset';
+    });
+
     transactions.forEach(t => {
-      if (t.account_id && balances[t.account_id] !== undefined) {
+      const aid = t.account_id;
+      if (aid && balances[aid] !== undefined) {
         const amt = parseFloat(t.amount) || 0;
-        const isLiability = accounts.find(a => a.id === t.account_id)?.type === 'liability';
+        const isLiability = typeMap[aid] === 'liability';
         
         if (isLiability) {
-          // For liabilities: spending (expense) increases debt, payments (income) decrease it
-          if (t.type === 'income') balances[t.account_id] -= amt;
-          if (t.type === 'expense') balances[t.account_id] += amt;
+          // Liability: Spending increases debt (+), Payments decrease it (-)
+          if (t.type === 'income') balances[aid] -= amt;
+          else if (t.type === 'expense') balances[aid] += amt;
         } else {
-          // For assets: income increases wealth, spending (expense) decreases it
-          if (t.type === 'income') balances[t.account_id] += amt;
-          if (t.type === 'expense') balances[t.account_id] -= amt;
+          // Asset: Income increases wealth (+), Spending decreases it (-)
+          if (t.type === 'income') balances[aid] += amt;
+          else if (t.type === 'expense') balances[aid] -= amt;
         }
       }
     });
@@ -54,6 +62,8 @@ export function useAnalyticsData({
     });
 
     // Net Worth = sum(Assets) - sum(Liabilities)
+    // Always use all accounts (even if excluded from total, for this specific calculation)
+    // Wait, actually respect the exclude_from_total for the "Global Balance" shown in Dashboard
     let netWorth = 0;
     accounts.forEach(a => {
       if (a.exclude_from_total) return;
