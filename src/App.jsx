@@ -24,6 +24,7 @@ const AccountManagement = lazy(() => import('./views/Management/AccountManagemen
 const CategoryManagement = lazy(() => import('./views/Management/CategoryManagement'));
 const PartyManagement = lazy(() => import('./views/Management/PartyManagement'));
 const TagManagement = lazy(() => import('./views/Management/TagManagement'));
+const BulkImport = lazy(() => import('./views/BulkImport'));
 
 // Loading fallback component
 const ViewLoader = () => (
@@ -94,6 +95,7 @@ export default function App() {
     onCategories: () => setView('category_management'),
     onPayees: () => setView('party_management'),
     onTags: () => setView('tag_management'),
+    onBulkImport: () => setView('bulk_import'),
     onLogout: handleLogout,
     session,
     onRefresh: appData.refreshData,
@@ -143,6 +145,7 @@ export default function App() {
       case 'category_management': return <CategoryManagement />;
       case 'party_management': return <PartyManagement />;
       case 'tag_management': return <TagManagement />;
+      case 'bulk_import': return <BulkImport />;
       default: return null;
     }
   };
@@ -191,6 +194,7 @@ export default function App() {
             onCategories={shellProps.onCategories}
             onPayees={shellProps.onPayees}
             onTags={shellProps.onTags}
+            onBulkImport={shellProps.onBulkImport}
           />
           <ScrollIndicator />
         </div>

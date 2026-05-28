@@ -13,6 +13,7 @@ export const VIEW_PATHS = {
   settings: '/settings', account_management: '/settings/accounts',
   category_management: '/settings/categories', party_management: '/settings/parties',
   tag_management: '/settings/tags',
+  bulk_import: '/ledger/bulk',
 };
 
 export const PATH_VIEWS = Object.fromEntries(Object.entries(VIEW_PATHS).map(([k, v]) => [v, k]));

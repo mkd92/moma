@@ -36,7 +36,7 @@ const Divider = () => (
 
 const managementViews = ['settings', 'account_management', 'category_management', 'party_management', 'tag_management'];
 
-const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNewTx, onAccounts, onCategories, onPayees, onTags }) => {
+const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNewTx, onAccounts, onCategories, onPayees, onTags, onBulkImport }) => {
   const isSettingsActive = managementViews.includes(view);
 
   const coreItems = [
@@ -51,6 +51,11 @@ const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNew
     { key: 'category_management', label: 'Categories', icon: 'category',        onClick: onCategories },
     { key: 'party_management',    label: 'Payees',     icon: 'storefront',      onClick: onPayees },
     { key: 'tag_management',      label: 'Tags',       icon: 'label',           onClick: onTags },
+  ];
+
+  // Desktop-only items (not shown in mobile pill)
+  const desktopOnlyItems = [
+    { key: 'bulk_import', label: 'Bulk', icon: 'table_rows', onClick: onBulkImport },
   ];
 
   return (
@@ -70,6 +75,12 @@ const BottomNav = ({ view, onDashboard, onLedger, onAnalytics, onSettings, onNew
       <div className="hidden md:flex items-center gap-0.5 px-2 py-2 rounded-full" style={PILL_STYLE}>
         {coreItems.map(({ key, label, icon, onClick }) => (
           <NavBtn key={key} icon={icon} label={label} isActive={view === key} onClick={onClick} />
+        ))}
+
+        <Divider />
+
+        {desktopOnlyItems.map(({ key, label, icon, onClick }) => (
+          <NavBtn key={key} icon={icon} label={label} isActive={view === key} onClick={onClick} compact />
         ))}
 
         <Divider />
