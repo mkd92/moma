@@ -54,8 +54,9 @@ const TransactionItem = ({ t, onClick, categories, accounts, currencySymbol, isS
             </p>
             {runningBalance != null && (
               <p className={`text-[10px] font-semibold mt-0.5 ${runningBalance < 0 ? 'text-error' : 'text-on-surface-variant'}`}>
+                {runningBalance < 0 ? '−' : ''}
                 <span className="opacity-50 mr-0.5">{currencySymbol}</span>
-                {runningBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {Math.abs(runningBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             )}
           </div>

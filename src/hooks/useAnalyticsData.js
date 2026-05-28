@@ -93,7 +93,8 @@ export function useAnalyticsData({
           if (t.type === 'income') bal += amt;
           else if (t.type === 'expense') bal -= amt;
         }
-        runBalMap[t.id] = bal;
+        // Store with net-worth sign: liabilities are negative (matching Ledger header convention)
+        runBalMap[t.id] = isLiab ? -bal : bal;
       });
     });
 
