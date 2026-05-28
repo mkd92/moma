@@ -12,8 +12,18 @@ export function useAnalyticsData({
     accounts.forEach(a => { balances[a.id] = parseFloat(a.initial_balance) || 0; });
     transactions.forEach(t => {
       if (t.account_id && balances[t.account_id] !== undefined) {
-        if (t.type === 'income') balances[t.account_id] += parseFloat(t.amount);
-        if (t.type === 'expense') balances[t.account_id] -= parseFloat(t.amount);
+        const amt = parseFloat(t.amount) || 0;
+        const isLiability = accounts.find(a => a.id === t.account_id)?.type === 'liability';
+        
+        if (isLiability) {
+          // For liabilities: spending (expense) increases debt, payments (income) decrease it
+          if (t.type === 'income') balances[t.account_id] -= amt;
+          if (t.type === 'expense') balances[t.account_id] += amt;
+        } else {
+          // For assets: income increases wealth, spending (expense) decreases it
+          if (t.type === 'income') balances[t.account_id] += amt;
+          if (t.type === 'expense') balances[t.account_id] -= amt;
+        }
       }
     });
     return balances;
@@ -29,9 +39,7 @@ export function useAnalyticsData({
   }, [transactions, dashDateRange]);
 
   const activeAccountIds = useMemo(() =>
-    new Set(accounts.filter(a =>
-      !a.exclude_from_total && (a.type || 'asset') === 'asset'
-    ).map(a => a.id)),
+    new Set(accounts.filter(a => !a.exclude_from_total).map(a => a.id)),
     [accounts]);
 
   const dashActiveTransactions = useMemo(() => (
@@ -41,18 +49,21 @@ export function useAnalyticsData({
   const { balance, totalIncome, totalExpense } = useMemo(() => {
     let inc = 0, exp = 0;
     dashActiveTransactions.forEach(t => {
-      if (t.type === 'income') inc += parseFloat(t.amount);
-      if (t.type === 'expense') exp += parseFloat(t.amount);
+      if (t.type === 'income') inc += parseFloat(t.amount) || 0;
+      if (t.type === 'expense') exp += parseFloat(t.amount) || 0;
     });
-    const accInitial = accounts.filter(a => !a.exclude_from_total && (a.type || 'asset') === 'asset').reduce((s, a) => s + parseFloat(a.initial_balance || 0), 0);
-    let allInc = 0, allExp = 0;
-    transactions.forEach(t => {
-      if (!t.account_id || !activeAccountIds.has(t.account_id)) return;
-      if (t.type === 'income') allInc += parseFloat(t.amount);
-      if (t.type === 'expense') allExp += parseFloat(t.amount);
+
+    // Net Worth = sum(Assets) - sum(Liabilities)
+    let netWorth = 0;
+    accounts.forEach(a => {
+      if (a.exclude_from_total) return;
+      const bal = accountBalances[a.id] || 0;
+      if (a.type === 'liability') netWorth -= bal;
+      else netWorth += bal;
     });
-    return { balance: accInitial + allInc - allExp, totalIncome: inc, totalExpense: exp };
-  }, [dashActiveTransactions, transactions, accounts, activeAccountIds]);
+
+    return { balance: netWorth, totalIncome: inc, totalExpense: exp };
+  }, [dashActiveTransactions, accounts, accountBalances]);
 
   const topCategories = useMemo(() => {
     const totals = {};
@@ -376,7 +387,15 @@ export function useAnalyticsData({
     transactions.forEach(t => {
       if (!t.account_id || !acctMap[t.account_id]) return;
       if (t.transaction_date <= baseDateStr) {
-        perAcctBal[t.account_id] += (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * (parseFloat(t.amount) || 0);
+        const isLiab = acctMap[t.account_id].type === 'liability';
+        const amt = parseFloat(t.amount) || 0;
+        if (isLiab) {
+          if (t.type === 'income') perAcctBal[t.account_id] -= amt;
+          else if (t.type === 'expense') perAcctBal[t.account_id] += amt;
+        } else {
+          if (t.type === 'income') perAcctBal[t.account_id] += amt;
+          else if (t.type === 'expense') perAcctBal[t.account_id] -= amt;
+        }
       }
     });
 
@@ -389,7 +408,14 @@ export function useAnalyticsData({
       if (!t.account_id || !acctMap[t.account_id]) return;
       if (t.transaction_date < start || t.transaction_date > endStr) return;
       const key = useMonthly ? t.transaction_date.slice(0, 7) : t.transaction_date;
-      const delta = (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * (parseFloat(t.amount) || 0);
+      const isLiab = acctMap[t.account_id].type === 'liability';
+      const amt = parseFloat(t.amount) || 0;
+      let delta = 0;
+      if (isLiab) {
+        delta = (t.type === 'expense' ? 1 : t.type === 'income' ? -1 : 0) * amt;
+      } else {
+        delta = (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * amt;
+      }
       acctDeltas[t.account_id][key] = (acctDeltas[t.account_id][key] || 0) + delta;
     });
 

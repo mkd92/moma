@@ -48,6 +48,7 @@ const Ledger = () => {
     const balanceMap = {};
     Object.entries(accountTxs).forEach(([accountId, txs]) => {
       const account = accounts.find(a => a.id === accountId);
+      const isLiability = account?.type === 'liability';
       let balance = parseFloat(account?.initial_balance) || 0;
 
       // Sort oldest-first so we can accumulate forward
@@ -57,8 +58,16 @@ const Ledger = () => {
       });
 
       sorted.forEach(t => {
-        if (t.type === 'income') balance += parseFloat(t.amount) || 0;
-        else if (t.type === 'expense') balance -= parseFloat(t.amount) || 0;
+        const amt = parseFloat(t.amount) || 0;
+        if (isLiability) {
+          // Debt increases with expense, decreases with income
+          if (t.type === 'income') balance -= amt;
+          else if (t.type === 'expense') balance += amt;
+        } else {
+          // Wealth increases with income, decreases with expense
+          if (t.type === 'income') balance += amt;
+          else if (t.type === 'expense') balance -= amt;
+        }
         balanceMap[t.id] = balance;
       });
     });
