@@ -121,6 +121,7 @@ export function useAppData(session, navigate, pathname, authIsLoading) {
 
   // Memoize the return object to stop downstream re-renders
   return useMemo(() => ({
+    session,
     // State
     transactions: transactionsData.transactions,
     categories: baseData.categories,
