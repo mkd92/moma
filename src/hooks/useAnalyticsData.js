@@ -400,18 +400,9 @@ export function useAnalyticsData({
       txs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
     );
 
-    if (ledgerSort === 'date_asc') {
-      // Ascending: sort groups by date
-      return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-    }
-
-    // Default date_desc: sort groups so the group containing the most recently
-    // added transaction appears first — last added entry always at the top
-    return Object.entries(groups).sort(([, txsA], [, txsB]) => {
-      const latestA = txsA[0]?.created_at || '';
-      const latestB = txsB[0]?.created_at || '';
-      return latestB.localeCompare(latestA);
-    });
+    // Sort date groups by transaction_date (desc by default, asc if requested)
+    const dir = ledgerSort === 'date_asc' ? 1 : -1;
+    return Object.entries(groups).sort(([a], [b]) => dir * a.localeCompare(b));
   }, [filteredLedger, ledgerSort]);
 
   // Balance over the selected date range, per day (or per month for long ranges).
