@@ -308,28 +308,29 @@ const BulkImport = () => {
   const [isCommitting, setIsCommitting] = useState(false);
   const tableRef = useRef(null);
 
-  const defaultAccount = accounts.find(a => a.id === defaultAccountId);
+  const effectiveAccountId = defaultAccountId || (accounts.length > 0 ? accounts[0].id : null);
+  const defaultAccount = accounts.find(a => a.id === effectiveAccountId);
 
   /* Current balance of the default account */
   const accountCurrentBalance = useMemo(() => {
-    if (!defaultAccountId) return 0;
-    const acct = accounts.find(a => a.id === defaultAccountId);
+    if (!effectiveAccountId) return 0;
+    const acct = accounts.find(a => a.id === effectiveAccountId);
     if (!acct) return 0;
     const txSum = transactions
-      .filter(t => t.account_id === defaultAccountId)
+      .filter(t => t.account_id === effectiveAccountId)
       .reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0);
     return (acct.initial_balance || 0) + txSum;
-  }, [accounts, transactions, defaultAccountId]);
+  }, [accounts, transactions, effectiveAccountId]);
 
   /* Enrich rows */
   const enrichedRows = useMemo(() => {
     let running = accountCurrentBalance;
     return rows.map(row => {
-      const delta = getRowDelta(row, defaultAccountId);
+      const delta = getRowDelta(row, effectiveAccountId);
       running += delta;
       return { ...row, _status: getRowStatus(row), _delta: delta, _runningBalance: running };
     });
-  }, [rows, accountCurrentBalance, defaultAccountId]);
+  }, [rows, accountCurrentBalance, effectiveAccountId]);
 
   /* Stats */
   const stats = useMemo(() => {
@@ -351,10 +352,10 @@ const BulkImport = () => {
       ...r,
       type: newType,
       category_id:     newType === 'transfer' ? null : r.category_id,
-      from_account_id: newType === 'transfer' ? (defaultAccountId || null) : null,
+      from_account_id: newType === 'transfer' ? (effectiveAccountId || null) : null,
       to_account_id:   newType === 'transfer' ? r.to_account_id : null,
     }))
-  , [defaultAccountId]);
+  , [effectiveAccountId]);
 
   const deleteRow = useCallback((id) =>
     setRows(prev => { const next = prev.filter(r => r.id !== id); return next.length ? next : [makeRow()]; })
@@ -458,7 +459,7 @@ const BulkImport = () => {
 
   const handleCommit = useCallback(async () => {
     const readyRows = enrichedRows.filter(r => r._status === 'ready');
-    if (!readyRows.length || !defaultAccountId || !session) return;
+    if (!readyRows.length || !effectiveAccountId || !session) return;
 
     setIsCommitting(true);
     try {
@@ -472,7 +473,7 @@ const BulkImport = () => {
           const base = { user_id: session.user.id, amount: v, note: row.note.trim() || null, transaction_date: row.date, transfer_id: tid, category_id: null, party_id: null };
           transfers.push({ ...base, account_id: row.from_account_id, type: 'expense' }, { ...base, account_id: row.to_account_id, type: 'income' });
         } else {
-          regular.push({ user_id: session.user.id, account_id: defaultAccountId, category_id: row.category_id || null, amount: v, type: row.type, note: row.note.trim() || null, transaction_date: row.date });
+          regular.push({ user_id: session.user.id, account_id: effectiveAccountId, category_id: row.category_id || null, amount: v, type: row.type, note: row.note.trim() || null, transaction_date: row.date });
         }
       }
 
@@ -492,7 +493,7 @@ const BulkImport = () => {
     } finally {
       setIsCommitting(false);
     }
-  }, [enrichedRows, defaultAccountId, session, fetchTransactions, setView, showToast]);
+  }, [enrichedRows, effectiveAccountId, session, fetchTransactions, setView, showToast]);
 
   const fmt      = (n) => fmtCurrency(currencySymbol, n);
   const fmtDelta = (n) => (n > 0 ? '+' : '') + fmt(n);
@@ -537,7 +538,7 @@ const BulkImport = () => {
             </button>
             <button
               onClick={handleCommit}
-              disabled={stats.ready === 0 || isCommitting || !defaultAccountId}
+              disabled={stats.ready === 0 || isCommitting || !effectiveAccountId}
               className="flex items-center gap-2 px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-primary text-on-primary shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: isCommitting ? "'FILL' 0" : "'FILL' 1" }}>
