@@ -54,16 +54,50 @@ export function useAnalyticsData({
     dashTransactions.filter(t => !t.transfer_id && t.account_id && activeAccountIds.has(t.account_id))
   ), [dashTransactions, activeAccountIds]);
 
-  const { balance, totalIncome, totalExpense } = useMemo(() => {
+  const { balance, totalIncome, totalExpense, runningBalances } = useMemo(() => {
     let inc = 0, exp = 0;
     dashActiveTransactions.forEach(t => {
       if (t.type === 'income') inc += parseFloat(t.amount) || 0;
       if (t.type === 'expense') exp += parseFloat(t.amount) || 0;
     });
 
+    const accountTxs = {};
+    transactions.forEach(t => {
+      if (!t.account_id) return;
+      if (!accountTxs[t.account_id]) accountTxs[t.account_id] = [];
+      accountTxs[t.account_id].push(t);
+    });
+
+    const runBalMap = {};
+    const typeMap = {};
+    accounts.forEach(a => { typeMap[a.id] = a.type || 'asset'; });
+
+    Object.entries(accountTxs).forEach(([aid, txs]) => {
+      const account = accounts.find(a => a.id === aid);
+      const isLiab = typeMap[aid] === 'liability';
+      let bal = parseFloat(account?.initial_balance) || 0;
+
+      const sorted = [...txs].sort((a, b) => {
+        const d1 = a.transaction_date || '';
+        const d2 = b.transaction_date || '';
+        if (d1 !== d2) return d1.localeCompare(d2);
+        return (a.created_at || '').localeCompare(b.created_at || '');
+      });
+
+      sorted.forEach(t => {
+        const amt = parseFloat(t.amount) || 0;
+        if (isLiab) {
+          if (t.type === 'income') bal -= amt;
+          else if (t.type === 'expense') bal += amt;
+        } else {
+          if (t.type === 'income') bal += amt;
+          else if (t.type === 'expense') bal -= amt;
+        }
+        runBalMap[t.id] = bal;
+      });
+    });
+
     // Net Worth = sum(Assets) - sum(Liabilities)
-    // Always use all accounts (even if excluded from total, for this specific calculation)
-    // Wait, actually respect the exclude_from_total for the "Global Balance" shown in Dashboard
     let netWorth = 0;
     accounts.forEach(a => {
       if (a.exclude_from_total) return;
@@ -72,8 +106,8 @@ export function useAnalyticsData({
       else netWorth += bal;
     });
 
-    return { balance: netWorth, totalIncome: inc, totalExpense: exp };
-  }, [dashActiveTransactions, accounts, accountBalances]);
+    return { balance: netWorth, totalIncome: inc, totalExpense: exp, runningBalances: runBalMap };
+  }, [dashActiveTransactions, transactions, accounts, accountBalances]);
 
   const topCategories = useMemo(() => {
     const totals = {};
@@ -468,6 +502,6 @@ export function useAnalyticsData({
     balance, totalIncome, totalExpense, topCategories, topExpenseCat, savingsRate, burnRate,
     portfolioChange, sparklineData, smartInsights, analyticsTransactions,
     prevAnalyticsTransactions, prevPeriodKPIs, chartTimeSeries, chartCategorical, chartTags,
-    analyticsKPIs, filteredLedger, groupedLedger, totalCatVal, topPayees, chartNetWorth
+    analyticsKPIs, filteredLedger, groupedLedger, totalCatVal, topPayees, chartNetWorth, runningBalances
   };
 }

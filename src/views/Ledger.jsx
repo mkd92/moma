@@ -21,6 +21,7 @@ const Ledger = () => {
     groupedLedger,
     currencySymbol,
     accountBalances,
+    runningBalances,
     isLoading,
     setShowAdvancedFilters,
     updateFilter,
@@ -36,57 +37,6 @@ const Ledger = () => {
     showAdvancedFilters,
     bulkSelectMode
   } = useAppDataContext();
-
-  // Compute per-account running balances using ALL transactions (not just filtered)
-  const runningBalances = useMemo(() => {
-    if (!accounts.length) return {};
-    
-    const accountTxs = {};
-    transactions.forEach(t => {
-      if (!t.account_id) return;
-      if (!accountTxs[t.account_id]) accountTxs[t.account_id] = [];
-      accountTxs[t.account_id].push(t);
-    });
-
-    const balanceMap = {};
-    const typeMap = {};
-    accounts.forEach(a => { typeMap[a.id] = a.type || 'asset'; });
-
-    Object.entries(accountTxs).forEach(([accountId, txs]) => {
-      const account = accounts.find(a => a.id === accountId);
-      const isLiability = typeMap[accountId] === 'liability';
-      let balance = parseFloat(account?.initial_balance) || 0;
-
-      // Sort oldest-first so we can accumulate forward
-      const sorted = [...txs].sort((a, b) => {
-        const d1 = a.transaction_date || '';
-        const d2 = b.transaction_date || '';
-        if (d1 !== d2) return d1.localeCompare(d2);
-        
-        const c1 = a.created_at || '';
-        const c2 = b.created_at || '';
-        return c1.localeCompare(c2);
-      });
-
-      sorted.forEach(t => {
-        const amt = parseFloat(t.amount) || 0;
-        if (isLiability) {
-          // Debt increases with expense, decreases with income
-          // We show the debt itself as a positive balance (e.g. 10,000 debt)
-          if (t.type === 'income') balance -= amt;
-          else if (t.type === 'expense') balance += amt;
-          balanceMap[t.id] = balance;
-        } else {
-          // Wealth increases with income, decreases with expense
-          if (t.type === 'income') balance += amt;
-          else if (t.type === 'expense') balance -= amt;
-          balanceMap[t.id] = balance;
-        }
-      });
-    });
-
-    return balanceMap;
-  }, [transactions, accounts]);
 
   const setShowFilters = setShowAdvancedFilters;
 
