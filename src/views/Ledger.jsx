@@ -38,6 +38,8 @@ const Ledger = () => {
 
   // Compute per-account running balances using ALL transactions (not just filtered)
   const runningBalances = useMemo(() => {
+    if (!accounts.length) return {};
+    
     const accountTxs = {};
     transactions.forEach(t => {
       if (!t.account_id) return;
@@ -105,39 +107,25 @@ const Ledger = () => {
   
   const allCatOptions = categories.filter(c => !c.is_system || c.type).map(c => ({ value: c.id, label: c.name, icon: c.icon }));
 
-  // Total Balance for the CURRENT FILTERED VIEW
-  // If viewing a single account, this should ideally match the last running balance
-  // If viewing all, it shows the net movement + initial balances of involved accounts
+  // Use global accountBalances for the header to ensure consistency with Dashboard
   const totalBalance = useMemo(() => {
-    const relevantAccountIds = new Set(filteredLedger.map(t => t.account_id).filter(Boolean));
-    const typeMap = {};
-    accounts.forEach(a => { typeMap[a.id] = a.type || 'asset'; });
-
-    // Sum of initial balances for all accounts that have at least one transaction in the current view
-    // (Or all accounts if no account filter is applied)
-    const initialSum = accounts.filter(a => {
-      if (filterOptions.accountIds.length > 0) return filterOptions.accountIds.includes(a.id);
-      return relevantAccountIds.has(a.id);
-    }).reduce((s, a) => {
-      const b = parseFloat(a.initial_balance) || 0;
-      return a.type === 'liability' ? s - b : s + b;
+    // If an account filter is active, show the sum of those specific accounts
+    if (filterOptions.accountIds.length > 0) {
+      return filterOptions.accountIds.reduce((s, id) => {
+        const a = accounts.find(acc => acc.id === id);
+        if (!a) return s;
+        const bal = accountBalances[id] || 0;
+        // Dashboard displays liability net worth as negative, we match that here
+        return a.type === 'liability' ? s - bal : s + bal;
+      }, 0);
+    }
+    
+    // Default: Show Net Worth (sum of all non-excluded accounts)
+    return accounts.filter(a => !a.exclude_from_total).reduce((s, a) => {
+      const bal = accountBalances[a.id] || 0;
+      return a.type === 'liability' ? s - bal : s + bal;
     }, 0);
-
-    const movement = filteredLedger.reduce((acc, t) => {
-      const amt = parseFloat(t.amount) || 0;
-      const isLiab = typeMap[t.account_id] === 'liability';
-      
-      if (isLiab) {
-        // Debt increases with expense (- net worth), decreases with income (+ net worth)
-        return t.type === 'income' ? acc + amt : acc - amt;
-      } else {
-        // Assets increase with income (+), decrease with expense (-)
-        return t.type === 'income' ? acc + amt : acc - amt;
-      }
-    }, 0);
-
-    return initialSum + movement;
-  }, [filteredLedger, accounts, filterOptions.accountIds]);
+  }, [accountBalances, accounts, filterOptions.accountIds]);
 
   return (
     <PageShell view="ledger" onRefresh={refreshData} isLoading={isLoading}>
