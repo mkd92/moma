@@ -136,6 +136,7 @@ export default function AccountManagement() {
   const [editAcctMode, setEditAcctMode] = useState('opening');
   const [editAcctValue, setEditAcctValue] = useState('');
   const [editAcctExclude, setEditAcctExclude] = useState(false);
+  const [editAcctType, setEditAcctType] = useState('asset');
 
   const openEditAccount = (acc) => {
     setEditingAccount(acc);
@@ -143,6 +144,7 @@ export default function AccountManagement() {
     setEditAcctMode('opening');
     setEditAcctValue(String(parseFloat(acc.initial_balance) || 0));
     setEditAcctExclude(!!acc.exclude_from_total);
+    setEditAcctType(acc.type || 'asset');
   };
 
   const handleCreateSubmit = async (e) => {
@@ -166,7 +168,7 @@ export default function AccountManagement() {
     e.preventDefault();
     const txSum = (accountBalances[editingAccount.id] || 0) - (parseFloat(editingAccount.initial_balance) || 0);
     const newInitial = editAcctMode === 'current' ? (parseFloat(editAcctValue) || 0) - txSum : (parseFloat(editAcctValue) || 0);
-    const error = await handleUpdateAccount(editingAccount.id, { name: editAcctName, initial_balance: newInitial, exclude_from_total: editAcctExclude });
+    const error = await handleUpdateAccount(editingAccount.id, { name: editAcctName, initial_balance: newInitial, exclude_from_total: editAcctExclude, type: editAcctType });
     if (!error) setEditingAccount(null);
   };
 
@@ -184,6 +186,14 @@ export default function AccountManagement() {
           <div className="space-y-4">
             <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Display Name</p>
             <input type="text" className="w-full bg-on-surface/[0.03] border border-outline-variant rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-on-surface/10 transition-all font-bold outline-none" value={editAcctName} onChange={e => setEditAcctName(e.target.value)} required />
+          </div>
+
+          <div className="space-y-4">
+            <p className="text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-1 opacity-60">Classification</p>
+            <select className="w-full bg-on-surface/[0.03] border border-outline-variant rounded-2xl p-5 text-on-surface focus:ring-2 focus:ring-on-surface/10 transition-all font-bold outline-none appearance-none cursor-pointer" value={editAcctType} onChange={e => setEditAcctType(e.target.value)}>
+              <option value="asset">Cash / Asset</option>
+              <option value="liability">Liability / Debt</option>
+            </select>
           </div>
 
           <div className="space-y-6">
