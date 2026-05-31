@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { getCategoryIcon } from '../../utils/formatters';
 
-const TransactionItem = ({ t, onClick, categories, accounts, currencySymbol, isSelected, bulkSelectMode, onToggleSelect, runningBalance }) => {
-  const cat = categories.find(c => c.id === t.category_id);
-  const account = accounts?.find(a => a.id === t.account_id);
+const TransactionItem = memo(({ t, onClick, categoryMap, accountMap, currencySymbol, isSelected, bulkSelectMode, onToggleSelect, runningBalance }) => {
+  const cat = categoryMap?.[t.category_id];
+  const account = accountMap?.[t.account_id];
   const amt = t.amount || 0;
   const isNeg = t.type === 'expense';
   const isTransfer = !!t.transfer_id;
@@ -76,6 +76,8 @@ const TransactionItem = ({ t, onClick, categories, accounts, currencySymbol, isS
       </div>
     </div>
   );
-};
+});
+
+TransactionItem.displayName = 'TransactionItem';
 
 export default TransactionItem;

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { PageShell } from '../components/layout';
 import TransactionItem from '../components/transactions/TransactionItem';
 import FilterPanel from '../components/filters/FilterPanel';
@@ -61,6 +61,24 @@ const Ledger = () => {
   };
   
   const allCatOptions = categories.filter(c => !c.is_system || c.type).map(c => ({ value: c.id, label: c.name, icon: c.icon }));
+
+  const categoryMap = useMemo(() => { const m = {}; categories.forEach(c => { m[c.id] = c; }); return m; }, [categories]);
+  const accountMap  = useMemo(() => { const m = {}; accounts.forEach(a => { m[a.id] = a; }); return m; }, [accounts]);
+
+  const PAGE_SIZE = 150;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // Reset pagination whenever the filtered list identity changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filteredLedger]);
+  const visibleGrouped = useMemo(() => {
+    let remaining = visibleCount;
+    const result = [];
+    for (const [date, txs] of groupedLedger) {
+      if (remaining <= 0) break;
+      result.push([date, txs.slice(0, remaining)]);
+      remaining -= txs.length;
+    }
+    return result;
+  }, [groupedLedger, visibleCount]);
 
   // When an account filter is active show that account's balance (matches the per-account
   // running balance column). Otherwise show Net Worth across all non-excluded accounts.
@@ -205,7 +223,7 @@ const Ledger = () => {
         {/* Ledger Table Section */}
         <div className="bg-surface-low rounded-[2rem] overflow-hidden shadow-sm">
           <div className="flex flex-col">
-            {groupedLedger.map(([date, txs]) => (
+            {visibleGrouped.map(([date, txs]) => (
               <React.Fragment key={date}>
                 {date !== '__flat__' && (
                   <div className="flex items-center gap-6 px-8 py-5 sticky top-0 bg-surface-low z-30">
@@ -219,8 +237,8 @@ const Ledger = () => {
                       key={t.id}
                       t={t}
                       onClick={openEditTransaction}
-                      categories={categories}
-                      accounts={accounts}
+                      categoryMap={categoryMap}
+                      accountMap={accountMap}
                       currencySymbol={currencySymbol}
                       isSelected={effectiveSelectedIds.has(t.id)}
                       bulkSelectMode={bulkSelectMode}
@@ -231,6 +249,16 @@ const Ledger = () => {
                 </div>
               </React.Fragment>
             ))}
+            {filteredLedger.length > visibleCount && (
+              <div className="px-8 py-5 flex justify-center">
+                <button
+                  className="text-xs font-bold text-primary px-6 py-3 rounded-2xl bg-primary/[0.07] hover:bg-primary/[0.13] transition-colors"
+                  onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                >
+                  Load more ({filteredLedger.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
             {filteredLedger.length === 0 && (
               <div className="py-32 flex flex-col items-center justify-center text-center space-y-4">
                 <div className="w-16 h-16 rounded-2xl bg-on-surface/[0.03] flex items-center justify-center text-on-surface-variant opacity-20">

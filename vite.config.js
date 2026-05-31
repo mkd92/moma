@@ -8,4 +8,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/victory-vendor') || id.includes('node_modules/d3')) return 'recharts';
+          if (id.includes('node_modules/@supabase')) return 'supabase';
+        },
+      },
+    },
+  },
 })

@@ -7,35 +7,67 @@ export function useAnalyticsData({
   filterOptions, ledgerSort,
   currencySymbol
 }) {
+  // ─── O(1) lookup maps — built once, reused everywhere ────────────────────
+  const categoryMap = useMemo(() => {
+    const m = {};
+    categories.forEach(c => { m[c.id] = c; });
+    return m;
+  }, [categories]);
+
+  const accountMap = useMemo(() => {
+    const m = {};
+    accounts.forEach(a => { m[a.id] = a; });
+    return m;
+  }, [accounts]);
+
+  // drillCategory name → id (avoids repeated find by name in chart loops)
+  const drillCategoryId = useMemo(() =>
+    drillCategory ? categories.find(c => c.name === drillCategory)?.id : null,
+  [categories, drillCategory]);
+
+  // ─── Pre-sort transactions chronologically (ASC) once ─────────────────────
+  // Transactions arrive from Supabase DESC. Reversing first so that the stable
+  // sort resolves ties (same date + same created_at) in ASC order.
+  const txsAsc = useMemo(() =>
+    [...transactions].reverse().sort((a, b) => {
+      const d = (a.transaction_date || '').localeCompare(b.transaction_date || '');
+      if (d !== 0) return d;
+      return (a.created_at || '').localeCompare(b.created_at || '');
+    }),
+  [transactions]);
+
+  // ─── Group sorted transactions by account (for running balance) ───────────
+  const txsByAccount = useMemo(() => {
+    const map = {};
+    txsAsc.forEach(t => {
+      if (!t.account_id) return;
+      if (!map[t.account_id]) map[t.account_id] = [];
+      map[t.account_id].push(t);
+    });
+    return map;
+  }, [txsAsc]);
+
+  // ─── Account balances ─────────────────────────────────────────────────────
   const accountBalances = useMemo(() => {
     const balances = {};
-    const typeMap = {};
-    
-    // Seed balances and build a quick lookup map for account types
-    accounts.forEach(a => { 
-      balances[a.id] = parseFloat(a.initial_balance) || 0; 
-      typeMap[a.id] = a.type || 'asset';
+    accounts.forEach(a => {
+      balances[a.id] = parseFloat(a.initial_balance) || 0;
     });
-
     transactions.forEach(t => {
       const aid = t.account_id;
-      if (aid && balances[aid] !== undefined) {
-        const amt = parseFloat(t.amount) || 0;
-        const isLiability = typeMap[aid] === 'liability';
-        
-        if (isLiability) {
-          // Liability: Spending increases debt (+), Payments decrease it (-)
-          if (t.type === 'income') balances[aid] -= amt;
-          else if (t.type === 'expense') balances[aid] += amt;
-        } else {
-          // Asset: Income increases wealth (+), Spending decreases it (-)
-          if (t.type === 'income') balances[aid] += amt;
-          else if (t.type === 'expense') balances[aid] -= amt;
-        }
+      if (!aid || balances[aid] === undefined) return;
+      const amt = parseFloat(t.amount) || 0;
+      const isLiability = (accountMap[aid]?.type || 'asset') === 'liability';
+      if (isLiability) {
+        if (t.type === 'income') balances[aid] -= amt;
+        else if (t.type === 'expense') balances[aid] += amt;
+      } else {
+        if (t.type === 'income') balances[aid] += amt;
+        else if (t.type === 'expense') balances[aid] -= amt;
       }
     });
     return balances;
-  }, [accounts, transactions]);
+  }, [accounts, transactions, accountMap]);
 
   const dashTransactions = useMemo(() => {
     const { start, end } = dashDateRange;
@@ -61,46 +93,23 @@ export function useAnalyticsData({
       if (t.type === 'expense') exp += parseFloat(t.amount) || 0;
     });
 
-    // Running balance = per-account balance at each point in time (includes initial_balance).
-    // Sorted chronologically within each account so each entry shows the real account balance
-    // after that transaction.
+    // Running balance per account — uses pre-sorted, pre-grouped txsByAccount
     const runBalMap = {};
-    const accountTxs = {};
-    transactions.forEach(t => {
-      if (!t.account_id) return;
-      if (!accountTxs[t.account_id]) accountTxs[t.account_id] = [];
-      accountTxs[t.account_id].push(t);
-    });
-
-    const acctTypeMap = {};
-    accounts.forEach(a => { acctTypeMap[a.id] = a.type || 'asset'; });
-
-    Object.entries(accountTxs).forEach(([aid, txs]) => {
-      const account = accounts.find(a => a.id === aid);
-      const isLiab = acctTypeMap[aid] === 'liability';
+    Object.entries(txsByAccount).forEach(([aid, txs]) => {
+      const account = accountMap[aid];
+      const isLiab = (account?.type || 'asset') === 'liability';
       let bal = parseFloat(account?.initial_balance) || 0;
-
-      // txs arrives in Supabase DESC order. Reversing first seeds the stable
-      // sort in ASC order so that ties in created_at (rapid inserts on the
-      // same day) resolve oldest-first instead of staying DESC.
-      [...txs].reverse()
-        .sort((a, b) => {
-          const d1 = a.transaction_date || '';
-          const d2 = b.transaction_date || '';
-          if (d1 !== d2) return d1.localeCompare(d2);
-          return (a.created_at || '').localeCompare(b.created_at || '');
-        })
-        .forEach(t => {
-          const amt = parseFloat(t.amount) || 0;
-          if (isLiab) {
-            if (t.type === 'income') bal -= amt;
-            else if (t.type === 'expense') bal += amt;
-          } else {
-            if (t.type === 'income') bal += amt;
-            else if (t.type === 'expense') bal -= amt;
-          }
-          runBalMap[t.id] = Math.round(bal * 100) / 100;
-        });
+      txs.forEach(t => {
+        const amt = parseFloat(t.amount) || 0;
+        if (isLiab) {
+          if (t.type === 'income') bal -= amt;
+          else if (t.type === 'expense') bal += amt;
+        } else {
+          if (t.type === 'income') bal += amt;
+          else if (t.type === 'expense') bal -= amt;
+        }
+        runBalMap[t.id] = Math.round(bal * 100) / 100;
+      });
     });
 
     // Net Worth = sum(Assets) - sum(Liabilities)
@@ -113,11 +122,12 @@ export function useAnalyticsData({
     });
 
     return { balance: netWorth, totalIncome: inc, totalExpense: exp, runningBalances: runBalMap };
-  }, [dashActiveTransactions, transactions, accounts, accountBalances]);
+  }, [dashActiveTransactions, txsByAccount, accountMap, accounts, accountBalances]);
 
   const topCategories = useMemo(() => {
     const totals = {};
-    dashActiveTransactions.filter(t => t.type === 'expense' && t.categories).forEach(t => {
+    dashActiveTransactions.forEach(t => {
+      if (t.type !== 'expense' || !t.categories) return;
       const { name, icon } = t.categories;
       if (!totals[name]) totals[name] = { amount: 0, icon: icon || '•' };
       totals[name].amount += parseFloat(t.amount);
@@ -135,7 +145,7 @@ export function useAnalyticsData({
     const { start, end } = dashDateRange;
     const ms = start && end ? new Date(end) - new Date(start) + 86400000 : 30 * 86400000;
     const days = Math.max(1, Math.round(ms / 86400000));
-    const total = dashActiveTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
+    const total = dashActiveTransactions.reduce((s, t) => t.type === 'expense' ? s + parseFloat(t.amount) : s, 0);
     return total / days;
   }, [dashActiveTransactions, dashDateRange]);
 
@@ -150,8 +160,7 @@ export function useAnalyticsData({
     const ps = fmt(prevStart), pe = fmt(prevEnd);
     let curr = 0, prev = 0;
     transactions.forEach(t => {
-      if (t.transfer_id) return;
-      if (!t.account_id || !activeAccountIds.has(t.account_id)) return;
+      if (t.transfer_id || !t.account_id || !activeAccountIds.has(t.account_id)) return;
       const amt = parseFloat(t.amount) * (t.type === 'income' ? 1 : -1);
       if (t.transaction_date >= start && t.transaction_date <= end) curr += amt;
       if (t.transaction_date >= ps && t.transaction_date <= pe) prev += amt;
@@ -163,11 +172,19 @@ export function useAnalyticsData({
   const sparklineData = useMemo(() => {
     const pad = n => String(n).padStart(2, '0');
     const today = new Date();
-    return Array.from({ length: 7 }, (_, i) => {
+    // Build a map of date → expense total for the last 7 days
+    const dayMap = {};
+    for (let i = 0; i < 7; i++) {
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (6 - i));
-      const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      return transactions.filter(t => t.transaction_date === key && t.type === 'expense' && !t.transfer_id && t.account_id && activeAccountIds.has(t.account_id)).reduce((s, t) => s + parseFloat(t.amount), 0);
+      dayMap[`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`] = 0;
+    }
+    transactions.forEach(t => {
+      if (t.type !== 'expense' || t.transfer_id || !t.account_id || !activeAccountIds.has(t.account_id)) return;
+      if (dayMap[t.transaction_date] !== undefined) {
+        dayMap[t.transaction_date] += parseFloat(t.amount);
+      }
     });
+    return Object.values(dayMap);
   }, [transactions, activeAccountIds]);
 
   const smartInsights = useMemo(() => {
@@ -176,8 +193,10 @@ export function useAnalyticsData({
       insights.push({ color: 'var(--primary)', title: 'Top Spending', text: `${topExpenseCat.name} is your biggest expense at ${currencySymbol}${topExpenseCat.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.` });
     }
     const partyCounts = {};
-    dashTransactions.filter(t => t.type === 'expense' && !t.transfer_id && t.parties?.name).forEach(t => {
-      partyCounts[t.parties.name] = (partyCounts[t.parties.name] || 0) + 1;
+    dashTransactions.forEach(t => {
+      if (t.type === 'expense' && !t.transfer_id && t.parties?.name) {
+        partyCounts[t.parties.name] = (partyCounts[t.parties.name] || 0) + 1;
+      }
     });
     const recurring = Object.entries(partyCounts).filter(([, c]) => c >= 2).map(([n]) => n);
     if (recurring.length > 0) {
@@ -206,15 +225,18 @@ export function useAnalyticsData({
       if (dateRange.start && t.transaction_date < dateRange.start) return false;
       if (dateRange.end && t.transaction_date > dateRange.end) return false;
       if (categoryIds.length > 0) {
-        const cat = categories.find(c => c.id === t.category_id);
+        const cat = categoryMap[t.category_id];
         if (!categoryIds.includes(t.category_id) && (!cat?.parent_id || !categoryIds.includes(cat.parent_id))) return false;
       }
       if (tagIds.length > 0 && !t.transaction_tags?.some(tt => tagIds.includes(tt.tag_id))) return false;
       if (accountIds.length > 0 && !accountIds.includes(t.account_id)) return false;
-      if (searchTerm) { const s = searchTerm.toLowerCase(); if (!(t.note || '').toLowerCase().includes(s) && !(t.parties?.name || '').toLowerCase().includes(s) && !(t.categories?.name || '').toLowerCase().includes(s)) return false; }
+      if (searchTerm) {
+        const s = searchTerm.toLowerCase();
+        if (!(t.note || '').toLowerCase().includes(s) && !(t.parties?.name || '').toLowerCase().includes(s) && !(t.categories?.name || '').toLowerCase().includes(s)) return false;
+      }
       return true;
     });
-  }, [transactions, filterOptions, categories, activeAccountIds]);
+  }, [transactions, filterOptions, categoryMap, activeAccountIds]);
 
   const prevAnalyticsTransactions = useMemo(() => {
     const { start, end } = filterOptions.dateRange;
@@ -233,7 +255,8 @@ export function useAnalyticsData({
 
   const prevPeriodKPIs = useMemo(() => {
     let income = 0, expense = 0;
-    prevAnalyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+    prevAnalyticsTransactions.forEach(t => {
+      if (t.transfer_id) return;
       if (t.type === 'income') income += parseFloat(t.amount);
       else expense += parseFloat(t.amount);
     });
@@ -254,9 +277,13 @@ export function useAnalyticsData({
     const endD = end ? new Date(end + 'T00:00:00') : new Date();
     const dayCount = Math.ceil((endD - startD) / 86400000) + 1;
 
+    // Reusable drill filter using pre-computed drillCategoryId
+    const matchesDrill = t => !drillCategory || t.categories?.name === drillCategory || categoryMap[t.category_id]?.parent_id === drillCategoryId;
+
     if (dayCount > 180) {
       const data = {};
-      analyticsTransactions.filter(t => !t.transfer_id && (!drillCategory || t.categories?.name === drillCategory || categories.find(c => c.id === t.category_id)?.parent_id === categories.find(c => c.name === drillCategory)?.id)).forEach(t => {
+      analyticsTransactions.forEach(t => {
+        if (t.transfer_id || !matchesDrill(t)) return;
         const key = t.transaction_date.slice(0, 7);
         if (!data[key]) data[key] = { date: key, income: 0, expense: 0, label: new Date(key + '-01T12:00:00').toLocaleDateString(undefined, { month: 'short', year: '2-digit' }) };
         if (t.type === 'income') data[key].income += parseFloat(t.amount);
@@ -270,11 +297,10 @@ export function useAnalyticsData({
         const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
         data[key] = { date: key, income: 0, expense: 0, label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) };
       }
-      analyticsTransactions.filter(t => !t.transfer_id && (!drillCategory || t.categories?.name === drillCategory || categories.find(c => c.id === t.category_id)?.parent_id === categories.find(c => c.name === drillCategory)?.id)).forEach(t => {
-        if (data[t.transaction_date]) {
-          if (t.type === 'income') data[t.transaction_date].income += parseFloat(t.amount);
-          if (t.type === 'expense') data[t.transaction_date].expense += parseFloat(t.amount);
-        }
+      analyticsTransactions.forEach(t => {
+        if (t.transfer_id || !matchesDrill(t) || !data[t.transaction_date]) return;
+        if (t.type === 'income') data[t.transaction_date].income += parseFloat(t.amount);
+        if (t.type === 'expense') data[t.transaction_date].expense += parseFloat(t.amount);
       });
       const result = Object.values(data).sort((a, b) => a.date.localeCompare(b.date));
       return result.map((d, i, arr) => {
@@ -283,14 +309,15 @@ export function useAnalyticsData({
         return { ...d, net: d.income - d.expense, expenseMA: sum / window.length };
       });
     }
-  }, [analyticsTransactions, filterOptions.dateRange, drillCategory, categories]);
+  }, [analyticsTransactions, filterOptions.dateRange, drillCategory, drillCategoryId, categoryMap]);
 
   const chartCategorical = useMemo(() => {
     const parentMap = {};
-    analyticsTransactions.filter(t => t.type === catBreakdownType && !t.transfer_id && t.categories).forEach(t => {
-      const cat = categories.find(c => c.id === t.category_id);
+    analyticsTransactions.forEach(t => {
+      if (t.type !== catBreakdownType || t.transfer_id || !t.categories) return;
+      const cat = categoryMap[t.category_id];
       const parentId = cat?.parent_id || t.category_id;
-      const parent = categories.find(c => c.id === parentId);
+      const parent = categoryMap[parentId];
       const parentName = parent?.name || cat?.name || 'Other';
       if (!parentMap[parentId]) parentMap[parentId] = { name: parentName, id: parentId, value: 0, subs: {} };
       parentMap[parentId].value += parseFloat(t.amount);
@@ -307,37 +334,42 @@ export function useAnalyticsData({
         value: Math.round(p.value * 100) / 100,
         subs: Object.values(p.subs).sort((a, b) => b.value - a.value).map(s => ({ ...s, value: Math.round(s.value * 100) / 100 })),
       }));
-  }, [analyticsTransactions, categories, catBreakdownType]);
+  }, [analyticsTransactions, categoryMap, catBreakdownType]);
 
-  const totalCatVal = useMemo(() => 
+  const totalCatVal = useMemo(() =>
     chartCategorical.reduce((s, c) => s + c.value, 0),
   [chartCategorical]);
 
   const chartTags = useMemo(() => {
     const totals = {};
-    analyticsTransactions.filter(t => !t.transfer_id && t.transaction_tags?.length > 0 && (!drillCategory || t.categories?.name === drillCategory || categories.find(c => c.id === t.category_id)?.parent_id === categories.find(c => c.name === drillCategory)?.id)).forEach(t => {
+    analyticsTransactions.forEach(t => {
+      if (t.transfer_id || !t.transaction_tags?.length) return;
+      if (drillCategory && t.categories?.name !== drillCategory && categoryMap[t.category_id]?.parent_id !== drillCategoryId) return;
       t.transaction_tags.forEach(tt => {
         if (tt.tags?.name) totals[tt.tags.name] = (totals[tt.tags.name] || 0) + parseFloat(t.amount);
       });
     });
     return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }));
-  }, [analyticsTransactions, drillCategory, categories]);
+  }, [analyticsTransactions, drillCategory, drillCategoryId, categoryMap]);
 
   const analyticsKPIs = useMemo(() => {
     const { start, end } = filterOptions.dateRange;
     const ms = start && end ? new Date(end) - new Date(start) + 86400000 : 30 * 86400000;
     const days = Math.max(1, Math.round(ms / 86400000));
-    let totalExpense = 0, totalIncome = 0;
-    analyticsTransactions.filter(t => !t.transfer_id).forEach(t => {
+    let totalExpense = 0, totalIncome = 0, txCount = 0;
+    analyticsTransactions.forEach(t => {
+      if (t.transfer_id) return;
+      txCount++;
       if (t.type === 'expense') totalExpense += parseFloat(t.amount);
       if (t.type === 'income') totalIncome += parseFloat(t.amount);
     });
-    return { totalExpense, totalIncome, dailyBurn: totalExpense / days, net: totalIncome - totalExpense, txCount: analyticsTransactions.filter(t => !t.transfer_id).length };
+    return { totalExpense, totalIncome, dailyBurn: totalExpense / days, net: totalIncome - totalExpense, txCount };
   }, [analyticsTransactions, filterOptions.dateRange]);
 
   const topPayees = useMemo(() => {
     const totals = {};
-    analyticsTransactions.filter(t => !t.transfer_id && t.parties?.name).forEach(t => {
+    analyticsTransactions.forEach(t => {
+      if (t.transfer_id || !t.parties?.name) return;
       const name = t.parties.name;
       totals[name] = (totals[name] || 0) + parseFloat(t.amount);
     });
@@ -362,7 +394,7 @@ export function useAnalyticsData({
         const wantUncat = categoryIds.includes('__uncategorized__');
         if (!t.category_id) { if (!wantUncat) return false; }
         else {
-          const cat = categories.find(c => c.id === t.category_id);
+          const cat = categoryMap[t.category_id];
           if (!categoryIds.includes(t.category_id) && (!cat?.parent_id || !categoryIds.includes(cat.parent_id))) return false;
         }
       }
@@ -380,7 +412,7 @@ export function useAnalyticsData({
       }
       return true;
     });
-  }, [transactions, filterOptions, categories]);
+  }, [transactions, filterOptions, categoryMap]);
 
   const groupedLedger = useMemo(() => {
     const amtOf = t => parseFloat(t.amount) || 0;
@@ -409,8 +441,6 @@ export function useAnalyticsData({
   }, [filteredLedger, ledgerSort]);
 
   // Balance over the selected date range, per day (or per month for long ranges).
-  // Tracks per-account running balances so the tooltip can show a breakdown.
-  // Respects accountIds filter; liability balances subtract from net worth.
   const chartNetWorth = useMemo(() => {
     let { start, end } = filterOptions.dateRange;
     const { accountIds } = filterOptions;
@@ -429,7 +459,6 @@ export function useAnalyticsData({
     const dayCount = Math.ceil((endD - startD) / 86400000) + 1;
     const endStr = end || fmt(new Date());
 
-    // Respect accountIds filter; exclude liability accounts that are excluded from total
     const acctMap = {};
     accounts.forEach(a => {
       if (a.exclude_from_total) return;
@@ -438,8 +467,6 @@ export function useAnalyticsData({
     });
     const nwSign = (a) => a.type === 'liability' ? -1 : 1;
 
-    // Seed each account's running balance from initial_balance,
-    // then apply all transactions up to the day before start.
     const baseDateStr = fmt(new Date(startD.getTime() - 86400000));
     const perAcctBal = {};
     Object.values(acctMap).forEach(a => { perAcctBal[a.id] = parseFloat(a.initial_balance) || 0; });
@@ -460,7 +487,6 @@ export function useAnalyticsData({
 
     const useMonthly = dayCount > 180;
 
-    // Build per-account delta map keyed by day or month
     const acctDeltas = {};
     Object.keys(acctMap).forEach(id => { acctDeltas[id] = {}; });
     transactions.forEach(t => {
@@ -469,16 +495,12 @@ export function useAnalyticsData({
       const key = useMonthly ? t.transaction_date.slice(0, 7) : t.transaction_date;
       const isLiab = acctMap[t.account_id].type === 'liability';
       const amt = parseFloat(t.amount) || 0;
-      let delta = 0;
-      if (isLiab) {
-        delta = (t.type === 'expense' ? 1 : t.type === 'income' ? -1 : 0) * amt;
-      } else {
-        delta = (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * amt;
-      }
+      const delta = isLiab
+        ? (t.type === 'expense' ? 1 : t.type === 'income' ? -1 : 0) * amt
+        : (t.type === 'income' ? 1 : t.type === 'expense' ? -1 : 0) * amt;
       acctDeltas[t.account_id][key] = (acctDeltas[t.account_id][key] || 0) + delta;
     });
 
-    // Build result — mutate perAcctBal sequentially as we walk through periods
     const makePoint = (key, label) => {
       Object.keys(acctMap).forEach(id => {
         perAcctBal[id] += acctDeltas[id][key] || 0;

@@ -13,14 +13,14 @@ export function useTransactions() {
     try {
       let { data, error } = await supabase
         .from('transactions')
-        .select('*, categories(name, icon, type), parties(name), accounts(name), transaction_tags(tag_id, tags(id, name))')
+        .select('id, user_id, amount, type, note, transaction_date, created_at, category_id, party_id, account_id, transfer_id, categories(name, icon), parties(name), accounts(name), transaction_tags(tag_id, tags(id, name))')
         .order('transaction_date', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error && error.code === 'PGRST200') {
         ({ data, error } = await supabase
           .from('transactions')
-          .select('*, categories(name, icon, type), parties(name), accounts(name)')
+          .select('id, user_id, amount, type, note, transaction_date, created_at, category_id, party_id, account_id, transfer_id, categories(name, icon), parties(name), accounts(name)')
           .order('transaction_date', { ascending: false })
           .order('created_at', { ascending: false }));
       }

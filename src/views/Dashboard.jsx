@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PageShell } from '../components/layout';
 import TransactionItem from '../components/transactions/TransactionItem';
 import { useAppDataContext } from '../hooks';
@@ -39,14 +39,20 @@ const Dashboard = () => {
 
   const fmt = (n) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const includedAccounts  = accounts.filter(a => !a.exclude_from_total);
-  const excludedCount     = accounts.length - includedAccounts.length;
-  const netWorth          = includedAccounts.reduce((s, a) => { const b = accountBalances[a.id] || 0; return a.type === 'liability' ? s - b : s + b; }, 0);
-  const assetTotal        = includedAccounts.filter(a => (a.type || 'asset') === 'asset').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
-  const investTotal       = includedAccounts.filter(a => a.type === 'investment' || a.type === 'temp').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
-  const liabTotal         = includedAccounts.filter(a => a.type === 'liability').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
-  const maxBal            = Math.max(...includedAccounts.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
-  const netPeriod         = totalIncome - totalExpense;
+  const categoryMap = useMemo(() => { const m = {}; categories.forEach(c => { m[c.id] = c; }); return m; }, [categories]);
+  const accountMap  = useMemo(() => { const m = {}; accounts.forEach(a => { m[a.id] = a; }); return m; }, [accounts]);
+
+  const { includedAccounts, excludedCount, netWorth, assetTotal, investTotal, liabTotal, maxBal } = useMemo(() => {
+    const included = accounts.filter(a => !a.exclude_from_total);
+    const excluded = accounts.length - included.length;
+    const net   = included.reduce((s, a) => { const b = accountBalances[a.id] || 0; return a.type === 'liability' ? s - b : s + b; }, 0);
+    const asset = included.filter(a => (a.type || 'asset') === 'asset').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
+    const inv   = included.filter(a => a.type === 'investment' || a.type === 'temp').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
+    const liab  = included.filter(a => a.type === 'liability').reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
+    const max   = Math.max(...included.map(a => Math.abs(accountBalances[a.id] || 0)), 1);
+    return { includedAccounts: included, excludedCount: excluded, netWorth: net, assetTotal: asset, investTotal: inv, liabTotal: liab, maxBal: max };
+  }, [accounts, accountBalances]);
+  const netPeriod = totalIncome - totalExpense;
 
   const kpis = [
     assetTotal  > 0 && { label: 'Cash & Assets',  value: assetTotal,  color: 'text-on-surface',         prefix: '' },
@@ -240,8 +246,8 @@ const Dashboard = () => {
                   key={t.id}
                   t={t}
                   onClick={openEditTransaction}
-                  categories={categories}
-                  accounts={accounts}
+                  categoryMap={categoryMap}
+                  accountMap={accountMap}
                   currencySymbol={currencySymbol}
                 />
               ))}
