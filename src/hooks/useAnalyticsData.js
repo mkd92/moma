@@ -80,7 +80,10 @@ export function useAnalyticsData({
       const isLiab = acctTypeMap[aid] === 'liability';
       let bal = parseFloat(account?.initial_balance) || 0;
 
-      [...txs]
+      // txs arrives in Supabase DESC order. Reversing first seeds the stable
+      // sort in ASC order so that ties in created_at (rapid inserts on the
+      // same day) resolve oldest-first instead of staying DESC.
+      [...txs].reverse()
         .sort((a, b) => {
           const d1 = a.transaction_date || '';
           const d2 = b.transaction_date || '';
