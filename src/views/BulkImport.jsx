@@ -356,6 +356,7 @@ const BulkImport = () => {
   const [isCommitting, setIsCommitting] = useState(false);
   const [postAccountId, setPostAccountId] = useState(null);
   const userPickedAccount = useRef(false);
+  const committingRef = useRef(false);   // hard re-entrancy guard (closes the double-click window)
   const tableRef = useRef(null);
 
   /**
@@ -525,6 +526,11 @@ const BulkImport = () => {
   };
 
   const handleCommit = useCallback(async () => {
+    // Re-entrancy guard: `isCommitting` is async state with a render gap, so a
+    // fast double/triple-click would fire this again and insert the batch twice.
+    // The ref flips synchronously, so only the first invocation proceeds.
+    if (committingRef.current) return;
+
     const readyRows = enrichedRows.filter(r => r._status === 'ready');
     if (!readyRows.length || !session) return;
     // Never post to an arbitrary account — require an explicit target.
@@ -533,28 +539,30 @@ const BulkImport = () => {
       return;
     }
 
+    committingRef.current = true;
     setIsCommitting(true);
     try {
-      const regular   = [];
-      const transfers = [];
+      const payload = [];
 
       for (const row of readyRows) {
         const v = parseFloat(row.amount);
         if (row.type === 'transfer') {
           const tid = crypto.randomUUID();
           const base = { user_id: session.user.id, amount: v, note: row.note.trim() || null, transaction_date: row.date, transfer_id: tid, category_id: null, party_id: null };
-          transfers.push({ ...base, account_id: row.from_account_id, type: 'expense' }, { ...base, account_id: row.to_account_id, type: 'income' });
+          payload.push(
+            { ...base, account_id: row.from_account_id, type: 'expense' },
+            { ...base, account_id: row.to_account_id, type: 'income' },
+          );
         } else {
-          regular.push({ user_id: session.user.id, account_id: effectiveAccountId, category_id: row.category_id || null, amount: v, type: row.type, note: row.note.trim() || null, transaction_date: row.date });
+          payload.push({ user_id: session.user.id, account_id: effectiveAccountId, category_id: row.category_id || null, amount: v, type: row.type, note: row.note.trim() || null, transaction_date: row.date });
         }
       }
 
-      const ops = [];
-      if (regular.length)   ops.push(supabase.from('transactions').insert(regular));
-      if (transfers.length) ops.push(supabase.from('transactions').insert(transfers));
-      const results = await Promise.all(ops);
-      const failed  = results.find(r => r.error);
-      if (failed) throw failed.error;
+      // Single insert = one atomic statement. No partial success across two
+      // calls, so a transient error can never leave half the batch saved (which
+      // a retry would then duplicate).
+      const { error } = await supabase.from('transactions').insert(payload);
+      if (error) throw error;
 
       showToast(`${readyRows.length} entr${readyRows.length === 1 ? 'y' : 'ies'} committed`, 'success');
       await fetchTransactions();
@@ -562,6 +570,9 @@ const BulkImport = () => {
     } catch (err) {
       console.error('Bulk commit error:', err);
       showToast(err.message || 'Commit failed', 'error');
+      // Only release the guard on failure so the user can retry. On success we
+      // navigate away and the component unmounts, discarding the ref.
+      committingRef.current = false;
     } finally {
       setIsCommitting(false);
     }
