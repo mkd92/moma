@@ -354,12 +354,31 @@ const BulkImport = () => {
 
   const [rows, setRows]           = useState([makeRow()]);
   const [isCommitting, setIsCommitting] = useState(false);
+  const [postAccountId, setPostAccountId] = useState(null);
+  const userPickedAccount = useRef(false);
   const tableRef = useRef(null);
 
-  const effectiveAccountId = defaultAccountId || (accounts.length > 0 ? accounts[0].id : null);
-  const defaultAccount = accounts.find(a => a.id === effectiveAccountId);
+  /**
+   * The account every NON-transfer row posts to. Seeded from the user's saved
+   * default account once it loads (the profile fetch is async and can resolve
+   * AFTER cached accounts populate). Auto-corrects to the real default when it
+   * arrives — UNLESS the user has manually overridden the selector. We never
+   * silently fall back to accounts[0] for committing: see the commit guard.
+   */
+  useEffect(() => {
+    if (userPickedAccount.current) return;
+    if (defaultAccountId) {
+      setPostAccountId(defaultAccountId);
+    } else if (accounts.length > 0) {
+      setPostAccountId(prev => prev || accounts[0].id);
+    }
+  }, [defaultAccountId, accounts]);
 
-  /* Current balance of the default account */
+  // Posting target (user-controlled). Alias keeps the rest of the file unchanged.
+  const effectiveAccountId = postAccountId;
+  const postAccount = accounts.find(a => a.id === effectiveAccountId);
+
+  /* Current balance of the account entries post to */
   const accountCurrentBalance = useMemo(() => {
     if (!effectiveAccountId) return 0;
     const acct = accounts.find(a => a.id === effectiveAccountId);
@@ -507,7 +526,12 @@ const BulkImport = () => {
 
   const handleCommit = useCallback(async () => {
     const readyRows = enrichedRows.filter(r => r._status === 'ready');
-    if (!readyRows.length || !effectiveAccountId || !session) return;
+    if (!readyRows.length || !session) return;
+    // Never post to an arbitrary account — require an explicit target.
+    if (!effectiveAccountId) {
+      showToast('Choose which account these entries post to first', 'error');
+      return;
+    }
 
     setIsCommitting(true);
     try {
@@ -611,13 +635,31 @@ const BulkImport = () => {
             </h1>
             <p className="text-sm text-on-surface-variant leading-relaxed">
               Set the type per row, fill in the details, confirm the running balance, then commit when every entry is grounded.
-              {defaultAccount && (
-                <span className="ml-2 inline-flex items-center gap-1 text-[11px] text-on-surface-variant/50 font-semibold">
-                  <span className="material-symbols-outlined text-sm">account_balance</span>
-                  Entries post to <strong className="text-on-surface-variant/70">{defaultAccount.name}</strong>
-                </span>
-              )}
             </p>
+
+            {/* Post-to account selector — every non-transfer row lands here.
+                Made explicit so entries never silently post to the wrong account. */}
+            <div className="flex items-center gap-3 flex-wrap pt-1">
+              <div className="inline-flex items-center gap-2.5 bg-surface-low rounded-2xl pl-4 pr-3 py-2.5 border border-outline-variant/15 shadow-sm">
+                <span className="material-symbols-outlined text-[18px] text-primary">account_balance</span>
+                <label htmlFor="bulk-post-account" className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/50">
+                  Post entries to
+                </label>
+                <select
+                  id="bulk-post-account"
+                  value={postAccountId || ''}
+                  onChange={e => { userPickedAccount.current = true; setPostAccountId(e.target.value || null); }}
+                  className="bg-transparent text-sm font-black text-on-surface outline-none cursor-pointer pr-1"
+                >
+                  {accounts.length === 0 && <option value="">No accounts</option>}
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[11px] text-on-surface-variant/40 font-medium">
+                <span className="material-symbols-outlined text-[14px]">sync_alt</span>
+                Transfer rows use their own From → To accounts.
+              </span>
+            </div>
           </div>
 
           {/* Stats bar */}
@@ -653,7 +695,7 @@ const BulkImport = () => {
                       { label: 'Payee / Note',                               cls: 'px-3' },
                       { label: 'Category / Accounts',                        cls: 'px-3' },
                       { label: 'Amount',                                      cls: 'px-3 text-right' },
-                      { label: `Balance · ${defaultAccount?.name || 'Account'}`, cls: 'px-4 text-right' },
+                      { label: `Balance · ${postAccount?.name || 'Account'}`, cls: 'px-4 text-right' },
                       { label: 'Status',                                      cls: 'px-3' },
                       { label: '',                                            cls: 'w-10 pr-4' },
                     ].map(({ label, cls }) => (
@@ -837,7 +879,7 @@ const BulkImport = () => {
             <span className="material-symbols-outlined text-sm">info</span>
             <span>
               Running balance anchors to{' '}
-              <strong className="text-on-surface-variant/60">{defaultAccount?.name || '…'}</strong>
+              <strong className="text-on-surface-variant/60">{postAccount?.name || '…'}</strong>
               {' '}current balance:{' '}
               <strong className={accountCurrentBalance >= 0 ? 'text-primary/70' : 'text-secondary/70'}>
                 {fmt(accountCurrentBalance)}
