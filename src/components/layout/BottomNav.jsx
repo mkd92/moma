@@ -1,11 +1,11 @@
 import React from 'react';
 
 const PILL_STYLE = {
-  background: 'rgba(40, 52, 39, 0.88)',
+  background: 'rgba(7, 16, 29, 0.88)',
   backdropFilter: 'blur(20px) saturate(180%)',
   WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-  boxShadow: '0 4px 28px rgba(40, 52, 39, 0.35), 0 1px 6px rgba(40, 52, 39, 0.2), inset 0 1px 0 rgba(210, 233, 205, 0.14)',
-  border: '1px solid rgba(210, 233, 205, 0.18)',
+  boxShadow: '0 4px 28px rgba(7, 16, 29, 0.45), 0 1px 6px rgba(7, 16, 29, 0.3), inset 0 1px 0 rgba(138, 180, 212, 0.12)',
+  border: '1px solid rgba(138, 180, 212, 0.18)',
 };
 
 const NavBtn = ({ icon, label, isActive, onClick, compact = false, className = '' }) => (
@@ -13,8 +13,8 @@ const NavBtn = ({ icon, label, isActive, onClick, compact = false, className = '
     onClick={onClick}
     className={`flex flex-col items-center justify-center gap-0.5 rounded-full transition-all duration-200 ${compact ? 'px-3 py-2' : 'px-2 py-2'} ${className}`}
     style={{
-      background: isActive ? 'rgba(210, 233, 205, 0.2)' : 'transparent',
-      color: isActive ? '#d2e9cd' : 'rgba(210, 233, 205, 0.6)',
+      background: isActive ? 'rgba(138, 180, 212, 0.2)' : 'transparent',
+      color: isActive ? '#d6e8f7' : 'rgba(138, 180, 212, 0.6)',
     }}
   >
     <span
@@ -30,7 +30,7 @@ const NavBtn = ({ icon, label, isActive, onClick, compact = false, className = '
 const Divider = () => (
   <div
     className="w-px self-stretch my-2 mx-1 shrink-0"
-    style={{ background: 'rgba(210, 233, 205, 0.18)' }}
+    style={{ background: 'rgba(138, 180, 212, 0.18)' }}
   />
 );
 
