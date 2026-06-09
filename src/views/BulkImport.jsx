@@ -107,9 +107,12 @@ function TypeToggle({ value, onChange, onArrow, dataRow, dataCol }) {
 /* ─── Cell Category Picker ─────────────────────────────────────────────────── */
 
 /**
- * Keyboard contract (trigger button focused):
- *   ↑/↓  and ←/→ delegated to onArrow for row/column navigation
- *   Enter  opens dropdown
+ * Keyboard contract:
+ *   Trigger button  — Enter/Space opens dropdown; ↑↓←→ delegated to onArrow
+ *   Search input    — type to filter; ↓ moves into list; Enter auto-selects
+ *                     when exactly one result remains; Escape closes
+ *   Option buttons  — ↓/↑ navigate list (↑ on first wraps back to search);
+ *                     Enter/Space selects; Escape closes
  */
 function CellCategoryPicker({ value, onChange, categories, type, onArrow, dataRow, dataCol }) {
   const [open, setOpen]     = useState(false);
@@ -118,6 +121,7 @@ function CellCategoryPicker({ value, onChange, categories, type, onArrow, dataRo
   const btnRef    = useRef(null);
   const menuRef   = useRef(null);
   const searchRef = useRef(null);
+  const listRef   = useRef(null);   // wraps all option buttons for keyboard nav
 
   const parents = categories.filter(c => !c.parent_id && c.type === type);
   const subs    = categories.filter(c => c.parent_id);
@@ -140,6 +144,8 @@ function CellCategoryPicker({ value, onChange, categories, type, onArrow, dataRo
   const displayLabel = selected
     ? selected.parentName ? `${selected.parentName} · ${selected.label}` : selected.label
     : null;
+
+  const closeMenu = () => { setOpen(false); btnRef.current?.focus(); };
 
   const openMenu = (e) => {
     e?.stopPropagation();
@@ -164,6 +170,25 @@ function CellCategoryPicker({ value, onChange, categories, type, onArrow, dataRo
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  // Keyboard navigation inside the option list
+  const handleItemKeyDown = (e) => {
+    const items = Array.from(listRef.current?.querySelectorAll('button') || []);
+    const idx   = items.indexOf(e.currentTarget);
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = items[idx + 1];
+      if (next) next.focus(); else searchRef.current?.focus(); // wrap to top
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (idx > 0) items[idx - 1].focus(); else searchRef.current?.focus(); // back to search
+    } else if (e.key === 'Escape') {
+      closeMenu();
+    } else if (e.key === 'Tab') {
+      // Close and let Tab move to the next table cell naturally
+      setOpen(false);
+    }
+  };
+
   return (
     <>
       <button
@@ -173,7 +198,7 @@ function CellCategoryPicker({ value, onChange, categories, type, onArrow, dataRo
         data-col={dataCol}
         onClick={openMenu}
         onKeyDown={(e) => {
-          if (open) return; // let dropdown handle keys when open
+          if (open) return; // dropdown is open — let its own handlers take over
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMenu(); return; }
           onArrow?.(e);
         }}
@@ -191,6 +216,7 @@ function CellCategoryPicker({ value, onChange, categories, type, onArrow, dataRo
 
       {open && createPortal(
         <div ref={menuRef} className="bg-surface-low rounded-2xl border border-outline-variant shadow-2xl overflow-hidden" style={style}>
+          {/* Search */}
           <div className="p-2 border-b border-outline-variant/20">
             <input
               ref={searchRef}
@@ -199,15 +225,38 @@ function CellCategoryPicker({ value, onChange, categories, type, onArrow, dataRo
               placeholder="Search categories…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); btnRef.current?.focus(); } }}
+              onKeyDown={e => {
+                if (e.key === 'Escape') { closeMenu(); return; }
+
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  // Move focus into the first item in the list
+                  listRef.current?.querySelectorAll('button')[0]?.focus();
+                  return;
+                }
+
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (filtered.length === 1) {
+                    // Single match — auto-select immediately
+                    onChange(filtered[0].value); closeMenu();
+                  } else if (filtered.length > 1) {
+                    // Multiple matches — jump into the list so the user can pick
+                    listRef.current?.querySelectorAll('button')[0]?.focus();
+                  }
+                }
+              }}
               onClick={e => e.stopPropagation()}
             />
           </div>
-          <div className="max-h-[220px] overflow-y-auto py-1">
+
+          {/* Option list */}
+          <div ref={listRef} className="max-h-[220px] overflow-y-auto py-1">
             {value && (
               <button
-                className="w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-error/60 hover:bg-error/5 transition-colors"
-                onClick={() => { onChange(null); setOpen(false); btnRef.current?.focus(); }}
+                className="w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-error/60 hover:bg-error/5 focus:outline-none focus:bg-error/5 transition-colors"
+                onKeyDown={handleItemKeyDown}
+                onClick={() => { onChange(null); closeMenu(); }}
               >
                 — Clear
               </button>
@@ -215,14 +264,15 @@ function CellCategoryPicker({ value, onChange, categories, type, onArrow, dataRo
             {filtered.map(opt => (
               <button
                 key={opt.value}
-                className={`w-full flex items-center gap-2 text-left py-2.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                className={`w-full flex items-center gap-2 text-left py-2.5 text-[10px] font-bold uppercase tracking-wide transition-colors focus:outline-none ${
                   opt.indent ? 'pl-8 pr-4' : 'px-4'
                 } ${
                   opt.value === value
-                    ? 'bg-primary-fixed text-primary'
-                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                    ? 'bg-primary-fixed text-primary focus:bg-primary-fixed/80'
+                    : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface focus:bg-surface-container focus:text-on-surface'
                 }`}
-                onClick={() => { onChange(opt.value); setOpen(false); btnRef.current?.focus(); }}
+                onKeyDown={handleItemKeyDown}
+                onClick={() => { onChange(opt.value); closeMenu(); }}
               >
                 <span className="material-symbols-outlined shrink-0" style={{ fontSize: 13 }}>{opt.icon}</span>
                 <span className="truncate">{opt.label}</span>
