@@ -127,10 +127,16 @@ export default function App() {
     ...txForm,
     shellProps,
     setView,
+    // Wrap openEditTransaction to capture the caller's view so handleTransaction
+    // can navigate back there instead of always going to ledger
+    openEditTransaction: (t) => {
+      txForm.setPostSaveView(view);
+      txForm.openEditTransaction(t);
+    },
     navToLedger: () => { txForm.resetForm(); setView('ledger'); },
     navToAnalytics: () => setView('analytics'),
     navToDashboard: () => setView('dashboard'),
-  }), [appData, txForm, shellProps, setView]);
+  }), [appData, txForm, shellProps, setView, view]);
 
   // --- View Selection ---
   const renderViewContent = () => {

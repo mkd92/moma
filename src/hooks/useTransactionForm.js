@@ -17,6 +17,7 @@ export function useTransactionForm(session, accounts, categories, transactions, 
   const [transferFromAccount, setTransferFromAccount] = useState(null);
   const [transferToAccount, setTransferToAccount] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [postSaveView, setPostSaveView] = useState('ledger');
 
   const resetForm = useCallback(() => {
     setTxToEdit(null);
@@ -116,7 +117,7 @@ export function useTransactionForm(session, accounts, categories, transactions, 
       localStorage.setItem('moma_last_tx_date', txDate);
       await fetchTransactions();
       resetForm();
-      setView('ledger');
+      setView(postSaveView);
     } catch (err) {
       console.error('Transaction error:', err);
       showToast(err.message || 'Failed to save entry', 'error');
@@ -147,14 +148,16 @@ export function useTransactionForm(session, accounts, categories, transactions, 
     transferFromAccount, setTransferFromAccount,
     transferToAccount, setTransferToAccount,
     isSubmitting,
+    postSaveView, setPostSaveView,
     resetForm,
     openEditTransaction,
     handleTransaction,
     currentParents,
     applicableSubs
   }), [
-    txToEdit, txType, amount, selectedCategory, selectedSubcategory, selectedParty, selectedAccount, 
+    txToEdit, txType, amount, selectedCategory, selectedSubcategory, selectedParty, selectedAccount,
     note, txDate, selectedTags, transferFromAccount, transferToAccount, isSubmitting,
+    postSaveView, setPostSaveView,
     resetForm, openEditTransaction, handleTransaction, currentParents, applicableSubs
   ]);
 }

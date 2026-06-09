@@ -44,7 +44,7 @@ const FilterPanel = ({ categories, tags, accounts, filterOptions, onUpdateFilter
     { id: 'this_month', label: 'This Month' },
     { id: 'last_month', label: 'Last Month' },
     { id: 'last_3m', label: 'Last 3m' },
-    { id: 'this_year', label: 'Last Year' }, // In useFilters it's named this_year but label requested is last year or similar
+    { id: 'this_year', label: 'This Year' },
     { id: 'custom', label: 'Custom' }
   ];
 

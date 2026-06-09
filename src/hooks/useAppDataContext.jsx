@@ -16,7 +16,7 @@ export function AppDataProvider({ value, children }) {
     setCurrencyCode, setCurrencySymbol, setDefaultAccountId, setDashPeriod,
     setFilterOptions, setLedgerSort, setDrillCategory, setCatBreakdownType, setSettingsType,
     setShowAdvancedFilters, setShowAnalyticsFilters, setBulkSelectMode, setSelectedTxIds, setBulkCategory,
-    openEditTransaction, resetForm, handleTransaction, shellProps,
+    openEditTransaction, resetForm, handleTransaction, setPostSaveView, shellProps,
     
     // Data (volatile)
     ...data
@@ -32,7 +32,7 @@ export function AppDataProvider({ value, children }) {
     setCurrencyCode, setCurrencySymbol, setDefaultAccountId, setDashPeriod,
     setFilterOptions, setLedgerSort, setDrillCategory, setCatBreakdownType, setSettingsType,
     setShowAdvancedFilters, setShowAnalyticsFilters, setBulkSelectMode, setSelectedTxIds, setBulkCategory,
-    openEditTransaction, resetForm, handleTransaction, shellProps
+    openEditTransaction, resetForm, handleTransaction, setPostSaveView, shellProps
   }), [
     fetchCategories, fetchParties, fetchTags, fetchAccounts, fetchBudgets, fetchTransactions,
     fetchInitialData, refreshData, setView, navToLedger, navToAnalytics, navToDashboard,
@@ -43,7 +43,7 @@ export function AppDataProvider({ value, children }) {
     setCurrencyCode, setCurrencySymbol, setDefaultAccountId, setDashPeriod,
     setFilterOptions, setLedgerSort, setDrillCategory, setCatBreakdownType, setSettingsType,
     setShowAdvancedFilters, setShowAnalyticsFilters, setBulkSelectMode, setSelectedTxIds, setBulkCategory,
-    openEditTransaction, resetForm, handleTransaction, shellProps
+    openEditTransaction, resetForm, handleTransaction, setPostSaveView, shellProps
   ]);
 
   return (

@@ -6,14 +6,12 @@ import { getCategoryIcon } from '../utils/formatters';
 
 /* ─── Helpers ──────────────────────────────────────────────────────────────── */
 
-const TODAY = new Date().toISOString().split('T')[0];
-
 // Column indices — keep in sync with the <td> render order
 const COL = { DATE: 0, TYPE: 1, NOTE: 2, DETAIL: 3, AMOUNT: 4 };
 
 const makeRow = () => ({
   id: crypto.randomUUID(),
-  date: TODAY,
+  date: new Date().toISOString().split('T')[0],
   note: '',
   type: 'expense',
   category_id: null,

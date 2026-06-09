@@ -49,6 +49,7 @@ const NewTransaction = () => {
   const isEditing = !!txToEdit;
   const noteInputRef = useRef(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [amountError, setAmountError] = useState('');
 
   // Auto-focus the note field when opening a new (not edit) transaction
   useEffect(() => {
@@ -112,7 +113,16 @@ const NewTransaction = () => {
         <section className="grid grid-cols-1 md:grid-cols-12 gap-8">
           {/* Main Form */}
           <div className="md:col-span-8 bg-surface-lowest rounded-[2rem] p-8 md:p-10 shadow-[0_20px_40px_rgba(77,97,75,0.08)]">
-            <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); handleTransaction(); }}>
+            <form className="space-y-8" onSubmit={(e) => {
+              e.preventDefault();
+              const val = parseFloat(amount);
+              if (isNaN(val) || val <= 0) {
+                setAmountError('Please enter a valid amount greater than zero.');
+                return;
+              }
+              setAmountError('');
+              handleTransaction();
+            }}>
 
               {/* Transaction type selector */}
               <div className="flex bg-surface-low p-1 rounded-2xl gap-1">
@@ -155,17 +165,20 @@ const NewTransaction = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-on-surface-variant mb-2 px-1">Energy amount</label>
+                  <label className="block text-sm font-semibold text-on-surface-variant mb-2 px-1">Amount</label>
                   <div className="relative">
                     <span className="absolute left-5 top-1/2 -translate-y-1/2 text-primary font-bold text-lg">{currencySymbol}</span>
                     <input
                       type="number"
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
+                      onChange={(e) => { setAmount(e.target.value); if (amountError) setAmountError(''); }}
                       placeholder="0.00"
-                      className="w-full bg-surface-low border-none rounded-2xl py-4 pl-10 pr-5 text-on-surface text-xl font-bold focus:ring-2 focus:ring-primary/20 focus:bg-surface-lowest outline-none transition-all"
+                      className={`w-full bg-surface-low border-none rounded-2xl py-4 pl-10 pr-5 text-on-surface text-xl font-bold focus:ring-2 outline-none transition-all ${amountError ? 'ring-2 ring-error/50 focus:ring-error/50 bg-error/[0.03]' : 'focus:ring-primary/20 focus:bg-surface-lowest'}`}
                     />
                   </div>
+                  {amountError && (
+                    <p className="text-error text-xs font-medium mt-2 px-1 fade-in">{amountError}</p>
+                  )}
                 </div>
               </div>
 

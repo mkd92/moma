@@ -10,7 +10,9 @@ const TransactionItem = memo(({ t, onClick, categoryMap, accountMap, currencySym
   const icon = isTransfer ? 'sync_alt' : getCategoryIcon(cat?.name || 'Other');
 
   const dateStr = t.transaction_date || t.created_at?.split('T')[0];
-  const displayDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+  // Append T12:00:00 so the date is parsed as local noon, not UTC midnight
+  // which would shift to the previous calendar day in UTC-offset timezones
+  const displayDate = dateStr ? new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
 
   return (
     <div

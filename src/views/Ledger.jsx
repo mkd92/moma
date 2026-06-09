@@ -40,7 +40,13 @@ const Ledger = () => {
 
   const setShowFilters = setShowAdvancedFilters;
 
-  const activeFiltersCount = (filterOptions.type !== 'all' ? 1 : 0) + (filterOptions.dateRange.start ? 1 : 0) + (filterOptions.dateRange.end ? 1 : 0) + filterOptions.categoryIds.length + filterOptions.tagIds.length;
+  const activeFiltersCount =
+    (filterOptions.type !== 'all' ? 1 : 0) +
+    (filterOptions.dateRange.start || filterOptions.dateRange.end ? 1 : 0) +
+    filterOptions.categoryIds.length +
+    filterOptions.tagIds.length +
+    filterOptions.accountIds.length +
+    (filterOptions.searchTerm?.trim() ? 1 : 0);
   
   const effectiveSelectedIds = selectedTxIds || new Set();
   const allVisibleIds = filteredLedger.filter(t => !t.transfer_id).map(t => t.id);

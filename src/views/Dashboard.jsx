@@ -16,7 +16,7 @@ const Dashboard = () => {
     totalIncome, totalExpense,
     dashTransactions, accounts, categories,
     smartInsights, accountBalances, topCategories,
-    dashPeriod, isLoading,
+    dashPeriod, setDashPeriod, isLoading,
     openEditTransaction, navToLedger, setView, navToAnalytics,
     resetFilters, updateFilter, refreshData,
   } = useAppDataContext();
@@ -67,7 +67,7 @@ const Dashboard = () => {
         {/* ───────────────────────────────────────────────────────────
             NET WORTH STATEMENT CARD
         ─────────────────────────────────────────────────────────── */}
-        <div className="bg-surface-lowest rounded-[1.75rem] overflow-hidden" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 8px 40px rgba(77,97,75,0.07)' }}>
+        <div className="bg-surface-lowest rounded-[1.75rem] overflow-hidden" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 8px 40px rgba(7,16,29,0.07)' }}>
 
           {/* ── Top: headline + actions ── */}
           <div className="px-8 md:px-10 pt-9 pb-7">
@@ -193,11 +193,35 @@ const Dashboard = () => {
         </div>
 
         {/* ───────────────────────────────────────────────────────────
+            PERIOD SELECTOR
+        ─────────────────────────────────────────────────────────── */}
+        <div className="flex items-center gap-1 bg-surface-lowest rounded-2xl p-1 shadow-sm self-start w-full sm:w-auto">
+          {[
+            { key: 'this_month',  label: 'This Month' },
+            { key: 'last_month',  label: 'Last Month' },
+            { key: 'last_3m',     label: 'Last 3M' },
+            { key: 'this_year',   label: 'This Year' },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setDashPeriod(key)}
+              className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                dashPeriod === key
+                  ? 'bg-primary text-on-primary shadow-sm'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* ───────────────────────────────────────────────────────────
             PERIOD FLOW — single card, 3 columns
         ─────────────────────────────────────────────────────────── */}
         <div
           className="grid grid-cols-3 divide-x divide-outline-variant/10 bg-surface-lowest rounded-[1.5rem] overflow-hidden"
-          style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(77,97,75,0.06)' }}
+          style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(7,16,29,0.06)' }}
         >
           <button
             className="text-left px-4 md:px-9 py-6 hover:bg-surface-low/60 transition-colors group"
@@ -239,7 +263,7 @@ const Dashboard = () => {
 
             <div
               className="bg-surface-lowest rounded-[1.5rem] overflow-hidden"
-              style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(77,97,75,0.06)' }}
+              style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(7,16,29,0.06)' }}
             >
               {dashTransactions.filter(t => !t.transfer_id).slice(0, 7).map(t => (
                 <TransactionItem
@@ -276,7 +300,7 @@ const Dashboard = () => {
 
               <div
                 className="bg-surface-lowest rounded-[1.5rem] overflow-hidden"
-                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(77,97,75,0.06)' }}
+                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(7,16,29,0.06)' }}
               >
                 {topCategories.length > 0 ? topCategories.slice(0, 5).map(({ name, amount }, i) => {
                   const pct = totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0;
@@ -309,7 +333,7 @@ const Dashboard = () => {
             {smartInsights.length > 0 && (
               <div
                 className="rounded-[1.5rem] overflow-hidden bg-surface-lowest"
-                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(77,97,75,0.06)' }}
+                style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 20px rgba(7,16,29,0.06)' }}
               >
                 <div className="border-l-[3px] border-primary px-6 py-5">
                   <div className="flex items-center gap-2 mb-2">
