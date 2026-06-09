@@ -4,6 +4,18 @@ import CustomDropdown from '../components/CustomDropdown';
 import { getCategoryIcon } from '../utils/formatters';
 import { useAppDataContext } from '../hooks';
 
+// Local date helpers — avoids UTC midnight timezone shift
+const pad = n => String(n).padStart(2, '0');
+const toLocalDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+const TYPE_CONFIG = {
+  expense:  { icon: 'arrow_downward', label: 'Expense',  amountColor: 'text-error',     tabActive: 'bg-error/10 text-error border-error/20' },
+  income:   { icon: 'arrow_upward',   label: 'Income',   amountColor: 'text-primary',    tabActive: 'bg-primary/10 text-primary border-primary/20' },
+  transfer: { icon: 'sync_alt',       label: 'Transfer', amountColor: 'text-on-surface', tabActive: 'bg-surface-high text-on-surface border-outline-variant/30' },
+};
+
+const TX_TYPES = ['expense', 'income', 'transfer'];
+
 const NewTransaction = () => {
   const {
     txToEdit,
@@ -26,6 +38,7 @@ const NewTransaction = () => {
     transferToAccount,
     isSubmitting,
     isLoading,
+    postSaveView,
     resetForm,
     setView,
     setTxType,
@@ -42,17 +55,34 @@ const NewTransaction = () => {
     handleTransaction,
     handleDeleteTransaction: onDelete,
     refreshData,
-    dashTransactions,
-    categories,
-    savingsRate,
   } = useAppDataContext();
 
   const isEditing = !!txToEdit;
+
   const noteInputRef = useRef(null);
+  const amountInputRef = useRef(null);
+  const dateInputRef = useRef(null);
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [amountError, setAmountError] = useState('');
+  const [showHints, setShowHints] = useState(false);
 
-  // Auto-focus the note field when opening a new (not edit) transaction
+  // Recompute each render to handle midnight rollover within a session
+  const todayStr = toLocalDate(new Date());
+  const yesterdayDate = new Date(); yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = toLocalDate(yesterdayDate);
+
+  const isToday = txDate === todayStr;
+  const isYesterday = txDate === yesterdayStr;
+  const isCustomDate = !isToday && !isYesterday;
+
+  const formattedCustomDate = isCustomDate && txDate
+    ? new Date(txDate + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
+
+  const typeConfig = TYPE_CONFIG[txType] || TYPE_CONFIG.expense;
+
+  // Focus note field on new entry
   useEffect(() => {
     if (!isEditing) {
       const t = setTimeout(() => noteInputRef.current?.focus(), 50);
@@ -60,23 +90,14 @@ const NewTransaction = () => {
     }
   }, [isEditing]);
 
-  const doDelete = () => {
-    onDelete(txToEdit);
-    resetForm();
-    setView('ledger');
-  };
-
-  const TX_TYPES = ['expense', 'income', 'transfer'];
-
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e) => {
-      // Cmd/Ctrl+S or Alt+Enter → save
       if ((e.key === 's' && (e.ctrlKey || e.metaKey)) || (e.altKey && e.key === 'Enter')) {
         e.preventDefault();
         handleTransaction();
         return;
       }
-      // Alt+← / Alt+→ → cycle transaction type
       if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         e.preventDefault();
         const idx = TX_TYPES.indexOf(txType);
@@ -92,162 +113,265 @@ const NewTransaction = () => {
     return () => document.removeEventListener('keydown', handler);
   }, [handleTransaction, txType, setTxType, setSelectedCategory, setSelectedSubcategory]);
 
+  const doDelete = () => {
+    onDelete(txToEdit);
+    resetForm();
+    setView('ledger');
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    setView(isEditing ? (postSaveView || 'ledger') : 'dashboard');
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const val = parseFloat(amount);
+    if (isNaN(val) || val <= 0) {
+      setAmountError('Enter an amount greater than zero.');
+      amountInputRef.current?.focus();
+      return;
+    }
+    setAmountError('');
+    handleTransaction();
+  };
+
+  const handleTypeChange = (t) => {
+    setTxType(t);
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
+  };
+
+  // Build flat category options list
+  const categoryOptions = currentParents.flatMap(p => [
+    { value: p.id, label: p.name, icon: getCategoryIcon(p.name), isParent: true },
+    ...applicableSubs
+      .filter(s => s.parent_id === p.id)
+      .map(s => ({ value: s.id, label: s.name, icon: getCategoryIcon(s.name), indent: true, parentId: p.id }))
+  ]);
+  const activeCategoryValue = selectedSubcategory || selectedCategory;
+  const handleCategoryChange = (id) => {
+    const sub = applicableSubs.find(s => s.id === id);
+    if (sub) { setSelectedCategory(sub.parent_id); setSelectedSubcategory(id); }
+    else { setSelectedCategory(id); setSelectedSubcategory(null); }
+  };
+
   return (
     <PageShell view="new_transaction" onRefresh={refreshData} isLoading={isLoading}>
-      <div
-        className="page-inner px-4 md:px-8 pt-6 max-w-5xl mx-auto"
-      >
-        {/* Editorial Header */}
-        <header className="mb-10">
-          <div className="inline-flex items-center gap-2 text-primary font-semibold mb-4">
-            <span className="material-symbols-outlined text-sm">spa</span>
-            <span className="text-xs uppercase tracking-widest">Entry Creation</span>
+      <div className="min-h-full pb-32">
+        <div className="max-w-lg mx-auto px-4 pt-7">
+
+          {/* ── Compact Header ─────────────────────────────────────────── */}
+          <div className="flex items-center gap-3 mb-8">
+            <button
+              type="button"
+              aria-label="Go back"
+              onClick={handleCancel}
+              className="w-10 h-10 rounded-2xl bg-surface-low flex items-center justify-center text-on-surface-variant hover:bg-surface-high hover:text-on-surface transition-all shrink-0"
+            >
+              <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            </button>
+            <h1 className="text-xl font-bold text-on-surface tracking-tight">
+              {isEditing ? 'Edit Entry' : 'New Entry'}
+            </h1>
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary tracking-tight leading-tight max-w-xl">
-            {isEditing ? 'Revise this movement of your funds.' : "Let's record a new movement of your funds."}
-          </h1>
-          <p className="mt-3 text-on-surface-variant text-base font-normal leading-relaxed">
-            Nurture your financial garden by acknowledging every flow.
-          </p>
-        </header>
 
-        <section className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          {/* Main Form */}
-          <div className="md:col-span-8 bg-surface-lowest rounded-[2rem] p-8 md:p-10 shadow-[0_20px_40px_rgba(77,97,75,0.08)]">
-            <form className="space-y-8" onSubmit={(e) => {
-              e.preventDefault();
-              const val = parseFloat(amount);
-              if (isNaN(val) || val <= 0) {
-                setAmountError('Please enter a valid amount greater than zero.');
-                return;
-              }
-              setAmountError('');
-              handleTransaction();
-            }}>
+          <form onSubmit={handleSubmit} noValidate>
 
-              {/* Transaction type selector */}
-              <div className="flex bg-surface-low p-1 rounded-2xl gap-1">
-                {['expense', 'income', 'transfer'].map(t => (
+            {/* ── Type Selector ───────────────────────────────────────── */}
+            <div className="grid grid-cols-3 gap-2 mb-7">
+              {TX_TYPES.map(t => {
+                const cfg = TYPE_CONFIG[t];
+                const isActive = txType === t;
+                return (
                   <button
                     key={t}
                     type="button"
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${txType === t ? 'bg-surface-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
-                    onClick={() => { setTxType(t); setSelectedCategory(null); setSelectedSubcategory(null); }}
+                    onClick={() => handleTypeChange(t)}
+                    className={`flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border text-[10px] font-bold uppercase tracking-widest transition-all ${
+                      isActive
+                        ? cfg.tabActive
+                        : 'border-transparent bg-surface-low text-on-surface-variant hover:bg-surface-high hover:text-on-surface'
+                    }`}
                   >
-                    {t}
+                    <span
+                      className="material-symbols-outlined text-[22px]"
+                      style={{ fontVariationSettings: isActive ? "'FILL' 1, 'wght' 500" : "'FILL' 0, 'wght' 400" }}
+                    >
+                      {cfg.icon}
+                    </span>
+                    {cfg.label}
                   </button>
-                ))}
-              </div>
+                );
+              })}
+            </div>
 
-              {/* Party / Note */}
-              <div>
-                <label className="block text-sm font-semibold text-on-surface-variant mb-2 px-1">
-                  {txType === 'income' ? 'Where did this flow from?' : txType === 'transfer' ? 'Transfer note' : 'Where did this flow to?'}
+            {/* ── Amount Hero ─────────────────────────────────────────── */}
+            <div className="mb-7">
+              <div className="flex items-baseline justify-center gap-2 px-4 py-2">
+                <span className={`text-2xl font-bold leading-none shrink-0 transition-colors ${amountError ? 'text-error' : 'text-on-surface-variant/30'}`}>
+                  {currencySymbol}
+                </span>
+                <input
+                  ref={amountInputRef}
+                  type="number"
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); if (amountError) setAmountError(''); }}
+                  placeholder="0.00"
+                  inputMode="decimal"
+                  className={`min-w-0 w-full bg-transparent border-none outline-none font-black tabular-nums text-center
+                    text-[3.25rem] leading-none placeholder:text-on-surface-variant/15
+                    transition-colors focus:outline-none
+                    ${amountError ? 'text-error' : typeConfig.amountColor}`}
+                  style={{ caretColor: 'var(--primary)', WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                />
+              </div>
+              {amountError && (
+                <p className="text-error text-xs font-medium text-center mt-1.5 fade-in">{amountError}</p>
+              )}
+            </div>
+
+            {/* ── Fields Card ─────────────────────────────────────────── */}
+            <div className="bg-surface-lowest rounded-[1.75rem] shadow-[0_2px_20px_rgba(7,16,29,0.07)] overflow-hidden divide-y divide-outline-variant/10">
+
+              {/* Description / Note */}
+              <div className="px-6 py-5">
+                <label className="block text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-2.5">
+                  {txType === 'income' ? 'What was this from?' : txType === 'transfer' ? 'Note (optional)' : 'What was this for?'}
                 </label>
                 <input
                   ref={noteInputRef}
                   type="text"
-                  placeholder={txType === 'income' ? 'e.g. Client Payment' : txType === 'transfer' ? 'e.g. Monthly rebalance' : 'e.g. Organic Market'}
+                  placeholder={
+                    txType === 'income' ? 'e.g. Client payment, salary…'
+                    : txType === 'transfer' ? 'e.g. Monthly rebalance'
+                    : 'e.g. Coffee, groceries, rent…'
+                  }
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-full bg-surface-low border-none rounded-2xl py-4 px-5 text-on-surface text-base placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary/20 focus:bg-surface-lowest outline-none transition-all"
+                  className="w-full bg-transparent border-none outline-none text-on-surface text-base font-medium placeholder:text-on-surface-variant/30 focus:outline-none"
                 />
               </div>
 
-              {/* Date + Amount */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-on-surface-variant mb-2 px-1">When did it happen?</label>
-                  <input
-                    type="date"
-                    value={txDate}
-                    onChange={(e) => setTxDate(e.target.value)}
-                    className="w-full bg-surface-low border-none rounded-2xl py-4 px-5 text-on-surface focus:ring-2 focus:ring-primary/20 focus:bg-surface-lowest outline-none transition-all text-sm font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-on-surface-variant mb-2 px-1">Amount</label>
-                  <div className="relative">
-                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-primary font-bold text-lg">{currencySymbol}</span>
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={(e) => { setAmount(e.target.value); if (amountError) setAmountError(''); }}
-                      placeholder="0.00"
-                      className={`w-full bg-surface-low border-none rounded-2xl py-4 pl-10 pr-5 text-on-surface text-xl font-bold focus:ring-2 outline-none transition-all ${amountError ? 'ring-2 ring-error/50 focus:ring-error/50 bg-error/[0.03]' : 'focus:ring-primary/20 focus:bg-surface-lowest'}`}
-                    />
-                  </div>
-                  {amountError && (
-                    <p className="text-error text-xs font-medium mt-2 px-1 fade-in">{amountError}</p>
+              {/* Date */}
+              <div className="px-6 py-5">
+                <label className="block text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-3">
+                  Date
+                </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setTxDate(todayStr)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                      isToday
+                        ? 'bg-primary text-on-primary'
+                        : 'bg-surface-low text-on-surface-variant hover:bg-surface-high hover:text-on-surface'
+                    }`}
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTxDate(yesterdayStr)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                      isYesterday
+                        ? 'bg-primary text-on-primary'
+                        : 'bg-surface-low text-on-surface-variant hover:bg-surface-high hover:text-on-surface'
+                    }`}
+                  >
+                    Yesterday
+                  </button>
+                  {isCustomDate && formattedCustomDate && (
+                    <span className="px-4 py-2 rounded-full text-xs font-bold bg-primary text-on-primary">
+                      {formattedCustomDate}
+                    </span>
                   )}
+                  {/* Calendar picker: label wraps invisible input so clicking the button opens native picker */}
+                  <label className="relative cursor-pointer inline-flex">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-low text-on-surface-variant hover:bg-surface-high hover:text-on-surface transition-all pointer-events-none">
+                      <span className="material-symbols-outlined text-[17px]">calendar_month</span>
+                    </div>
+                    <input
+                      ref={dateInputRef}
+                      type="date"
+                      value={txDate}
+                      onChange={(e) => setTxDate(e.target.value)}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      aria-label="Pick a custom date"
+                    />
+                  </label>
                 </div>
               </div>
 
-              {/* Transfer-specific or normal fields */}
+              {/* Normal (expense / income) fields */}
               {txType !== 'transfer' ? (
-                <div className="space-y-6">
-                  {/* Unified category dropdown */}
-                  {currentParents.length > 0 && (() => {
-                    const categoryOptions = currentParents.flatMap(p => [
-                      { value: p.id, label: p.name, icon: getCategoryIcon(p.name), isParent: true },
-                      ...applicableSubs
-                        .filter(s => s.parent_id === p.id)
-                        .map(s => ({ value: s.id, label: s.name, icon: getCategoryIcon(s.name), indent: true, parentId: p.id }))
-                    ]);
-
-                    const activeValue = selectedSubcategory || selectedCategory;
-
-                    const handleCategoryChange = (id) => {
-                      const sub = applicableSubs.find(s => s.id === id);
-                      if (sub) {
-                        setSelectedCategory(sub.parent_id);
-                        setSelectedSubcategory(id);
-                      } else {
-                        setSelectedCategory(id);
-                        setSelectedSubcategory(null);
-                      }
-                    };
-
-                    return (
+                <>
+                  {/* Category */}
+                  {currentParents.length > 0 && (
+                    <div className="px-6 py-5">
+                      <label className="block text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-3">
+                        Category
+                      </label>
                       <CustomDropdown
-                        label="Category"
                         options={categoryOptions}
-                        value={activeValue}
+                        value={activeCategoryValue}
                         onChange={handleCategoryChange}
                         placeholder="Select a category"
                         showSearch={true}
                       />
-                    );
-                  })()}
+                    </div>
+                  )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <CustomDropdown
-                      label="Account"
-                      options={accounts.map(a => ({ value: a.id, label: a.name, icon: 'account_balance' }))}
-                      value={selectedAccount}
-                      onChange={setSelectedAccount}
-                      placeholder="Select Source"
-                    />
-                    <CustomDropdown
-                      label="Payee / Source"
-                      options={[{ value: '', label: '— No Attribution —', icon: 'person_off' }, ...parties.map(p => ({ value: p.id, label: p.name, icon: 'storefront' }))]}
-                      value={selectedParty || ''}
-                      onChange={v => setSelectedParty(v || null)}
-                      placeholder="Identify Merchant"
-                      showSearch={true}
-                    />
+                  {/* Account + Payee */}
+                  <div className="px-6 py-5 grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-3">
+                        Account
+                      </label>
+                      <CustomDropdown
+                        options={accounts.map(a => ({ value: a.id, label: a.name, icon: 'account_balance' }))}
+                        value={selectedAccount}
+                        onChange={setSelectedAccount}
+                        placeholder="Account"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-3">
+                        {txType === 'income' ? 'From' : 'Payee'}
+                        <span className="ml-1 font-normal normal-case tracking-normal opacity-50">(opt.)</span>
+                      </label>
+                      <CustomDropdown
+                        options={[
+                          { value: '', label: 'None', icon: 'person_off' },
+                          ...parties.map(p => ({ value: p.id, label: p.name, icon: 'storefront' }))
+                        ]}
+                        value={selectedParty || ''}
+                        onChange={v => setSelectedParty(v || null)}
+                        placeholder="None"
+                        showSearch={true}
+                      />
+                    </div>
                   </div>
 
+                  {/* Tags */}
                   {tags.length > 0 && (
-                    <div className="space-y-3">
-                      <p className="text-sm font-semibold text-on-surface-variant px-1">Tags</p>
+                    <div className="px-6 py-5">
+                      <label className="block text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-3">
+                        Tags
+                      </label>
                       <div className="flex flex-wrap gap-2">
                         {tags.map(t => (
                           <button
                             key={t.id}
                             type="button"
-                            onClick={() => setSelectedTags(prev => prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id])}
-                            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${selectedTags.includes(t.id) ? 'bg-primary text-on-primary' : 'bg-surface-low text-on-surface-variant hover:bg-primary-fixed'}`}
+                            onClick={() => setSelectedTags(prev =>
+                              prev.includes(t.id) ? prev.filter(x => x !== t.id) : [...prev, t.id]
+                            )}
+                            className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                              selectedTags.includes(t.id)
+                                ? 'bg-primary text-on-primary'
+                                : 'bg-surface-low text-on-surface-variant hover:bg-surface-high hover:text-on-surface'
+                            }`}
                           >
                             #{t.name}
                           </button>
@@ -255,139 +379,131 @@ const NewTransaction = () => {
                       </div>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <CustomDropdown label="Source Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: 'logout' }))} value={transferFromAccount} onChange={setTransferFromAccount} placeholder="From..." />
-                  <CustomDropdown label="Destination Account" options={accounts.map(a => ({ value: a.id, label: a.name, icon: 'login' }))} value={transferToAccount} onChange={setTransferToAccount} placeholder="To..." />
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex flex-col gap-3 pt-2">
-                <button
-                  type="submit"
-                  className="w-full bg-primary text-on-primary py-5 rounded-full text-base font-bold shadow-xl shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
-                  disabled={isSubmitting}
-                >
-                  <span className="material-symbols-outlined">add_task</span>
-                  {isSubmitting ? 'Processing...' : isEditing ? 'Commit Changes' : 'Commit Entry'}
-                </button>
-                <div className="flex items-center justify-center gap-6">
-                  <button type="button" className="text-on-surface-variant font-medium text-sm hover:text-on-surface transition-colors" onClick={() => { resetForm(); setView(isEditing ? 'ledger' : 'dashboard'); }}>
-                    Cancel
-                  </button>
-                  {isEditing && !showDeleteConfirm && (
-                    <button type="button" className="text-error font-medium text-sm hover:underline transition-colors" onClick={() => setShowDeleteConfirm(true)}>
-                      Delete entry
-                    </button>
-                  )}
-                  {isEditing && showDeleteConfirm && (
-                    <div className="flex items-center gap-3 fade-in">
-                      <span className="text-error text-sm font-medium">Delete permanently?</span>
-                      <button type="button" className="text-error font-bold text-sm underline transition-colors" onClick={doDelete}>
-                        Yes, delete
-                      </button>
-                      <button type="button" className="text-on-surface-variant font-medium text-sm hover:text-on-surface transition-colors" onClick={() => setShowDeleteConfirm(false)}>
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Keyboard shortcuts hint */}
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 pt-1">
-                  {[
-                    { keys: ['⌥', 'Enter'], label: 'Save' },
-                    { keys: ['⌥', '←', '→'], label: 'Cycle type' },
-                    { keys: ['Tab'], label: 'Next field' },
-                    { keys: ['↑', '↓'], label: 'Navigate' },
-                    { keys: ['⌥', 'N'], label: 'New entry' },
-                  ].map(({ keys, label }) => (
-                    <span key={label} className="flex items-center gap-1 text-[10px] text-on-surface-variant/40">
-                      {keys.map(k => (
-                        <kbd key={k} className="px-1.5 py-0.5 rounded bg-surface-low text-on-surface-variant/50 font-mono text-[9px] border border-outline-variant/20">{k}</kbd>
-                      ))}
-                      <span className="ml-0.5">{label}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </form>
-          </div>
-
-          {/* Sidebar panel */}
-          <aside className="md:col-span-4 space-y-5">
-            {/* Savings Rate card */}
-            <div className="bg-primary rounded-[2rem] p-7 text-on-primary shadow-xl shadow-primary/10 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6 opacity-10">
-                <span className="material-symbols-outlined text-8xl" style={{ fontVariationSettings: "'wght' 200" }}>savings</span>
-              </div>
-              <h3 className="text-lg font-bold mb-2">Savings Rate</h3>
-              {savingsRate !== null ? (
-                <>
-                  <p className="text-sm opacity-80 leading-relaxed mb-5">
-                    {savingsRate >= 20
-                      ? `You're saving ${savingsRate}% of income this period. Great discipline.`
-                      : savingsRate >= 0
-                      ? `You're saving ${savingsRate}% of income. Small steps add up.`
-                      : `Spending exceeds income by ${Math.abs(savingsRate)}% this period.`}
-                  </p>
-                  <div className="h-1.5 w-full bg-primary-container rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary-fixed rounded-full transition-all duration-700"
-                      style={{ width: `${Math.min(Math.max(savingsRate, 0), 100)}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between mt-2 text-xs font-medium opacity-70">
-                    <span>This Period</span>
-                    <span>{savingsRate}%</span>
-                  </div>
                 </>
               ) : (
-                <p className="text-sm opacity-70 leading-relaxed">Add income and expense transactions to see your savings rate here.</p>
+                /* Transfer: From → To accounts */
+                <div className="px-6 py-5 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-3">
+                      From
+                    </label>
+                    <CustomDropdown
+                      options={accounts.map(a => ({ value: a.id, label: a.name, icon: 'logout' }))}
+                      value={transferFromAccount}
+                      onChange={setTransferFromAccount}
+                      placeholder="Source"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mb-3">
+                      To
+                    </label>
+                    <CustomDropdown
+                      options={accounts.map(a => ({ value: a.id, label: a.name, icon: 'login' }))}
+                      value={transferToAccount}
+                      onChange={setTransferToAccount}
+                      placeholder="Destination"
+                    />
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Recent flows */}
-            {dashTransactions?.filter(t => !t.transfer_id).slice(0, 3).length > 0 && (
-              <div className="bg-surface-low rounded-[2rem] p-7">
-                <h4 className="font-bold text-primary mb-5 flex items-center gap-2 text-sm">
-                  <span className="material-symbols-outlined text-base">history</span>
-                  Recent Roots
-                </h4>
-                <div className="space-y-5">
-                  {dashTransactions.filter(t => !t.transfer_id).slice(0, 3).map(t => {
-                    const cat = categories?.find(c => c.id === t.category_id);
-                    const isNeg = t.type === 'expense';
-                    return (
-                      <div key={t.id} className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-surface-lowest flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-primary text-[16px]">{getCategoryIcon(cat?.name || 'Other')}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-on-surface truncate">{t.note || cat?.name || 'Entry'}</p>
-                          <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{new Date(t.transaction_date || t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                        </div>
-                        <span className={`text-sm font-bold shrink-0 ${isNeg ? 'text-on-surface' : 'text-primary'}`}>
-                          {isNeg ? '-' : '+'}{currencySymbol}{Math.abs(t.amount).toFixed(2)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* ── Actions ─────────────────────────────────────────────── */}
+            <div className="mt-6 space-y-3">
 
-            {/* Inspirational quote */}
-            <div className="rounded-[2rem] overflow-hidden bg-primary-fixed p-8 relative">
-              <span className="text-5xl absolute top-4 right-6 opacity-20 leading-none text-primary">"</span>
-              <p className="text-sm font-medium italic text-primary leading-relaxed relative z-10">
-                "Financial peace is not the acquisition of stuff. It's the acquisition of calm."
-              </p>
+              {/* Primary save button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-primary text-on-primary py-4 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                    {isEditing ? 'Save Changes' : 'Save Entry'}
+                  </>
+                )}
+              </button>
+
+              {/* Secondary actions: Cancel / Delete */}
+              <div className="flex items-center justify-center gap-6 py-1">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="text-on-surface-variant text-sm font-medium hover:text-on-surface transition-colors"
+                >
+                  Cancel
+                </button>
+
+                {isEditing && !showDeleteConfirm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="text-error text-sm font-medium hover:underline transition-colors"
+                  >
+                    Delete entry
+                  </button>
+                )}
+
+                {isEditing && showDeleteConfirm && (
+                  <div className="flex items-center gap-3 fade-in">
+                    <span className="text-error text-sm font-medium">Delete permanently?</span>
+                    <button
+                      type="button"
+                      onClick={doDelete}
+                      className="text-error text-sm font-bold underline"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="text-on-surface-variant text-sm"
+                    >
+                      No
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Keyboard shortcuts — collapsible */}
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowHints(h => !h)}
+                  className="flex items-center gap-1.5 text-[10px] text-on-surface-variant/30 hover:text-on-surface-variant/60 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[14px]">keyboard</span>
+                  Keyboard shortcuts
+                </button>
+                {showHints && (
+                  <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-1 fade-in">
+                    {[
+                      { keys: ['⌥', 'Enter'], label: 'Save' },
+                      { keys: ['⌥', '←  →'], label: 'Cycle type' },
+                      { keys: ['Tab'], label: 'Next field' },
+                      { keys: ['⌥', 'N'], label: 'New entry' },
+                    ].map(({ keys, label }) => (
+                      <span key={label} className="flex items-center gap-1 text-[10px] text-on-surface-variant/50">
+                        {keys.map(k => (
+                          <kbd key={k} className="px-1.5 py-0.5 rounded bg-surface-low text-on-surface-variant/60 font-mono text-[9px] border border-outline-variant/20">{k}</kbd>
+                        ))}
+                        <span className="ml-0.5">{label}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
-          </aside>
-        </section>
+          </form>
+        </div>
       </div>
     </PageShell>
   );
