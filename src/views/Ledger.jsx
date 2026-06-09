@@ -270,13 +270,8 @@ const Ledger = () => {
           </div>
           
           {/* Table Footer */}
-          <div className="px-8 py-5 flex justify-between items-center bg-surface-high/20">
+          <div className="px-8 py-5 flex items-center bg-surface-high/20">
             <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-[0.2em] opacity-50">Showing {filteredLedger.length} entries</p>
-            <div className="flex items-center gap-4">
-              <button className="material-symbols-outlined text-on-surface-variant hover:text-on-surface disabled:opacity-10 transition-colors" disabled>chevron_left</button>
-              <span className="text-[10px] font-bold text-primary px-2">1</span>
-              <button className="material-symbols-outlined text-on-surface-variant hover:text-on-surface transition-colors">chevron_right</button>
-            </div>
           </div>
         </div>
       </div>

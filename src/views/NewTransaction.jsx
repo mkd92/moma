@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { PageShell } from '../components/layout';
 import CustomDropdown from '../components/CustomDropdown';
 import { getCategoryIcon } from '../utils/formatters';
@@ -48,6 +48,7 @@ const NewTransaction = () => {
 
   const isEditing = !!txToEdit;
   const noteInputRef = useRef(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Auto-focus the note field when opening a new (not edit) transaction
   useEffect(() => {
@@ -57,12 +58,10 @@ const NewTransaction = () => {
     }
   }, [isEditing]);
 
-  const confirmDelete = () => {
-    if (window.confirm("Are you sure you want to permanently delete this entry?")) {
-      onDelete(txToEdit);
-      resetForm();
-      setView('ledger');
-    }
+  const doDelete = () => {
+    onDelete(txToEdit);
+    resetForm();
+    setView('ledger');
   };
 
   const TX_TYPES = ['expense', 'income', 'transfer'];
@@ -165,7 +164,6 @@ const NewTransaction = () => {
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
                       className="w-full bg-surface-low border-none rounded-2xl py-4 pl-10 pr-5 text-on-surface text-xl font-bold focus:ring-2 focus:ring-primary/20 focus:bg-surface-lowest outline-none transition-all"
-                      autoFocus
                     />
                   </div>
                 </div>
@@ -265,10 +263,21 @@ const NewTransaction = () => {
                   <button type="button" className="text-on-surface-variant font-medium text-sm hover:text-on-surface transition-colors" onClick={() => { resetForm(); setView(isEditing ? 'ledger' : 'dashboard'); }}>
                     Cancel
                   </button>
-                  {isEditing && (
-                    <button type="button" className="text-error font-medium text-sm hover:underline transition-colors" onClick={confirmDelete}>
+                  {isEditing && !showDeleteConfirm && (
+                    <button type="button" className="text-error font-medium text-sm hover:underline transition-colors" onClick={() => setShowDeleteConfirm(true)}>
                       Delete entry
                     </button>
+                  )}
+                  {isEditing && showDeleteConfirm && (
+                    <div className="flex items-center gap-3 fade-in">
+                      <span className="text-error text-sm font-medium">Delete permanently?</span>
+                      <button type="button" className="text-error font-bold text-sm underline transition-colors" onClick={doDelete}>
+                        Yes, delete
+                      </button>
+                      <button type="button" className="text-on-surface-variant font-medium text-sm hover:text-on-surface transition-colors" onClick={() => setShowDeleteConfirm(false)}>
+                        Cancel
+                      </button>
+                    </div>
                   )}
                 </div>
 

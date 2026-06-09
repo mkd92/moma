@@ -135,7 +135,10 @@ const Analytics = () => {
     setCatBreakdownType,
     navToLedgerByCategory,
     topPayees,
-    refreshData
+    refreshData,
+    categories,
+    tags,
+    accounts,
   } = useAppDataContext();
 
   
@@ -181,9 +184,9 @@ const Analytics = () => {
           {showAnalyticsFilters && (
             <div className="bg-surface-low p-8 rounded-[3rem] border border-outline-variant/10 shadow-2xl space-y-10 fade-in">
               <FilterPanel
-                categories={useAppDataContext().categories}
-                tags={useAppDataContext().tags}
-                accounts={useAppDataContext().accounts}
+                categories={categories}
+                tags={tags}
+                accounts={accounts}
                 filterOptions={filterOptions}
                 onUpdateFilter={updateFilter}
                 onResetFilters={resetFilters}
