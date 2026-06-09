@@ -43,7 +43,8 @@ const NewTransaction = () => {
     handleDeleteTransaction: onDelete,
     refreshData,
     dashTransactions,
-    categories
+    categories,
+    savingsRate,
   } = useAppDataContext();
 
   const isEditing = !!txToEdit;
@@ -317,20 +318,35 @@ const NewTransaction = () => {
 
           {/* Sidebar panel */}
           <aside className="md:col-span-4 space-y-5">
-            {/* A Wise Move card */}
+            {/* Savings Rate card */}
             <div className="bg-primary rounded-[2rem] p-7 text-on-primary shadow-xl shadow-primary/10 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-6 opacity-10">
-                <span className="material-symbols-outlined text-8xl" style={{ fontVariationSettings: "'wght' 200" }}>energy_savings_leaf</span>
+                <span className="material-symbols-outlined text-8xl" style={{ fontVariationSettings: "'wght' 200" }}>savings</span>
               </div>
-              <h3 className="text-lg font-bold mb-2">A Wise Move</h3>
-              <p className="text-sm opacity-80 leading-relaxed mb-5">Acknowledging every flow has helped countless people save 12% on impulse purchases.</p>
-              <div className="h-1.5 w-full bg-primary-container rounded-full overflow-hidden">
-                <div className="h-full bg-primary-fixed w-[65%] rounded-full" />
-              </div>
-              <div className="flex justify-between mt-2 text-xs font-medium opacity-70">
-                <span>Mindful Spending</span>
-                <span>65%</span>
-              </div>
+              <h3 className="text-lg font-bold mb-2">Savings Rate</h3>
+              {savingsRate !== null ? (
+                <>
+                  <p className="text-sm opacity-80 leading-relaxed mb-5">
+                    {savingsRate >= 20
+                      ? `You're saving ${savingsRate}% of income this period. Great discipline.`
+                      : savingsRate >= 0
+                      ? `You're saving ${savingsRate}% of income. Small steps add up.`
+                      : `Spending exceeds income by ${Math.abs(savingsRate)}% this period.`}
+                  </p>
+                  <div className="h-1.5 w-full bg-primary-container rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary-fixed rounded-full transition-all duration-700"
+                      style={{ width: `${Math.min(Math.max(savingsRate, 0), 100)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-2 text-xs font-medium opacity-70">
+                    <span>This Period</span>
+                    <span>{savingsRate}%</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm opacity-70 leading-relaxed">Add income and expense transactions to see your savings rate here.</p>
+              )}
             </div>
 
             {/* Recent flows */}

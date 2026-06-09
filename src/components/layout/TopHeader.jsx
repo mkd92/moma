@@ -40,7 +40,7 @@ const AccountSelector = ({ align = 'left' }) => {
       </button>
 
       {open && (
-        <div className={`absolute top-full mt-2 min-w-[180px] bg-surface-lowest rounded-2xl shadow-[0_8px_24px_rgba(77,97,75,0.14)] overflow-hidden z-50 fade-in ${align === 'right' ? 'right-0' : 'left-0'}`}>
+        <div className={`absolute top-full mt-2 min-w-[180px] bg-surface-lowest rounded-2xl shadow-[0_8px_24px_rgba(7,16,29,0.14)] overflow-hidden z-50 fade-in ${align === 'right' ? 'right-0' : 'left-0'}`}>
           {accounts.map(a => {
             const isActive = a.id === defaultAccountId;
             return (
@@ -86,7 +86,7 @@ const AvatarMenu = ({ session, onLogout, onSettings }) => {
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 right-0 w-56 bg-surface-lowest rounded-2xl shadow-[0_8px_32px_rgba(77,97,75,0.16)] overflow-hidden z-50 fade-in">
+        <div className="absolute top-full mt-2 right-0 w-56 bg-surface-lowest rounded-2xl shadow-[0_8px_32px_rgba(7,16,29,0.16)] overflow-hidden z-50 fade-in">
           {/* User info */}
           <div className="px-4 py-3.5 border-b border-outline-variant/10">
             <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40 mb-0.5">Signed in as</p>

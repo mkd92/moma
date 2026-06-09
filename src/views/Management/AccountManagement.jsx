@@ -234,7 +234,7 @@ export default function AccountManagement() {
           <button className="w-12 h-12 rounded-2xl bg-surface-low border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-on-surface/[0.05] transition-all" onClick={() => setView('settings')}>
             <span className="material-symbols-outlined text-[22px]">arrow_back</span>
           </button>
-          <h2 className="font-headline text-4xl font-black tracking-tight text-on-surface uppercase tracking-tight">Accounts</h2>
+          <h2 className="font-headline text-4xl font-black tracking-tight text-on-surface uppercase">Accounts</h2>
         </div>
 
         <div className="space-y-12 fade-in">

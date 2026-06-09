@@ -103,7 +103,7 @@ export default function CategoryManagement() {
                         <span className="text-lg opacity-40">{s.icon}</span>
                         <p className="text-xs font-bold text-on-surface-variant">{s.name}</p>
                       </div>
-                      <div className="flex gap-2 opacity-0 group-sub/sub:opacity-100 transition-opacity">
+                      <div className="flex gap-2 opacity-0 group-hover/sub:opacity-100 transition-opacity">
                         <button className="p-1.5 text-on-surface-variant hover:text-primary" onClick={() => handleEdit(s)}><span className="material-symbols-outlined text-xs">edit</span></button>
                         <button className="p-1.5 text-on-surface-variant hover:text-error" onClick={() => handleDeleteCategory(s.id)}><span className="material-symbols-outlined text-xs">delete</span></button>
                       </div>

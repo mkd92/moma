@@ -1,7 +1,10 @@
 const V = 1;
 const key = (uid, name) => `moma_v${V}_${uid}_${name}`;
 
-const TTL_MS = 24 * 60 * 60 * 1000;
+// 5-minute TTL: stale-while-revalidate pattern — cache pre-populates the UI
+// on load, then a fresh fetch immediately replaces it. 24h was too long for
+// multi-device use where another device adds transactions.
+const TTL_MS = 5 * 60 * 1000;
 
 export const cacheGet = (uid, name) => {
   try {

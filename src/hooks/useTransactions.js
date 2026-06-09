@@ -27,15 +27,19 @@ export function useTransactions() {
 
       if (error) {
         console.error('Error fetching transactions:', error);
+        showToast('Could not load transactions. Pull down to retry.', 'error');
         return;
       }
       const txData = data || [];
       setTransactions(txData);
       if (userId) cacheSet(userId, 'transactions', txData);
+    } catch (err) {
+      console.error('Unexpected error fetching transactions:', err);
+      showToast('Could not load transactions. Check your connection.', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [showToast]);
 
   const handleDeleteTransaction = useCallback(async (session, t, onRefresh) => {
     if (!session) return;

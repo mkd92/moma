@@ -52,10 +52,13 @@ export function useBaseData() {
         fetchTags(userId),
         fetchAccounts(userId)
       ]);
+    } catch (err) {
+      console.error('Failed to load base data:', err);
+      showToast('Could not load account data. Pull down to retry.', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [fetchCategories, fetchParties, fetchTags, fetchAccounts]);
+  }, [fetchCategories, fetchParties, fetchTags, fetchAccounts, showToast]);
 
   const handleCreateCategory = useCallback(async (session, payload, editingId = null) => {
     if (!session) return;

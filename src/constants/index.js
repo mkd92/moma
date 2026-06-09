@@ -1,4 +1,8 @@
-export const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', INR: '₹', JPY: '¥' };
+export const CURRENCY_SYMBOLS = {
+  USD: '$', EUR: '€', GBP: '£', INR: '₹', JPY: '¥',
+  AUD: 'A$', CAD: 'C$', SGD: 'S$', CHF: 'Fr',
+  CNY: '¥', BRL: 'R$', MXN: '$', AED: 'د.إ', KRW: '₩',
+};
 
 export const ACCT_META = {
   asset: { icon: '🏦', label: 'Asset', color: 'var(--secondary)' },
@@ -41,4 +45,4 @@ export const CATEGORY_ICONS = {
   'Transfer': 'sync_alt'
 };
 
-export const SUB_VIEWS = new Set(['new_transaction', 'account_management', 'category_management', 'party_management', 'tag_management']);
+export const SUB_VIEWS = new Set(['new_transaction', 'account_management', 'category_management', 'party_management', 'tag_management', 'bulk_import']);
