@@ -442,8 +442,19 @@ const BulkImport = () => {
     const el = tableRef.current?.querySelector(
       `[data-row="${rowIdx}"][data-col="${colIdx}"]`
     );
-    el?.focus();
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    // Bring the cell fully into view ourselves — focus()'s default scroll is
+    // unreliable across the sticky top bar, so we drive it explicitly.
+    el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, []);
+
+  /* Append a row and scroll/focus straight into it (used by the Add-row button) */
+  const addRowAndFocus = useCallback(() => {
+    const newIdx = rows.length;            // new row's index = current length
+    addOneRow();
+    setTimeout(() => focusCell(newIdx, COL.DATE), 40);
+  }, [rows.length, addOneRow, focusCell]);
 
   /**
    * Central arrow-key handler. Called by each cell with its own (rowIdx, colIdx).
@@ -860,7 +871,7 @@ const BulkImport = () => {
             <div className="px-6 py-4 border-t border-outline-variant/10 flex items-center justify-between">
               <button
                 type="button"
-                onClick={addOneRow}
+                onClick={addRowAndFocus}
                 className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors"
               >
                 <span className="material-symbols-outlined text-base">add_circle</span>
