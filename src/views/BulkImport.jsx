@@ -444,9 +444,11 @@ const BulkImport = () => {
     );
     if (!el) return;
     el.focus({ preventScroll: true });
-    // Bring the cell fully into view ourselves — focus()'s default scroll is
-    // unreliable across the sticky top bar, so we drive it explicitly.
-    el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    // Scroll the whole ROW into view (not just the cell): the row carries
+    // scroll-margin top/bottom so it clears the sticky top bar AND the
+    // floating bottom nav, which otherwise covers the last row.
+    const row = el.closest('tr') || el;
+    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, []);
 
   /* Append a row and scroll/focus straight into it (used by the Add-row button) */
@@ -644,7 +646,7 @@ const BulkImport = () => {
         </div>
 
         {/* Page body */}
-        <div className="px-6 lg:px-8 py-8 max-w-[1440px] w-full mx-auto space-y-6">
+        <div className="px-6 lg:px-8 pt-8 pb-40 max-w-[1440px] w-full mx-auto space-y-6">
 
           {/* Header */}
           <div className="space-y-2">
@@ -732,7 +734,7 @@ const BulkImport = () => {
                   {enrichedRows.map((row, idx) => (
                     <tr
                       key={row.id}
-                      className={`group border-b border-outline-variant/10 last:border-0 transition-colors duration-75 ${
+                      className={`group border-b border-outline-variant/10 last:border-0 transition-colors duration-75 scroll-mt-24 scroll-mb-28 ${
                         row._status === 'error' ? 'bg-secondary/[0.03]' : idx % 2 === 0 ? 'bg-surface-lowest/20' : ''
                       } hover:bg-primary-fixed/10`}
                     >
