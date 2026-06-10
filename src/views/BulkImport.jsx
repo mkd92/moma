@@ -358,6 +358,7 @@ const BulkImport = () => {
   const userPickedAccount = useRef(false);
   const committingRef = useRef(false);   // hard re-entrancy guard (closes the double-click window)
   const tableRef = useRef(null);
+  const scrollContainerRef = useRef(null);   // the scrollable-area wrapper (for pin-to-bottom)
 
   /**
    * The account every NON-transfer row posts to. Seeded from the user's saved
@@ -437,26 +438,34 @@ const BulkImport = () => {
    * Focus the primary focusable element of cell (rowIdx, colIdx).
    * Every navigable cell has [data-row][data-col] on its focusable element.
    */
-  const focusCell = useCallback((rowIdx, colIdx) => {
+  const focusCell = useCallback((rowIdx, colIdx, scroll = true) => {
     if (rowIdx < 0) return;
     const el = tableRef.current?.querySelector(
       `[data-row="${rowIdx}"][data-col="${colIdx}"]`
     );
     if (!el) return;
     el.focus({ preventScroll: true });
-    // Scroll the whole ROW into view (not just the cell): the row carries
-    // scroll-margin top/bottom so it clears the sticky top bar AND the
-    // floating bottom nav, which otherwise covers the last row.
+    if (!scroll) return;   // caller will handle scrolling (e.g. pin to bottom)
+    // Minimal scroll for arrow navigation: bring the whole ROW into view. The
+    // row carries scroll-margin so it clears the sticky top bar AND floating nav.
     const row = el.closest('tr') || el;
     row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, []);
 
-  /* Append a row and scroll/focus straight into it (used by the Add-row button) */
+  /* Pin the scroll container to its bottom — keeps the newest row + Add-row
+     button in view as rows are appended, until the user scrolls up manually. */
+  const scrollToBottom = useCallback(() => {
+    const c = scrollContainerRef.current;
+    if (c) c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' });
+  }, []);
+
+  /* Append a row, focus it WITHOUT a per-row scroll, then pin to the bottom
+     (used by the Add-row button and the keyboard add-row paths). */
   const addRowAndFocus = useCallback(() => {
     const newIdx = rows.length;            // new row's index = current length
     addOneRow();
-    setTimeout(() => focusCell(newIdx, COL.DATE), 40);
-  }, [rows.length, addOneRow, focusCell]);
+    setTimeout(() => { focusCell(newIdx, COL.DATE, false); scrollToBottom(); }, 40);
+  }, [rows.length, addOneRow, focusCell, scrollToBottom]);
 
   /**
    * Central arrow-key handler. Called by each cell with its own (rowIdx, colIdx).
@@ -482,9 +491,9 @@ const BulkImport = () => {
     if (key === 'ArrowDown') {
       e.preventDefault();
       if (rowIdx >= rows.length - 1) {
-        // Last row → append and move down
+        // Last row → append, focus, and pin to the bottom
         addOneRow();
-        setTimeout(() => focusCell(rowIdx + 1, colIdx), 40);
+        setTimeout(() => { focusCell(rowIdx + 1, colIdx, false); scrollToBottom(); }, 40);
       } else {
         focusCell(rowIdx + 1, colIdx);
       }
@@ -518,17 +527,17 @@ const BulkImport = () => {
       e.preventDefault();
       focusCell(rowIdx, colIdx + 1);
     }
-  }, [rows.length, addOneRow, focusCell]);
+  }, [rows.length, addOneRow, focusCell, scrollToBottom]);
 
   /* Tab on the last row's amount → add a new row */
   const handleAmountKeyDown = useCallback((e, rowIdx) => {
     if (e.key === 'Tab' && !e.shiftKey && rowIdx === rows.length - 1) {
       e.preventDefault();
       addOneRow();
-      setTimeout(() => focusCell(rowIdx + 1, COL.DATE), 40);
+      setTimeout(() => { focusCell(rowIdx + 1, COL.DATE, false); scrollToBottom(); }, 40);
     }
     handleArrowKey(e, rowIdx, COL.AMOUNT);
-  }, [rows.length, addOneRow, focusCell, handleArrowKey]);
+  }, [rows.length, addOneRow, focusCell, handleArrowKey, scrollToBottom]);
 
   /* ── Discard / Commit ─────────────────────────────────────────────────── */
 
@@ -597,7 +606,7 @@ const BulkImport = () => {
   /* ── Render ───────────────────────────────────────────────────────────── */
 
   return (
-    <div className="flex-1 w-full min-h-0 flex flex-col relative scrollable-area">
+    <div ref={scrollContainerRef} className="flex-1 w-full min-h-0 flex flex-col relative scrollable-area">
 
       {/* Mobile gate */}
       <div className="md:hidden flex flex-col items-center justify-center h-full px-8 py-16 text-center gap-4">
