@@ -31,3 +31,62 @@ export function loadMapping(signature, storage = globalThis.localStorage) {
     return null;
   }
 }
+
+function splitDateParts(value, sep) {
+  const parts = String(value).trim().split(sep);
+  if (parts.length !== 3) return null;
+  const nums = parts.map(p => parseInt(p, 10));
+  if (nums.some(n => Number.isNaN(n))) return null;
+  return nums;
+}
+
+export function parseDateWithFormat(value, format) {
+  if (!value) return null;
+  const sep = format.includes('/') ? '/' : '-';
+  const parts = splitDateParts(value, sep);
+  if (!parts) return null;
+  let year, month, day;
+  if (format === 'YYYY-MM-DD') {
+    [year, month, day] = parts;
+  } else if (format === 'DD/MM/YYYY' || format === 'DD-MM-YYYY') {
+    [day, month, year] = parts;
+  } else if (format === 'MM/DD/YYYY' || format === 'MM-DD-YYYY') {
+    [month, day, year] = parts;
+  } else {
+    return null;
+  }
+  if (year < 100) year += 2000;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const pad = n => String(n).padStart(2, '0');
+  return `${year}-${pad(month)}-${pad(day)}`;
+}
+
+export function guessDateFormat(sampleValues) {
+  const values = sampleValues.filter(Boolean);
+  if (values.length === 0) return 'YYYY-MM-DD';
+  if (values.every(v => /^\d{4}-\d{2}-\d{2}$/.test(String(v).trim()))) return 'YYYY-MM-DD';
+  const sep = String(values[0]).includes('/') ? '/' : '-';
+  const candidates = sep === '/' ? ['DD/MM/YYYY', 'MM/DD/YYYY'] : ['DD-MM-YYYY', 'MM-DD-YYYY'];
+  for (const v of values) {
+    const parts = splitDateParts(v, sep);
+    if (!parts) continue;
+    const [a, b] = parts;
+    if (a > 12) return candidates[0];
+    if (b > 12) return candidates[1];
+  }
+  return candidates[0];
+}
+
+export function normalizeNote(note) {
+  return String(note || '').trim().toLowerCase();
+}
+
+export function guessColumnMapping(headers) {
+  const find = (patterns) => headers.find(h => patterns.some(p => p.test(h))) || '';
+  return {
+    dateCol: find([/date/i]),
+    noteCol: find([/desc/i, /narrat/i, /note/i, /payee/i, /particular/i]),
+    debitCol: find([/debit/i, /withdrawal/i, /paid.?out/i]),
+    creditCol: find([/credit/i, /deposit/i, /paid.?in/i]),
+  };
+}
