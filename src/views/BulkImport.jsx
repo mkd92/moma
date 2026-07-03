@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAppDataContext, useToast } from '../hooks';
 import { supabase } from '../supabaseClient';
 import { getCategoryIcon } from '../utils/formatters';
+import ImportCsvModal from '../components/transactions/ImportCsvModal';
 
 /* ─── Helpers ──────────────────────────────────────────────────────────────── */
 
@@ -18,6 +19,8 @@ const makeRow = () => ({
   amount: '',
   from_account_id: null,
   to_account_id: null,
+  isDuplicate: false,
+  forceInclude: false,
 });
 
 const getRowDelta = (row, defaultAccountId) => {
@@ -43,6 +46,7 @@ const getRowStatus = (row) => {
     if (!row.from_account_id || !row.to_account_id) return 'error';
     if (row.from_account_id === row.to_account_id)  return 'error';
   }
+  if (row.isDuplicate && !row.forceInclude) return 'duplicate';
   return 'ready';
 };
 
@@ -332,6 +336,12 @@ function StatusBadge({ status }) {
       Ready
     </span>
   );
+  if (status === 'duplicate') return (
+    <span className="inline-flex items-center gap-1 bg-tertiary/10 text-tertiary px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest whitespace-nowrap">
+      <span className="material-symbols-outlined" style={{ fontSize: 10 }}>content_copy</span>
+      Duplicate
+    </span>
+  );
   if (status === 'error') return (
     <span className="inline-flex items-center gap-1 bg-secondary/10 text-secondary px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest whitespace-nowrap">
       <span className="material-symbols-outlined" style={{ fontSize: 10 }}>warning</span>
@@ -355,6 +365,7 @@ const BulkImport = () => {
   const [rows, setRows]           = useState([makeRow()]);
   const [isCommitting, setIsCommitting] = useState(false);
   const [postAccountId, setPostAccountId] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
   const userPickedAccount = useRef(false);
   const committingRef = useRef(false);   // hard re-entrancy guard (closes the double-click window)
   const tableRef = useRef(null);
@@ -404,7 +415,7 @@ const BulkImport = () => {
   /* Stats */
   const stats = useMemo(() => {
     const ready     = enrichedRows.filter(r => r._status === 'ready').length;
-    const attention = enrichedRows.filter(r => r._status === 'error').length;
+    const attention = enrichedRows.filter(r => r._status === 'error' || r._status === 'duplicate').length;
     const filled    = enrichedRows.filter(r => r._status !== 'empty').length;
     const netChange = enrichedRows.reduce((s, r) => s + r._delta, 0);
     return { total: filled, ready, attention, netChange };
@@ -458,6 +469,14 @@ const BulkImport = () => {
     const c = scrollContainerRef.current;
     if (c) c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' });
   }, []);
+
+  const handleImportRows = useCallback((newRows) => {
+    setRows(prev => {
+      const kept = prev.filter(r => getRowStatus(r) !== 'empty');
+      return [...kept, ...newRows];
+    });
+    setTimeout(scrollToBottom, 60);
+  }, [scrollToBottom]);
 
   /* Append a row, focus it WITHOUT a per-row scroll, then pin to the bottom
      (used by the Add-row button and the keyboard add-row paths). */
@@ -859,7 +878,20 @@ const BulkImport = () => {
                       </td>
 
                       {/* Status */}
-                      <td className="px-3 py-3"><StatusBadge status={row._status} /></td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <StatusBadge status={row._status} />
+                          {row._status === 'duplicate' && (
+                            <button
+                              type="button"
+                              onClick={() => updateRow(row.id, 'forceInclude', true)}
+                              className="text-[9px] font-bold text-primary underline underline-offset-2 hover:text-primary/70 transition-colors"
+                            >
+                              Keep anyway
+                            </button>
+                          )}
+                        </div>
+                      </td>
 
                       {/* Delete */}
                       <td className="pr-4 py-3 w-10">
@@ -880,14 +912,24 @@ const BulkImport = () => {
 
             {/* Table footer */}
             <div className="px-6 py-4 border-t border-outline-variant/10 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={addRowAndFocus}
-                className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors"
-              >
-                <span className="material-symbols-outlined text-base">add_circle</span>
-                Add row
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={addRowAndFocus}
+                  className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">add_circle</span>
+                  Add row
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(true)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">upload_file</span>
+                  Import CSV
+                </button>
+              </div>
 
               <div className="flex items-center gap-4">
                 {[
@@ -922,6 +964,15 @@ const BulkImport = () => {
           </div>
 
         </div>
+
+        {showImportModal && (
+          <ImportCsvModal
+            categories={categories}
+            transactions={transactions}
+            onImport={handleImportRows}
+            onClose={() => setShowImportModal(false)}
+          />
+        )}
       </div>
     </div>
   );
