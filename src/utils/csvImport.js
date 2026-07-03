@@ -90,3 +90,46 @@ export function guessColumnMapping(headers) {
     creditCol: find([/credit/i, /deposit/i, /paid.?in/i]),
   };
 }
+
+export function buildRowsFromMapping({ headers, rows, mapping }) {
+  const { dateCol, noteCol, debitCol, creditCol, dateFormat } = mapping;
+  const dateIdx = headers.indexOf(dateCol);
+  const noteIdx = headers.indexOf(noteCol);
+  const debitIdx = debitCol ? headers.indexOf(debitCol) : -1;
+  const creditIdx = creditCol ? headers.indexOf(creditCol) : -1;
+
+  const parsedRows = [];
+  const skipped = [];
+
+  rows.forEach((raw, i) => {
+    const rawDate = dateIdx >= 0 ? raw[dateIdx] : '';
+    const rawNote = noteIdx >= 0 ? raw[noteIdx] : '';
+    const rawDebit = debitIdx >= 0 ? raw[debitIdx] : '';
+    const rawCredit = creditIdx >= 0 ? raw[creditIdx] : '';
+
+    const date = parseDateWithFormat(rawDate, dateFormat);
+    if (!date) {
+      skipped.push({ raw, reason: `Row ${i + 2}: could not parse date "${rawDate}"` });
+      return;
+    }
+
+    const debit = parseFloat(rawDebit);
+    const credit = parseFloat(rawCredit);
+    const hasDebit = !Number.isNaN(debit) && debit > 0;
+    const hasCredit = !Number.isNaN(credit) && credit > 0;
+
+    if (!hasDebit && !hasCredit) {
+      skipped.push({ raw, reason: `Row ${i + 2}: no debit or credit amount` });
+      return;
+    }
+
+    parsedRows.push({
+      date,
+      note: String(rawNote || '').trim(),
+      amount: hasDebit ? debit : credit,
+      type: hasDebit ? 'expense' : 'income',
+    });
+  });
+
+  return { parsedRows, skipped };
+}

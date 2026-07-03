@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCsvText, buildHeaderSignature, saveMapping, loadMapping, parseDateWithFormat, guessDateFormat, normalizeNote, guessColumnMapping } from './csvImport.js';
+import { parseCsvText, buildHeaderSignature, saveMapping, loadMapping, parseDateWithFormat, guessDateFormat, normalizeNote, guessColumnMapping, buildRowsFromMapping } from './csvImport.js';
 
 function makeFakeStorage() {
   const store = new Map();
@@ -87,4 +87,40 @@ test('guessColumnMapping finds columns by common header names', () => {
   assert.equal(mapping.noteCol, 'Description');
   assert.equal(mapping.debitCol, 'Debit Amount');
   assert.equal(mapping.creditCol, 'Credit Amount');
+});
+
+test('buildRowsFromMapping derives expense from the debit column', () => {
+  const headers = ['Date', 'Description', 'Debit', 'Credit'];
+  const rows = [['2026-01-01', 'Coffee Shop', '4.50', '']];
+  const mapping = { dateCol: 'Date', noteCol: 'Description', debitCol: 'Debit', creditCol: 'Credit', dateFormat: 'YYYY-MM-DD' };
+  const { parsedRows, skipped } = buildRowsFromMapping({ headers, rows, mapping });
+  assert.equal(skipped.length, 0);
+  assert.deepEqual(parsedRows, [{ date: '2026-01-01', note: 'Coffee Shop', amount: 4.5, type: 'expense' }]);
+});
+
+test('buildRowsFromMapping derives income from the credit column', () => {
+  const headers = ['Date', 'Description', 'Debit', 'Credit'];
+  const rows = [['2026-01-02', 'Paycheck', '', '1500.00']];
+  const mapping = { dateCol: 'Date', noteCol: 'Description', debitCol: 'Debit', creditCol: 'Credit', dateFormat: 'YYYY-MM-DD' };
+  const { parsedRows } = buildRowsFromMapping({ headers, rows, mapping });
+  assert.deepEqual(parsedRows, [{ date: '2026-01-02', note: 'Paycheck', amount: 1500, type: 'income' }]);
+});
+
+test('buildRowsFromMapping skips rows with an unparseable date', () => {
+  const headers = ['Date', 'Description', 'Debit', 'Credit'];
+  const rows = [['not-a-date', 'Mystery', '10.00', '']];
+  const mapping = { dateCol: 'Date', noteCol: 'Description', debitCol: 'Debit', creditCol: 'Credit', dateFormat: 'YYYY-MM-DD' };
+  const { parsedRows, skipped } = buildRowsFromMapping({ headers, rows, mapping });
+  assert.equal(parsedRows.length, 0);
+  assert.equal(skipped.length, 1);
+  assert.match(skipped[0].reason, /could not parse date/);
+});
+
+test('buildRowsFromMapping skips rows with no debit or credit amount', () => {
+  const headers = ['Date', 'Description', 'Debit', 'Credit'];
+  const rows = [['2026-01-03', 'Empty row', '', '']];
+  const mapping = { dateCol: 'Date', noteCol: 'Description', debitCol: 'Debit', creditCol: 'Credit', dateFormat: 'YYYY-MM-DD' };
+  const { parsedRows, skipped } = buildRowsFromMapping({ headers, rows, mapping });
+  assert.equal(parsedRows.length, 0);
+  assert.match(skipped[0].reason, /no debit or credit amount/);
 });
