@@ -91,6 +91,10 @@ export function guessColumnMapping(headers) {
   };
 }
 
+function parseAmount(raw) {
+  return parseFloat(String(raw).trim().replace(/,/g, ''));
+}
+
 export function buildRowsFromMapping({ headers, rows, mapping }) {
   const { dateCol, noteCol, debitCol, creditCol, dateFormat } = mapping;
   const dateIdx = headers.indexOf(dateCol);
@@ -113,8 +117,8 @@ export function buildRowsFromMapping({ headers, rows, mapping }) {
       return;
     }
 
-    const debit = parseFloat(rawDebit);
-    const credit = parseFloat(rawCredit);
+    const debit = parseAmount(rawDebit);
+    const credit = parseAmount(rawCredit);
     const hasDebit = !Number.isNaN(debit) && debit > 0;
     const hasCredit = !Number.isNaN(credit) && credit > 0;
 

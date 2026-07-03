@@ -116,6 +116,15 @@ test('buildRowsFromMapping skips rows with an unparseable date', () => {
   assert.match(skipped[0].reason, /could not parse date/);
 });
 
+test('buildRowsFromMapping strips thousands-separator commas from debit amounts', () => {
+  const headers = ['Date', 'Description', 'Debit', 'Credit'];
+  const rows = [['2026-01-04', 'Big Purchase', '1,500.00', '']];
+  const mapping = { dateCol: 'Date', noteCol: 'Description', debitCol: 'Debit', creditCol: 'Credit', dateFormat: 'YYYY-MM-DD' };
+  const { parsedRows, skipped } = buildRowsFromMapping({ headers, rows, mapping });
+  assert.equal(skipped.length, 0);
+  assert.deepEqual(parsedRows, [{ date: '2026-01-04', note: 'Big Purchase', amount: 1500, type: 'expense' }]);
+});
+
 test('buildRowsFromMapping skips rows with no debit or credit amount', () => {
   const headers = ['Date', 'Description', 'Debit', 'Credit'];
   const rows = [['2026-01-03', 'Empty row', '', '']];
