@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCsvText, buildHeaderSignature, saveMapping, loadMapping, parseDateWithFormat, guessDateFormat, normalizeNote, guessColumnMapping, buildRowsFromMapping } from './csvImport.js';
+import { parseCsvText, buildHeaderSignature, saveMapping, loadMapping, parseDateWithFormat, guessDateFormat, normalizeNote, guessColumnMapping, buildRowsFromMapping, findDuplicates, suggestCategories } from './csvImport.js';
 
 function makeFakeStorage() {
   const store = new Map();
@@ -123,4 +123,34 @@ test('buildRowsFromMapping skips rows with no debit or credit amount', () => {
   const { parsedRows, skipped } = buildRowsFromMapping({ headers, rows, mapping });
   assert.equal(parsedRows.length, 0);
   assert.match(skipped[0].reason, /no debit or credit amount/);
+});
+
+test('findDuplicates flags rows matching date, amount, and note', () => {
+  const parsedRows = [{ date: '2026-01-01', note: 'Coffee Shop', amount: 4.5, type: 'expense' }];
+  const existing = [{ transaction_date: '2026-01-01', amount: 4.5, note: 'Coffee Shop' }];
+  const [result] = findDuplicates(parsedRows, existing);
+  assert.equal(result.isDuplicate, true);
+});
+
+test('findDuplicates does not flag rows with a different amount', () => {
+  const parsedRows = [{ date: '2026-01-01', note: 'Coffee Shop', amount: 4.5, type: 'expense' }];
+  const existing = [{ transaction_date: '2026-01-01', amount: 9.0, note: 'Coffee Shop' }];
+  const [result] = findDuplicates(parsedRows, existing);
+  assert.equal(result.isDuplicate, false);
+});
+
+test('suggestCategories reuses the category from the most recent matching note', () => {
+  const parsedRows = [{ date: '2026-02-01', note: 'Coffee Shop', amount: 5, type: 'expense' }];
+  const existing = [
+    { transaction_date: '2026-01-01', note: 'Coffee Shop', category_id: 'cat-old' },
+    { transaction_date: '2026-01-20', note: 'Coffee Shop', category_id: 'cat-new' },
+  ];
+  const [result] = suggestCategories(parsedRows, existing);
+  assert.equal(result.category_id, 'cat-new');
+});
+
+test('suggestCategories leaves category_id null when no exact note match exists', () => {
+  const parsedRows = [{ date: '2026-02-01', note: 'Totally New Payee', amount: 5, type: 'expense' }];
+  const [result] = suggestCategories(parsedRows, []);
+  assert.equal(result.category_id, null);
 });

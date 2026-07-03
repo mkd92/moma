@@ -133,3 +133,25 @@ export function buildRowsFromMapping({ headers, rows, mapping }) {
 
   return { parsedRows, skipped };
 }
+
+export function findDuplicates(parsedRows, existingTransactions) {
+  return parsedRows.map(row => {
+    const isDuplicate = existingTransactions.some(t =>
+      t.transaction_date === row.date &&
+      Math.abs(t.amount) === row.amount &&
+      normalizeNote(t.note) === normalizeNote(row.note)
+    );
+    return { ...row, isDuplicate };
+  });
+}
+
+export function suggestCategories(parsedRows, existingTransactions) {
+  return parsedRows.map(row => {
+    const targetNote = normalizeNote(row.note);
+    if (!targetNote) return { ...row, category_id: null };
+    const matches = existingTransactions
+      .filter(t => t.category_id && normalizeNote(t.note) === targetNote)
+      .sort((a, b) => (b.transaction_date || '').localeCompare(a.transaction_date || ''));
+    return { ...row, category_id: matches.length > 0 ? matches[0].category_id : null };
+  });
+}
