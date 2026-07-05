@@ -179,11 +179,12 @@ export function buildRowsFromMapping({ headers, rows, mapping }) {
       return;
     }
 
+    const type = hasDebit ? 'expense' : 'income';
     parsedRows.push({
       date,
-      note: String(rawNote || '').trim(),
+      note: humanizeNote(String(rawNote || '').trim(), type),
       amount: hasDebit ? debit : credit,
-      type: hasDebit ? 'expense' : 'income',
+      type,
     });
   });
 

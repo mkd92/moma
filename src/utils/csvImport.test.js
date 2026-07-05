@@ -230,3 +230,18 @@ test('humanizeNote falls back to the raw note when the name segment is missing o
   assert.equal(humanizeNote('UPI/12345/CR', 'income'), 'UPI/12345/CR');
   assert.equal(humanizeNote('UPI/12345/CR/NA/NA', 'income'), 'UPI/12345/CR/NA/NA');
 });
+
+test('buildRowsFromMapping humanizes UPI/NEFT narrations using the row\'s own income/expense type', () => {
+  const headers = ['Date', 'Description', 'Debit', 'Credit'];
+  const rows = [
+    ['2026-01-05', 'UPI/209814909586/CR/MANIKANDAN MAR/IOB/NA', '', '500.00'],
+    ['2026-01-06', 'UPI/P2M/608247030050/Thanigai Agencies    /Sent u/YES BANK LIMITED YBS', '250.00', ''],
+  ];
+  const mapping = { dateCol: 'Date', noteCol: 'Description', debitCol: 'Debit', creditCol: 'Credit', dateFormat: 'YYYY-MM-DD' };
+  const { parsedRows, skipped } = buildRowsFromMapping({ headers, rows, mapping });
+  assert.equal(skipped.length, 0);
+  assert.equal(parsedRows[0].note, 'UPI from Manikandan Mar (IOB)');
+  assert.equal(parsedRows[0].type, 'income');
+  assert.equal(parsedRows[1].note, 'UPI to Thanigai Agencies (Yes Bank Limited YBS)');
+  assert.equal(parsedRows[1].type, 'expense');
+});
