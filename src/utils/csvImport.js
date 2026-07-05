@@ -95,6 +95,58 @@ function parseAmount(raw) {
   return parseFloat(String(raw).trim().replace(/,/g, ''));
 }
 
+const BANK_CODES = new Set(['HDFC', 'IDFC', 'ICICI', 'SBI', 'IOB', 'KVB', 'YBS']);
+const TITLE_CASE_ACRONYMS = new Set([...BANK_CODES, 'GST', 'RTGS', 'UPI', 'NEFT', 'IMPS']);
+
+function collapseWhitespace(value) {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function titleCaseSegment(rawSegment) {
+  const collapsed = collapseWhitespace(rawSegment);
+  if (!collapsed || /[a-z]/.test(collapsed)) return collapsed;
+  return collapsed
+    .split(' ')
+    .map(word => {
+      const upper = word.toUpperCase();
+      if (TITLE_CASE_ACRONYMS.has(upper)) return upper;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
+function findBankSegment(segments, startIndex) {
+  for (let i = segments.length - 1; i >= startIndex; i--) {
+    const segment = String(segments[i] || '').trim();
+    if (!segment) continue;
+    const upper = segment.toUpperCase();
+    if (BANK_CODES.has(upper) || upper.includes('BAN')) return segment;
+  }
+  return null;
+}
+
+export function humanizeNote(rawNote, type) {
+  const note = String(rawNote || '').trim();
+  const segments = note.split('/');
+  if (segments.length < 3) return note;
+
+  const prefix = segments[0].trim().toUpperCase();
+  if (!['UPI', 'NEFT', 'IMPS'].includes(prefix)) return note;
+
+  const nameIndex = prefix === 'UPI' ? 3 : 2;
+  if (nameIndex >= segments.length) return note;
+
+  const rawName = String(segments[nameIndex] || '').trim();
+  if (!rawName || rawName.toUpperCase() === 'NA') return note;
+
+  const rawBank = findBankSegment(segments, nameIndex + 1);
+  const name = titleCaseSegment(rawName);
+  const bank = rawBank ? titleCaseSegment(rawBank) : null;
+  const verb = type === 'income' ? 'from' : 'to';
+
+  return `${prefix} ${verb} ${name}${bank ? ` (${bank})` : ''}`;
+}
+
 export function buildRowsFromMapping({ headers, rows, mapping }) {
   const { dateCol, noteCol, debitCol, creditCol, dateFormat } = mapping;
   const dateIdx = headers.indexOf(dateCol);

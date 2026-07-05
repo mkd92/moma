@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCsvText, buildHeaderSignature, saveMapping, loadMapping, parseDateWithFormat, guessDateFormat, normalizeNote, guessColumnMapping, buildRowsFromMapping, findDuplicates, suggestCategories } from './csvImport.js';
+import { parseCsvText, buildHeaderSignature, saveMapping, loadMapping, parseDateWithFormat, guessDateFormat, normalizeNote, guessColumnMapping, buildRowsFromMapping, findDuplicates, suggestCategories, humanizeNote } from './csvImport.js';
 
 function makeFakeStorage() {
   const store = new Map();
@@ -162,4 +162,71 @@ test('suggestCategories leaves category_id null when no exact note match exists'
   const parsedRows = [{ date: '2026-02-01', note: 'Totally New Payee', amount: 5, type: 'expense' }];
   const [result] = suggestCategories(parsedRows, []);
   assert.equal(result.category_id, null);
+});
+
+test('humanizeNote formats a UPI transfer with a CR flag and a short bank code', () => {
+  assert.equal(
+    humanizeNote('UPI/209814909586/CR/MANIKANDAN MAR/IOB/NA', 'income'),
+    'UPI from Manikandan Mar (IOB)'
+  );
+});
+
+test('humanizeNote formats a UPI P2M transfer with a full bank name', () => {
+  assert.equal(
+    humanizeNote('UPI/P2M/608247030050/Thanigai Agencies    /Sent u/YES BANK LIMITED YBS', 'expense'),
+    'UPI to Thanigai Agencies (Yes Bank Limited YBS)'
+  );
+});
+
+test('humanizeNote omits the bank when no segment matches a known code or contains "BAN"', () => {
+  assert.equal(
+    humanizeNote('UPI/P2A/791578661253/M  ASIF/IOBA/Payment/', 'expense'),
+    'UPI to M Asif'
+  );
+});
+
+test('humanizeNote formats a NEFT transfer using the two-segment-earlier name position', () => {
+  assert.equal(
+    humanizeNote('NEFT/IDFB613083124582/BANYAM MIKRO SUPPLY PLATFORM/IDFC FIRST BANK LTD/April 2026 Salary', 'income'),
+    'NEFT from Banyam Mikro Supply Platform (IDFC First Bank Ltd)'
+  );
+});
+
+test('humanizeNote finds the bank past trailing mandate/P2V markers', () => {
+  assert.equal(
+    humanizeNote('UPI/P2M/906619501176/Google Pl/AXIS BANK/MandateE//P2V/', 'expense'),
+    'UPI to Google Pl (Axis Bank)'
+  );
+});
+
+test('humanizeNote scans right-to-left so a remark containing "BAN" does not shadow the real bank', () => {
+  assert.equal(
+    humanizeNote('UPI/P2M/608966647612/BANYAM MIKRO SUPPLY P/Banyam/AXIS BANK', 'expense'),
+    'UPI to Banyam Mikro Supply P (Axis Bank)'
+  );
+});
+
+test('humanizeNote preserves already-mixed-case segments as-is', () => {
+  assert.equal(
+    humanizeNote('UPI/P2M/752550018963/Zomato Online Order  /Zomato/AIRTEL PAYMENTS BANK', 'expense'),
+    'UPI to Zomato Online Order (Airtel Payments Bank)'
+  );
+});
+
+test('humanizeNote leaves unrecognized narration formats unchanged', () => {
+  assert.equal(humanizeNote('Cash Txn Chrgs Incl GST', 'expense'), 'Cash Txn Chrgs Incl GST');
+  assert.equal(humanizeNote('UPILITE/DORMANT/27.03.2026', 'expense'), 'UPILITE/DORMANT/27.03.2026');
+  assert.equal(
+    humanizeNote('ECOM PUR/BOOKMYSHOW CO/1243054000/290326/15:25/608815680819', 'expense'),
+    'ECOM PUR/BOOKMYSHOW CO/1243054000/290326/15:25/608815680819'
+  );
+  assert.equal(
+    humanizeNote('SB:920010018700161:Int.Pd:01-01-2026 to 31-03-2026', 'income'),
+    'SB:920010018700161:Int.Pd:01-01-2026 to 31-03-2026'
+  );
+});
+
+test('humanizeNote falls back to the raw note when the name segment is missing or blank/NA', () => {
+  assert.equal(humanizeNote('UPI/12345/CR', 'income'), 'UPI/12345/CR');
+  assert.equal(humanizeNote('UPI/12345/CR/NA/NA', 'income'), 'UPI/12345/CR/NA/NA');
 });
